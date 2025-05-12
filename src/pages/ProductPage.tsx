@@ -1,0 +1,176 @@
+
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { products, Product } from '../data/products';
+import { ArrowLeft, Check, Heart, Share, ShoppingBag } from 'lucide-react';
+
+const ProductPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [selectedTab, setSelectedTab] = useState('description');
+  const [quantity, setQuantity] = useState(1);
+  
+  useEffect(() => {
+    const foundProduct = products.find(p => p.id === id);
+    if (foundProduct) {
+      setProduct(foundProduct);
+    }
+    // Reset scroll position when product changes
+    window.scrollTo(0, 0);
+  }, [id]);
+  
+  if (!product) {
+    return (
+      <div className="min-h-screen pt-24 flex items-center justify-center">
+        <p>Product not found</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="min-h-screen pt-24">
+      <div className="container-custom py-8">
+        {/* Breadcrumb */}
+        <div className="mb-6">
+          <div className="flex items-center text-sm">
+            <Link to="/" className="text-muted-foreground hover:text-primary-foreground transition-colors">Home</Link>
+            <span className="mx-2">/</span>
+            <Link to="/shop" className="text-muted-foreground hover:text-primary-foreground transition-colors">Shop</Link>
+            <span className="mx-2">/</span>
+            <span className="text-foreground">{product.name}</span>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+          {/* Product Image */}
+          <div>
+            <div className="aspect-square rounded-md overflow-hidden bg-lskin-lightGray">
+              <img 
+                src={product.image} 
+                alt={product.name} 
+                className="w-full h-full object-cover object-center"
+              />
+            </div>
+          </div>
+          
+          {/* Product Details */}
+          <div>
+            {/* Back to shop - Mobile only */}
+            <Link to="/shop" className="inline-flex items-center text-sm font-medium mb-4 md:hidden">
+              <ArrowLeft size={16} className="mr-1" />
+              Back to Shop
+            </Link>
+            
+            {/* Category */}
+            <p className="text-sm capitalize text-muted-foreground">{product.category}</p>
+            
+            {/* Name & Price */}
+            <h1 className="text-3xl md:text-4xl font-serif font-medium mt-1 mb-4">{product.name}</h1>
+            <p className="text-2xl font-medium mb-6">${product.price.toFixed(2)}</p>
+            
+            {/* Description */}
+            <p className="mb-6 text-muted-foreground">{product.description}</p>
+            
+            {/* Key Benefits */}
+            <div className="mb-8">
+              <h3 className="font-medium mb-2">Key Benefits:</h3>
+              <ul className="space-y-1">
+                {product.benefits.map((benefit, index) => (
+                  <li key={index} className="flex items-start">
+                    <Check size={16} className="text-green-500 mt-1 mr-2 flex-shrink-0" />
+                    <span>{benefit}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            {/* Quantity */}
+            <div className="mb-6">
+              <label htmlFor="quantity" className="font-medium block mb-2">
+                Quantity
+              </label>
+              <div className="flex items-center">
+                <button 
+                  className="w-10 h-10 border border-border rounded-l-md flex items-center justify-center"
+                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                >
+                  -
+                </button>
+                <input 
+                  type="number" 
+                  id="quantity" 
+                  className="h-10 w-16 border-y border-border text-center"
+                  min="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                />
+                <button 
+                  className="w-10 h-10 border border-border rounded-r-md flex items-center justify-center"
+                  onClick={() => setQuantity(q => q + 1)}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            
+            {/* Add to Cart */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-8">
+              <button className="flex-1 btn btn-primary py-3">
+                <ShoppingBag size={18} className="mr-2" />
+                Add to Cart
+              </button>
+              <button className="sm:w-12 h-12 border border-border rounded-md flex items-center justify-center">
+                <Heart size={20} />
+              </button>
+              <button className="sm:w-12 h-12 border border-border rounded-md flex items-center justify-center">
+                <Share size={20} />
+              </button>
+            </div>
+            
+            {/* Product Details Tabs */}
+            <div className="border-t border-border pt-6">
+              <div className="flex space-x-6 border-b border-border">
+                <button 
+                  className={`pb-3 text-sm font-medium ${selectedTab === 'description' ? 'border-b-2 border-foreground' : 'text-muted-foreground'}`}
+                  onClick={() => setSelectedTab('description')}
+                >
+                  Description
+                </button>
+                <button 
+                  className={`pb-3 text-sm font-medium ${selectedTab === 'ingredients' ? 'border-b-2 border-foreground' : 'text-muted-foreground'}`}
+                  onClick={() => setSelectedTab('ingredients')}
+                >
+                  Ingredients
+                </button>
+                <button 
+                  className={`pb-3 text-sm font-medium ${selectedTab === 'howToUse' ? 'border-b-2 border-foreground' : 'text-muted-foreground'}`}
+                  onClick={() => setSelectedTab('howToUse')}
+                >
+                  How to Use
+                </button>
+              </div>
+              
+              <div className="py-4">
+                {selectedTab === 'description' && (
+                  <p>{product.description}</p>
+                )}
+                {selectedTab === 'ingredients' && (
+                  <ul className="list-disc pl-5 space-y-1">
+                    {product.ingredients.map((ingredient, index) => (
+                      <li key={index}>{ingredient}</li>
+                    ))}
+                  </ul>
+                )}
+                {selectedTab === 'howToUse' && (
+                  <p>{product.howToUse}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProductPage;
