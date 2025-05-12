@@ -2,17 +2,18 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/supabase';
 
-// Use environment variables or fallback to empty strings to prevent errors
-// These will be populated when connected properly to Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Use environment variables or fallback to placeholder values to prevent errors
+// These placeholders will just prevent the app from crashing, but won't connect to Supabase
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder-url.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
 
-// Check if we have valid Supabase credentials
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Missing Supabase environment variables. Some features may not work correctly.');
-}
+// Flag to check if we have real Supabase credentials
+const hasRealCredentials = Boolean(
+  import.meta.env.VITE_SUPABASE_URL && 
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
-// Create the Supabase client
+// Create the Supabase client with placeholder or real values
 export const supabase = createClient<Database>(
   supabaseUrl, 
   supabaseAnonKey,
@@ -24,7 +25,7 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Function to check if Supabase is properly connected
+// Function to check if Supabase is properly configured
 export const isSupabaseConfigured = () => {
-  return Boolean(supabaseUrl && supabaseAnonKey);
+  return hasRealCredentials;
 };
