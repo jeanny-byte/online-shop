@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
+import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -24,17 +25,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isSupabaseReady] = useState(isSupabaseConfigured());
 
   useEffect(() => {
-    // Only attempt to fetch session if Supabase is properly configured
-    if (!isSupabaseReady) {
-      setIsLoading(false);
-      return;
-    }
-
-    const setData = async () => {
+    // Setup auth state change listener
+    const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
-          console.error(error);
+          console.error("Error getting session:", error);
+          toast({
+            title: "Authentication Error",
+            description: "Failed to initialize authentication session",
+            variant: "destructive",
+          });
+          return;
         }
         
         setSession(session);
@@ -42,68 +44,109 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           // Check if user is admin
-          const { data } = await supabase
+          const { data, error: adminError } = await supabase
             .from('admin_users')
             .select('is_admin')
             .eq('id', session.user.id)
             .single();
           
-          setIsAdmin(!!data?.is_admin);
+          if (adminError) {
+            console.error("Error checking admin status:", adminError);
+          } else {
+            setIsAdmin(!!data?.is_admin);
+          }
         }
       } catch (error) {
-        console.error("Error setting up auth session:", error);
+        console.error("Error in auth setup:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    setData();
+    // Get initial session
+    getInitialSession();
 
-    // Only set up auth state change listener if Supabase is configured
-    if (isSupabaseReady) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsLoading(false);
-        
-        // Check admin status
-        if (session?.user) {
-          supabase
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.email);
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        // Check admin status on auth state change
+        try {
+          const { data, error } = await supabase
             .from('admin_users')
             .select('is_admin')
             .eq('id', session.user.id)
-            .single()
-            .then(({ data }) => {
-              setIsAdmin(!!data?.is_admin);
-            });
-        } else {
-          setIsAdmin(false);
+            .single();
+          
+          if (error) {
+            console.error("Error checking admin status:", error);
+          } else {
+            setIsAdmin(!!data?.is_admin);
+          }
+        } catch (error) {
+          console.error("Failed to check admin status:", error);
         }
-      });
+      } else {
+        setIsAdmin(false);
+      }
+    });
 
-      return () => subscription.unsubscribe();
-    }
-  }, [isSupabaseReady]);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const signIn = async (email: string, password: string) => {
-    if (!isSupabaseReady) {
-      return { error: new Error('Supabase is not configured') };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        console.error("SignIn error:", error.message);
+        return { error };
+      }
+      return { error: null };
+    } catch (error: any) {
+      console.error("Unexpected error during sign in:", error);
+      return { error };
     }
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
   };
 
   const signUp = async (email: string, password: string) => {
-    if (!isSupabaseReady) {
-      return { error: new Error('Supabase is not configured') };
+    try {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        console.error("SignUp error:", error.message);
+        return { error };
+      }
+      
+      toast({
+        title: "Account created",
+        description: "Please check your email for verification instructions",
+      });
+      
+      return { error: null };
+    } catch (error: any) {
+      console.error("Unexpected error during sign up:", error);
+      return { error };
     }
-    const { error } = await supabase.auth.signUp({ email, password });
-    return { error };
   };
 
   const signOut = async () => {
-    if (isSupabaseReady) {
+    try {
       await supabase.auth.signOut();
+      toast({
+        title: "Signed out",
+        description: "You have been logged out successfully",
+      });
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive",
+      });
     }
   };
 

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '../context/AuthContext';
+import { Button } from '@/components/ui/button';
 
 interface LoginFormData {
   email: string;
@@ -11,7 +12,7 @@ interface LoginFormData {
 }
 
 const LoginPage: React.FC = () => {
-  const { signIn } = useAuth();
+  const { signIn, isSupabaseReady } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -21,6 +22,15 @@ const LoginPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
+      if (!isSupabaseReady) {
+        toast({
+          title: "Connection Error",
+          description: "Authentication service is not available",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await signIn(data.email, data.password);
       
       if (error) throw error;
@@ -83,13 +93,14 @@ const LoginPage: React.FC = () => {
                 {errors.password && <span className="text-sm text-red-500">{errors.password.message}</span>}
               </div>
               
-              <button
+              <Button
                 type="submit"
-                className="btn btn-primary w-full py-2"
+                className="w-full py-2"
                 disabled={isSubmitting}
+                variant="default"
               >
                 {isSubmitting ? 'Logging in...' : 'Login'}
-              </button>
+              </Button>
             </form>
             
             <div className="mt-4 text-sm text-center">
