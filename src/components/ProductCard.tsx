@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
+import { useCart } from '../context/CartContext';
 
 export interface ProductProps {
   id: string;
@@ -12,6 +14,18 @@ export interface ProductProps {
 }
 
 const ProductCard: React.FC<ProductProps> = ({ id, name, price, image, category, featured }) => {
+  const { addToCart } = useCart();
+  
+  const handleQuickAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart({ id, name, price, image, category, featured } as any, 1);
+    toast({
+      title: "Added to cart",
+      description: `${name} has been added to your cart.`,
+    });
+  };
+  
   return (
     <div className={`group relative ${featured ? 'animate-fade-in' : ''}`}>
       {/* Product Image */}
@@ -26,7 +40,10 @@ const ProductCard: React.FC<ProductProps> = ({ id, name, price, image, category,
         
         {/* Quick Add Button (appears on hover) */}
         <div className="absolute bottom-0 left-0 w-full p-3 bg-white/80 backdrop-blur-sm translate-y-full opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-          <button className="w-full py-2 bg-lskin-pink hover:bg-lskin-peach transition-colors text-sm font-medium">
+          <button 
+            className="w-full py-2 bg-lskin-pink hover:bg-lskin-peach transition-colors text-sm font-medium"
+            onClick={handleQuickAdd}
+          >
             Quick Add
           </button>
         </div>

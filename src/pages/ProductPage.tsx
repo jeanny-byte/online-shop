@@ -1,28 +1,75 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { products, Product } from '../data/products';
 import { ArrowLeft, Check, Heart, Share, ShoppingBag } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { useCart } from '../context/CartContext';
+import { supabase } from '../lib/supabase';
+import { Database } from '../types/supabase';
+
+type Product = Database['public']['Tables']['products']['Row'];
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('description');
   const [quantity, setQuantity] = useState(1);
+  const { addToCart } = useCart();
   
   useEffect(() => {
-    const foundProduct = products.find(p => p.id === id);
-    if (foundProduct) {
-      setProduct(foundProduct);
+    if (id) {
+      fetchProduct(id);
     }
     // Reset scroll position when product changes
     window.scrollTo(0, 0);
   }, [id]);
   
+  const fetchProduct = async (productId: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+      
+      if (error) throw error;
+      setProduct(data);
+    } catch (error) {
+      console.error('Error fetching product:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleAddToCart = () => {
+    if (product) {
+      addToCart(product, quantity);
+      toast({
+        title: "Added to cart",
+        description: `${product.name} (x${quantity}) has been added to your cart.`,
+      });
+    }
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pt-24 flex items-center justify-center">
+        <p>Loading product...</p>
+      </div>
+    );
+  }
+  
   if (!product) {
     return (
       <div className="min-h-screen pt-24 flex items-center justify-center">
-        <p>Product not found</p>
+        <div className="text-center">
+          <h1 className="text-2xl font-medium mb-4">Product not found</h1>
+          <Link to="/shop" className="btn btn-primary py-2 px-6">
+            Return to Shop
+          </Link>
+        </div>
       </div>
     );
   }
@@ -115,7 +162,10 @@ const ProductPage: React.FC = () => {
             
             {/* Add to Cart */}
             <div className="flex flex-col sm:flex-row gap-3 mb-8">
-              <button className="flex-1 btn btn-primary py-3">
+              <button 
+                className="flex-1 btn btn-primary py-3"
+                onClick={handleAddToCart}
+              >
                 <ShoppingBag size={18} className="mr-2" />
                 Add to Cart
               </button>
@@ -162,7 +212,7 @@ const ProductPage: React.FC = () => {
                   </ul>
                 )}
                 {selectedTab === 'howToUse' && (
-                  <p>{product.howToUse}</p>
+                  <p>{product.how_to_use}</p>
                 )}
               </div>
             </div>

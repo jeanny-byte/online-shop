@@ -1,0 +1,366 @@
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { toast } from '@/hooks/use-toast';
+import { useCart } from '../context/CartContext';
+import { supabase } from '../lib/supabase';
+
+type CheckoutFormData = {
+  fullName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  paymentMethod: 'paystack' | 'whatsapp';
+};
+
+const CheckoutPage: React.FC = () => {
+  const { cart, cartTotal, clearCart } = useCart();
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { register, handleSubmit, formState: { errors }, watch } = useForm<CheckoutFormData>({
+    defaultValues: {
+      paymentMethod: 'paystack'
+    }
+  });
+  
+  const paymentMethod = watch('paymentMethod');
+  
+  const onSubmit = async (data: CheckoutFormData) => {
+    if (cart.length === 0) {
+      toast({
+        title: "Cart is empty",
+        description: "Please add some products to your cart before checkout",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Format shipping address
+      const shippingAddress = `${data.address}, ${data.city}, ${data.state} ${data.zipCode}`;
+      
+      // Generate a random tracking code
+      const tracking_code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      // Create order in database
+      const { data: order, error } = await supabase
+        .from('orders')
+        .insert({
+          customer_name: data.fullName,
+          customer_email: data.email,
+          customer_phone: data.phone,
+          shipping_address: shippingAddress,
+          order_total: cartTotal,
+          payment_method: data.paymentMethod,
+          order_status: 'pending',
+          tracking_code
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Add order items
+      const orderItems = cart.map(item => ({
+        order_id: order.id,
+        product_id: item.product.id,
+        quantity: item.quantity,
+        price_per_item: item.product.price
+      }));
+      
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+      
+      if (itemsError) throw itemsError;
+      
+      // Handle payment method
+      if (data.paymentMethod === 'paystack') {
+        // Implement Paystack integration here
+        console.log('Redirecting to Paystack payment');
+        toast({
+          title: "Order placed successfully",
+          description: "You will be redirected to Paystack to complete your payment.",
+        });
+      } else if (data.paymentMethod === 'whatsapp') {
+        // Format order message for WhatsApp
+        const orderDetails = cart.map(item => 
+          `${item.quantity}x ${item.product.name} - $${(item.product.price * item.quantity).toFixed(2)}`
+        ).join('\n');
+        
+        const message = 
+          `*New Order*\n\n` +
+          `*Customer*: ${data.fullName}\n` +
+          `*Phone*: ${data.phone}\n` +
+          `*Email*: ${data.email}\n` +
+          `*Address*: ${shippingAddress}\n\n` +
+          `*Order Items*:\n${orderDetails}\n\n` +
+          `*Total*: $${cartTotal.toFixed(2)}\n` +
+          `*Tracking Code*: ${tracking_code}`;
+        
+        // Encode the message for WhatsApp
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappNumber = '1234567890'; // Replace with your actual number
+        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+        
+        toast({
+          title: "Order placed successfully",
+          description: "You will be redirected to WhatsApp to complete your order.",
+        });
+        
+        // Open WhatsApp in a new tab
+        window.open(whatsappUrl, '_blank');
+      }
+      
+      // Clear the cart and navigate to success page
+      clearCart();
+      navigate(`/track-order?code=${tracking_code}`);
+      
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast({
+        title: "Checkout failed",
+        description: "There was an error processing your order. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  if (cart.length === 0) {
+    return (
+      <div className="min-h-screen pt-24">
+        <div className="container-custom py-8">
+          <h1 className="text-3xl md:text-4xl font-serif font-medium mb-8">Checkout</h1>
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-serif mb-4">Your cart is empty</h2>
+            <p className="text-muted-foreground mb-8">Add some products to your cart before checkout.</p>
+            <button 
+              onClick={() => navigate('/shop')}
+              className="btn btn-primary py-2 px-6"
+            >
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="min-h-screen pt-24">
+      <div className="container-custom py-8">
+        <h1 className="text-3xl md:text-4xl font-serif font-medium mb-8">Checkout</h1>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Checkout Form */}
+          <div className="lg:col-span-2">
+            <form onSubmit={handleSubmit(onSubmit)}>
+              {/* Customer Information */}
+              <div className="mb-8">
+                <h2 className="text-xl font-serif mb-4">Customer Information</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="fullName" className="block text-sm font-medium mb-1">
+                      Full Name*
+                    </label>
+                    <input
+                      id="fullName"
+                      type="text"
+                      className={`w-full p-2 border rounded-md ${errors.fullName ? 'border-red-500' : 'border-border'}`}
+                      {...register('fullName', { required: 'Full name is required' })}
+                    />
+                    {errors.fullName && <span className="text-sm text-red-500">{errors.fullName.message}</span>}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium mb-1">
+                        Email*
+                      </label>
+                      <input
+                        id="email"
+                        type="email"
+                        className={`w-full p-2 border rounded-md ${errors.email ? 'border-red-500' : 'border-border'}`}
+                        {...register('email', { 
+                          required: 'Email is required',
+                          pattern: {
+                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                            message: 'Invalid email address'
+                          }
+                        })}
+                      />
+                      {errors.email && <span className="text-sm text-red-500">{errors.email.message}</span>}
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="phone" className="block text-sm font-medium mb-1">
+                        Phone Number*
+                      </label>
+                      <input
+                        id="phone"
+                        type="tel"
+                        className={`w-full p-2 border rounded-md ${errors.phone ? 'border-red-500' : 'border-border'}`}
+                        {...register('phone', { required: 'Phone number is required' })}
+                      />
+                      {errors.phone && <span className="text-sm text-red-500">{errors.phone.message}</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Shipping Information */}
+              <div className="mb-8">
+                <h2 className="text-xl font-serif mb-4">Shipping Address</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="address" className="block text-sm font-medium mb-1">
+                      Street Address*
+                    </label>
+                    <input
+                      id="address"
+                      type="text"
+                      className={`w-full p-2 border rounded-md ${errors.address ? 'border-red-500' : 'border-border'}`}
+                      {...register('address', { required: 'Address is required' })}
+                    />
+                    {errors.address && <span className="text-sm text-red-500">{errors.address.message}</span>}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label htmlFor="city" className="block text-sm font-medium mb-1">
+                        City*
+                      </label>
+                      <input
+                        id="city"
+                        type="text"
+                        className={`w-full p-2 border rounded-md ${errors.city ? 'border-red-500' : 'border-border'}`}
+                        {...register('city', { required: 'City is required' })}
+                      />
+                      {errors.city && <span className="text-sm text-red-500">{errors.city.message}</span>}
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="state" className="block text-sm font-medium mb-1">
+                        State/Province*
+                      </label>
+                      <input
+                        id="state"
+                        type="text"
+                        className={`w-full p-2 border rounded-md ${errors.state ? 'border-red-500' : 'border-border'}`}
+                        {...register('state', { required: 'State is required' })}
+                      />
+                      {errors.state && <span className="text-sm text-red-500">{errors.state.message}</span>}
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="zipCode" className="block text-sm font-medium mb-1">
+                        ZIP/Postal Code*
+                      </label>
+                      <input
+                        id="zipCode"
+                        type="text"
+                        className={`w-full p-2 border rounded-md ${errors.zipCode ? 'border-red-500' : 'border-border'}`}
+                        {...register('zipCode', { required: 'ZIP code is required' })}
+                      />
+                      {errors.zipCode && <span className="text-sm text-red-500">{errors.zipCode.message}</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Payment Method */}
+              <div className="mb-8">
+                <h2 className="text-xl font-serif mb-4">Payment Method</h2>
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <input
+                      id="paystack"
+                      type="radio"
+                      value="paystack"
+                      className="mr-2"
+                      {...register('paymentMethod')}
+                    />
+                    <label htmlFor="paystack" className="flex items-center">
+                      <span>Pay online with Paystack</span>
+                      <img src="/paystack-logo.png" alt="Paystack" className="h-6 ml-2" />
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <input
+                      id="whatsapp"
+                      type="radio"
+                      value="whatsapp"
+                      className="mr-2"
+                      {...register('paymentMethod')}
+                    />
+                    <label htmlFor="whatsapp" className="flex items-center">
+                      <span>Order via WhatsApp</span>
+                      <img src="/whatsapp-logo.png" alt="WhatsApp" className="h-6 ml-2" />
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <button
+                type="submit"
+                className="btn btn-primary w-full py-3"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Processing...' : paymentMethod === 'paystack' ? 'Pay Now' : 'Place Order via WhatsApp'}
+              </button>
+            </form>
+          </div>
+          
+          {/* Order Summary */}
+          <div>
+            <div className="bg-lskin-lightGray p-6 rounded-md">
+              <h2 className="font-serif text-xl mb-4">Order Summary</h2>
+              
+              <div className="mb-4">
+                {cart.map((item) => (
+                  <div key={item.product.id} className="flex justify-between py-2 border-b border-border last:border-b-0">
+                    <div>
+                      <span>{item.quantity}x </span>
+                      <span className="font-medium">{item.product.name}</span>
+                    </div>
+                    <span>${(item.product.price * item.quantity).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="space-y-3 mb-4">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span>${cartTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Shipping</span>
+                  <span>Free</span>
+                </div>
+              </div>
+              
+              <div className="border-t border-border pt-4">
+                <div className="flex justify-between font-medium">
+                  <span>Total</span>
+                  <span>${cartTotal.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CheckoutPage;
