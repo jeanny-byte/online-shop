@@ -1,6 +1,9 @@
 
 import { ShoppingBag, CreditCard } from "lucide-react";
-import { Product } from "@/types/supabase";
+import { Database } from "@/types/supabase";
+
+// Define the Product type using the Database types
+export type Product = Database['public']['Tables']['products']['Row'];
 
 export interface CartItem {
   product: Product;
@@ -59,4 +62,3 @@ export const sendOrderToWhatsApp = (message: string, phoneNumber: string = '1234
   // Open WhatsApp in a new tab
   window.open(whatsappUrl, '_blank');
 };
-
