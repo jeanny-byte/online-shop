@@ -5,6 +5,10 @@ import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
 import { useCart } from '../context/CartContext';
 import { supabase } from '../lib/supabase';
+import { initializePayment, generatePaymentReference } from '../lib/paystack';
+import { formatOrderForWhatsApp, sendOrderToWhatsApp } from '../lib/orderUtils';
+import { Button } from '@/components/ui/button';
+import { ShoppingBag, CreditCard } from 'lucide-react';
 
 type CheckoutFormData = {
   fullName: string;
@@ -83,40 +87,97 @@ const CheckoutPage: React.FC = () => {
       
       // Handle payment method
       if (data.paymentMethod === 'paystack') {
-        // Implement Paystack integration here
-        console.log('Redirecting to Paystack payment');
-        toast({
-          title: "Order placed successfully",
-          description: "You will be redirected to Paystack to complete your payment.",
-        });
+        try {
+          // Generate a unique reference for this payment
+          const paymentRef = generatePaymentReference();
+          
+          // Prepare metadata for the payment
+          const metadata = {
+            order_id: order.id,
+            tracking_code,
+            customer_name: data.fullName
+          };
+          
+          // Initialize Paystack payment
+          const paystackResponse = await initializePayment(
+            data.email,
+            cartTotal,
+            paymentRef,
+            metadata
+          );
+          
+          if (paystackResponse.status) {
+            // Update order with payment reference
+            await supabase
+              .from('orders')
+              .update({ 
+                payment_reference: paymentRef,
+                order_status: 'awaiting_payment' 
+              })
+              .eq('id', order.id);
+            
+            // Forward order details to admin WhatsApp
+            const orderDetails = {
+              id: order.id,
+              customer_name: data.fullName,
+              customer_email: data.email,
+              customer_phone: data.phone,
+              shipping_address: shippingAddress,
+              order_total: cartTotal,
+              payment_method: 'paystack',
+              tracking_code,
+              items: cart
+            };
+            
+            const whatsappMessage = formatOrderForWhatsApp(orderDetails);
+            
+            // This would normally be done server-side after payment confirmation
+            // For demo purposes, we're sending it immediately
+            const adminWhatsappNumber = '1234567890'; // Replace with your actual WhatsApp number
+            sendOrderToWhatsApp(whatsappMessage, adminWhatsappNumber);
+            
+            toast({
+              title: "Order placed successfully",
+              description: "You will be redirected to Paystack to complete your payment.",
+            });
+            
+            // Redirect to Paystack payment page
+            window.location.href = paystackResponse.data.authorization_url;
+          } else {
+            throw new Error("Failed to initialize payment");
+          }
+        } catch (paymentError) {
+          console.error('Payment initialization error:', paymentError);
+          toast({
+            title: "Payment Error",
+            description: "There was an error initializing your payment. Please try again.",
+            variant: "destructive",
+          });
+        }
       } else if (data.paymentMethod === 'whatsapp') {
-        // Format order message for WhatsApp
-        const orderDetails = cart.map(item => 
-          `${item.quantity}x ${item.product.name} - $${(item.product.price * item.quantity).toFixed(2)}`
-        ).join('\n');
+        // Format order details for WhatsApp
+        const orderDetails = {
+          id: order.id,
+          customer_name: data.fullName,
+          customer_email: data.email,
+          customer_phone: data.phone,
+          shipping_address: shippingAddress,
+          order_total: cartTotal,
+          payment_method: 'whatsapp',
+          tracking_code,
+          items: cart
+        };
         
-        const message = 
-          `*New Order*\n\n` +
-          `*Customer*: ${data.fullName}\n` +
-          `*Phone*: ${data.phone}\n` +
-          `*Email*: ${data.email}\n` +
-          `*Address*: ${shippingAddress}\n\n` +
-          `*Order Items*:\n${orderDetails}\n\n` +
-          `*Total*: $${cartTotal.toFixed(2)}\n` +
-          `*Tracking Code*: ${tracking_code}`;
+        const whatsappMessage = formatOrderForWhatsApp(orderDetails);
         
-        // Encode the message for WhatsApp
-        const encodedMessage = encodeURIComponent(message);
-        const whatsappNumber = '1234567890'; // Replace with your actual number
-        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+        // Send to admin WhatsApp
+        const adminWhatsappNumber = '1234567890'; // Replace with your actual WhatsApp number
+        sendOrderToWhatsApp(whatsappMessage, adminWhatsappNumber);
         
         toast({
           title: "Order placed successfully",
           description: "You will be redirected to WhatsApp to complete your order.",
         });
-        
-        // Open WhatsApp in a new tab
-        window.open(whatsappUrl, '_blank');
       }
       
       // Clear the cart and navigate to success page
@@ -281,7 +342,7 @@ const CheckoutPage: React.FC = () => {
               <div className="mb-8">
                 <h2 className="text-xl font-serif mb-4">Payment Method</h2>
                 <div className="space-y-4">
-                  <div className="flex items-center">
+                  <div className="flex items-center p-4 border rounded-md cursor-pointer hover:bg-lskin-lightGray transition-colors">
                     <input
                       id="paystack"
                       type="radio"
@@ -289,13 +350,16 @@ const CheckoutPage: React.FC = () => {
                       className="mr-2"
                       {...register('paymentMethod')}
                     />
-                    <label htmlFor="paystack" className="flex items-center">
-                      <span>Pay online with Paystack</span>
-                      <img src="/paystack-logo.png" alt="Paystack" className="h-6 ml-2" />
+                    <label htmlFor="paystack" className="flex items-center cursor-pointer w-full">
+                      <CreditCard className="h-5 w-5 mr-2" />
+                      <div>
+                        <span className="font-medium">Pay online with Paystack</span>
+                        <p className="text-sm text-muted-foreground">Secure online payment</p>
+                      </div>
                     </label>
                   </div>
                   
-                  <div className="flex items-center">
+                  <div className="flex items-center p-4 border rounded-md cursor-pointer hover:bg-lskin-lightGray transition-colors">
                     <input
                       id="whatsapp"
                       type="radio"
@@ -303,21 +367,24 @@ const CheckoutPage: React.FC = () => {
                       className="mr-2"
                       {...register('paymentMethod')}
                     />
-                    <label htmlFor="whatsapp" className="flex items-center">
-                      <span>Order via WhatsApp</span>
-                      <img src="/whatsapp-logo.png" alt="WhatsApp" className="h-6 ml-2" />
+                    <label htmlFor="whatsapp" className="flex items-center cursor-pointer w-full">
+                      <ShoppingBag className="h-5 w-5 mr-2" />
+                      <div>
+                        <span className="font-medium">Order via WhatsApp</span>
+                        <p className="text-sm text-muted-foreground">Complete your order through WhatsApp</p>
+                      </div>
                     </label>
                   </div>
                 </div>
               </div>
               
-              <button
+              <Button
                 type="submit"
-                className="btn btn-primary w-full py-3"
+                className="w-full py-6 text-base font-medium"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Processing...' : paymentMethod === 'paystack' ? 'Pay Now' : 'Place Order via WhatsApp'}
-              </button>
+              </Button>
             </form>
           </div>
           
