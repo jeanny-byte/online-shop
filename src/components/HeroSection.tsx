@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import BlogPostsSlider from './BlogPostsSlider';
 
 const HeroSection: React.FC = () => {
   return (
@@ -22,20 +23,15 @@ const HeroSection: React.FC = () => {
               <Link to="/shop" className="btn btn-primary py-2 px-6">
                 Shop Now
               </Link>
-              <Link to="/about" className="btn btn-outline py-2 px-6">
-                Learn More
+              <Link to="/blog" className="btn btn-outline py-2 px-6">
+                Read Our Blog
               </Link>
             </div>
           </div>
           
-          {/* Hero Image */}
-          <div className="relative h-72 md:h-96 lg:h-[500px] rounded-lg overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-lskin-pink/40 to-transparent z-10"></div>
-            <img 
-              src="https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-              alt="Woman with glowing skin" 
-              className="w-full h-full object-cover object-center"
-            />
+          {/* Hero Image replaced with Blog Posts Slider */}
+          <div className="relative rounded-lg overflow-hidden">
+            <BlogPostsSlider />
           </div>
         </div>
       </div>

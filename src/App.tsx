@@ -17,9 +17,13 @@ import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderTrackingPage from "./pages/OrderTrackingPage";
 import LoginPage from "./pages/LoginPage";
+import BlogPage from "./pages/BlogPage";
+import BlogPostPage from "./pages/BlogPostPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
+import AdminBlogPosts from "./pages/admin/AdminBlogPosts";
+import AdminBlogEditor from "./pages/admin/AdminBlogEditor";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -44,6 +48,8 @@ const App = () => (
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/track-order" element={<OrderTrackingPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/blog" element={<BlogPage />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={
@@ -59,6 +65,21 @@ const App = () => (
               <Route path="/admin/orders" element={
                 <ProtectedRoute>
                   <AdminOrders />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/blog" element={
+                <ProtectedRoute>
+                  <AdminBlogPosts />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/blog/new" element={
+                <ProtectedRoute>
+                  <AdminBlogEditor />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/blog/edit/:id" element={
+                <ProtectedRoute>
+                  <AdminBlogEditor />
                 </ProtectedRoute>
               } />
               
