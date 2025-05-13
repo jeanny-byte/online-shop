@@ -1,11 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, ShoppingBag, X } from 'lucide-react';
+import { Menu, ShoppingBag, X, User } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { user, signOut } = useAuth();
   
   useEffect(() => {
     const handleScroll = () => {
@@ -47,11 +56,60 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
           
-          {/* Shopping Bag & Mobile Menu Button */}
+          {/* Shopping Bag & Profile Menu & Mobile Menu Button */}
           <div className="flex items-center space-x-4">
             <Link to="/cart" className="text-foreground hover:text-primary-foreground transition-colors">
               <ShoppingBag size={20} />
             </Link>
+            
+            {/* Profile Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-foreground hover:bg-gray-200 transition-colors">
+                  <User size={18} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-white">
+                {user ? (
+                  <>
+                    <div className="px-3 py-2 text-sm font-medium">
+                      {user.email}
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/account" className="cursor-pointer w-full">
+                        Account
+                      </Link>
+                    </DropdownMenuItem>
+                    {user && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="cursor-pointer w-full">
+                          Admin Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={signOut} className="cursor-pointer">
+                      Log out
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/login" className="cursor-pointer w-full">
+                        Log in
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/login" className="cursor-pointer w-full">
+                        Sign up
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
             <button onClick={() => setIsOpen(true)} className="md:hidden text-foreground">
               <Menu size={24} />
             </button>
@@ -87,6 +145,40 @@ const Navbar: React.FC = () => {
               <Link to="/cart" className="text-lg font-medium flex items-center" onClick={() => setIsOpen(false)}>
                 <ShoppingBag size={20} className="mr-2" /> Cart
               </Link>
+              
+              {/* Mobile Auth Links */}
+              <div className="pt-2 border-t border-gray-100">
+                {user ? (
+                  <>
+                    <Link to="/account" className="text-lg font-medium block py-2" onClick={() => setIsOpen(false)}>
+                      Account
+                    </Link>
+                    {user && (
+                      <Link to="/admin" className="text-lg font-medium block py-2" onClick={() => setIsOpen(false)}>
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    <button 
+                      onClick={() => {
+                        signOut();
+                        setIsOpen(false);
+                      }}
+                      className="text-lg font-medium w-full text-left py-2 text-red-500"
+                    >
+                      Log out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" className="text-lg font-medium block py-2" onClick={() => setIsOpen(false)}>
+                      Log in
+                    </Link>
+                    <Link to="/login" className="text-lg font-medium block py-2" onClick={() => setIsOpen(false)}>
+                      Sign up
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
