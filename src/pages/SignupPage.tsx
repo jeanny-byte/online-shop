@@ -1,25 +1,28 @@
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Link } from 'react-router-dom';
 
-interface LoginFormData {
+interface SignupFormData {
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
-const LoginPage: React.FC = () => {
-  const { signIn, isSupabaseReady } = useAuth();
+const SignupPage: React.FC = () => {
+  const { signUp, isSupabaseReady } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
+  const { register, handleSubmit, formState: { errors }, watch } = useForm<SignupFormData>();
+  const password = watch('password');
   
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: SignupFormData) => {
     setIsSubmitting(true);
     
     try {
@@ -32,21 +35,21 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      const { error } = await signIn(data.email, data.password);
+      const { error } = await signUp(data.email, data.password);
       
       if (error) throw error;
       
       toast({
-        title: "Login successful",
-        description: "You have been logged in to your account.",
+        title: "Registration successful",
+        description: "Please check your email to confirm your account.",
       });
       
-      navigate('/account');
+      navigate('/login');
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Signup error:', error);
       toast({
-        title: "Login failed",
-        description: error.message || "Invalid email or password",
+        title: "Registration failed",
+        description: error.message || "There was a problem creating your account",
         variant: "destructive",
       });
     } finally {
@@ -58,7 +61,7 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen pt-24">
       <div className="container-custom py-8">
         <div className="max-w-md mx-auto">
-          <h1 className="text-3xl font-serif font-medium mb-8 text-center">Sign In</h1>
+          <h1 className="text-3xl font-serif font-medium mb-8 text-center">Create an Account</h1>
           
           <div className="bg-white p-6 border border-border rounded-md">
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -81,7 +84,7 @@ const LoginPage: React.FC = () => {
                 {errors.email && <span className="text-sm text-red-500">{errors.email.message}</span>}
               </div>
               
-              <div className="mb-6">
+              <div className="mb-4">
                 <label htmlFor="password" className="block text-sm font-medium mb-1">
                   Password
                 </label>
@@ -89,9 +92,31 @@ const LoginPage: React.FC = () => {
                   id="password"
                   type="password"
                   className={errors.password ? 'border-red-500' : ''}
-                  {...register('password', { required: 'Password is required' })}
+                  {...register('password', { 
+                    required: 'Password is required',
+                    minLength: {
+                      value: 6,
+                      message: 'Password must be at least 6 characters long'
+                    }
+                  })}
                 />
                 {errors.password && <span className="text-sm text-red-500">{errors.password.message}</span>}
+              </div>
+              
+              <div className="mb-6">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">
+                  Confirm Password
+                </label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  className={errors.confirmPassword ? 'border-red-500' : ''}
+                  {...register('confirmPassword', {
+                    required: 'Please confirm your password',
+                    validate: value => value === password || 'The passwords do not match'
+                  })}
+                />
+                {errors.confirmPassword && <span className="text-sm text-red-500">{errors.confirmPassword.message}</span>}
               </div>
               
               <Button
@@ -100,15 +125,15 @@ const LoginPage: React.FC = () => {
                 disabled={isSubmitting}
                 variant="default"
               >
-                {isSubmitting ? 'Logging in...' : 'Sign In'}
+                {isSubmitting ? 'Creating Account...' : 'Sign Up'}
               </Button>
             </form>
             
             <div className="mt-4 text-sm text-center">
               <p className="text-muted-foreground">
-                Don't have an account?{' '}
-                <Link to="/signup" className="text-primary hover:underline">
-                  Create an account
+                Already have an account?{' '}
+                <Link to="/login" className="text-primary hover:underline">
+                  Sign in
                 </Link>
               </p>
             </div>
@@ -119,4 +144,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage;
+export default SignupPage;

@@ -101,7 +101,7 @@ const Navbar: React.FC = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/login" className="cursor-pointer w-full">
+                      <Link to="/signup" className="cursor-pointer w-full">
                         Sign up
                       </Link>
                     </DropdownMenuItem>
@@ -173,7 +173,7 @@ const Navbar: React.FC = () => {
                     <Link to="/login" className="text-lg font-medium block py-2" onClick={() => setIsOpen(false)}>
                       Log in
                     </Link>
-                    <Link to="/login" className="text-lg font-medium block py-2" onClick={() => setIsOpen(false)}>
+                    <Link to="/signup" className="text-lg font-medium block py-2" onClick={() => setIsOpen(false)}>
                       Sign up
                     </Link>
                   </>

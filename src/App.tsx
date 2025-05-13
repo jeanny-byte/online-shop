@@ -18,8 +18,14 @@ import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderTrackingPage from "./pages/OrderTrackingPage";
 import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
 import BlogPage from "./pages/BlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
+import FAQPage from "./pages/FAQPage";
+import ShippingPolicyPage from "./pages/ShippingPolicyPage";
+import ReturnsRefundsPage from "./pages/ReturnsRefundsPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
@@ -49,8 +55,16 @@ const App = () => (
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/track-order" element={<OrderTrackingPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
+              
+              {/* Information Pages */}
+              <Route path="/faq" element={<FAQPage />} />
+              <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
+              <Route path="/returns-policy" element={<ReturnsRefundsPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms-of-service" element={<TermsOfServicePage />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={
