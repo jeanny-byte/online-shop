@@ -112,7 +112,7 @@ CREATE POLICY "Products are viewable by everyone"
 ON products FOR SELECT USING (true);
 
 CREATE POLICY "Products are editable by admins only" 
-ON products FOR INSERT TO authenticated USING (
+ON products FOR INSERT WITH CHECK (
   EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
 );
 
@@ -157,12 +157,14 @@ ON blog_posts FOR SELECT USING (published = true OR
   EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid()));
 
 CREATE POLICY "Blog posts are editable by admins only" 
-ON blog_posts FOR INSERT USING (
+ON blog_posts FOR INSERT WITH CHECK (
   EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
 );
 
 CREATE POLICY "Blog posts are updatable by admins only" 
 ON blog_posts FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+) WITH CHECK (
   EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
 );
 
