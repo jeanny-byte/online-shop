@@ -135,7 +135,7 @@ ON orders FOR SELECT USING (
 );
 
 CREATE POLICY "Orders can be created by anyone" 
-ON orders FOR INSERT USING (true);
+ON orders FOR INSERT WITH CHECK (true);
 
 CREATE POLICY "Orders are updatable by admins only" 
 ON orders FOR UPDATE USING (
@@ -149,7 +149,7 @@ ON order_items FOR SELECT USING (
 );
 
 CREATE POLICY "Order items can be created by anyone" 
-ON order_items FOR INSERT USING (true);
+ON order_items FOR INSERT WITH CHECK (true);
 
 -- Create policies for blog posts
 CREATE POLICY "Published blog posts are viewable by everyone" 
