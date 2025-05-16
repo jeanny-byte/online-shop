@@ -3,6 +3,18 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import AdminLayout from './components/AdminLayout';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { DollarSign, Package, ShoppingBag, Clock } from "lucide-react";
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface DashboardStats {
   totalOrders: number;
@@ -100,75 +112,103 @@ const AdminDashboard: React.FC = () => {
         <>
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white p-6 rounded-md border border-border">
-              <h3 className="text-lg font-medium">Total Orders</h3>
-              <p className="text-3xl mt-2">{stats.totalOrders}</p>
-            </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalOrders}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  All time customer orders
+                </p>
+              </CardContent>
+            </Card>
             
-            <div className="bg-white p-6 rounded-md border border-border">
-              <h3 className="text-lg font-medium">Pending Orders</h3>
-              <p className="text-3xl mt-2">{stats.pendingOrders}</p>
-            </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.pendingOrders}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Orders awaiting processing
+                </p>
+              </CardContent>
+            </Card>
             
-            <div className="bg-white p-6 rounded-md border border-border">
-              <h3 className="text-lg font-medium">Total Products</h3>
-              <p className="text-3xl mt-2">{stats.totalProducts}</p>
-            </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalProducts}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Active products in inventory
+                </p>
+              </CardContent>
+            </Card>
             
-            <div className="bg-white p-6 rounded-md border border-border">
-              <h3 className="text-lg font-medium">Total Revenue</h3>
-              <p className="text-3xl mt-2">${stats.totalRevenue.toFixed(2)}</p>
-            </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Lifetime store revenue
+                </p>
+              </CardContent>
+            </Card>
           </div>
           
           {/* Recent Orders */}
-          <div className="bg-white rounded-md border border-border overflow-hidden">
-            <div className="p-6 border-b border-border">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-medium">Recent Orders</h2>
-                <Link to="/admin/orders" className="text-sm underline hover:text-primary-foreground">
-                  View All Orders
-                </Link>
-              </div>
-            </div>
+          <Card>
+            <CardHeader className="flex justify-between items-center">
+              <CardTitle>Recent Orders</CardTitle>
+              <Button variant="ghost" asChild>
+                <Link to="/admin/orders">View All Orders</Link>
+              </Button>
+            </CardHeader>
             
             {recentOrders.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Customer</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {recentOrders.map((order) => (
-                      <tr key={order.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">#{order.tracking_code}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">{order.customer_name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">${order.order_total.toFixed(2)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(order.order_status)}`}>
-                            {order.order_status.charAt(0).toUpperCase() + order.order_status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                          {new Date(order.created_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium">#{order.tracking_code}</TableCell>
+                      <TableCell>{order.customer_name}</TableCell>
+                      <TableCell>${order.order_total.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <span className={cn("px-2 py-1 rounded-full text-xs", getStatusColor(order.order_status))}>
+                          {order.order_status.charAt(0).toUpperCase() + order.order_status.slice(1)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(order.created_at).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             ) : (
-              <div className="p-6 text-center">
-                <p className="text-muted-foreground">No orders yet</p>
-              </div>
+              <CardContent>
+                <p className="text-center text-muted-foreground">No orders yet</p>
+              </CardContent>
             )}
-          </div>
+          </Card>
         </>
       )}
     </AdminLayout>
