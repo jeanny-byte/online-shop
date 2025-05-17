@@ -173,13 +173,31 @@ ON blog_posts FOR DELETE USING (
   EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
 );
 
--- Create policies for admin users
-CREATE POLICY "Admin users are viewable by admins" 
-ON admin_users FOR SELECT USING (
+-- Fix admin users policies to avoid infinite recursion
+-- Allow SELECT access to admin_users table for authenticated users
+CREATE POLICY "Admin users are viewable by authenticated users" 
+ON admin_users FOR SELECT USING (auth.uid() IS NOT NULL);
+
+-- Allow admins to be created by the system or super admins
+CREATE POLICY "Admin users can be created by super admins" 
+ON admin_users FOR INSERT WITH CHECK (
+  -- Initially allow one admin to be created (first user)
+  NOT EXISTS (SELECT 1 FROM admin_users) 
+  OR 
+  -- After first admin exists, only allow existing admins to create new admins
   EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
 );
 
-CREATE POLICY "Admin users are editable by super admins" 
-ON admin_users FOR ALL USING (
+-- Allow admins to update other admin users
+CREATE POLICY "Admin users can be updated by admins" 
+ON admin_users FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+) WITH CHECK (
+  EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+);
+
+-- Allow admins to delete other admin users
+CREATE POLICY "Admin users can be deleted by admins" 
+ON admin_users FOR DELETE USING (
   EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
 );
