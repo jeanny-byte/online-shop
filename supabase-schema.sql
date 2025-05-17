@@ -68,6 +68,16 @@ CREATE TABLE admin_users (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Profiles table for user profile information
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name VARCHAR(255),
+  display_name VARCHAR(255),
+  avatar_url TEXT,
+  website TEXT,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Create indexes for better query performance
 CREATE INDEX idx_products_category ON products(category);
 CREATE INDEX idx_products_featured ON products(featured) WHERE featured = true;
@@ -100,12 +110,18 @@ BEFORE UPDATE ON blog_posts
 FOR EACH ROW
 EXECUTE FUNCTION trigger_set_timestamp();
 
+CREATE TRIGGER set_timestamp_profiles
+BEFORE UPDATE ON profiles
+FOR EACH ROW
+EXECUTE FUNCTION trigger_set_timestamp();
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE blog_posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for products
 CREATE POLICY "Products are viewable by everyone" 
@@ -172,6 +188,16 @@ CREATE POLICY "Blog posts are deletable by admins only"
 ON blog_posts FOR DELETE USING (
   EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
 );
+
+-- Create policies for profiles
+CREATE POLICY "Profiles are viewable by the owner"
+ON profiles FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Profiles can be created by the owner"
+ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Profiles can be updated by the owner"
+ON profiles FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
 
 -- Fix admin users policies to avoid infinite recursion
 -- Allow SELECT access to admin_users table for authenticated users
