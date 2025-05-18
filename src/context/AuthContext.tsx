@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
@@ -44,9 +45,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           try {
-            // For development: Set all authenticated users as admins temporarily
-            setIsAdmin(true);
-            console.log("User authenticated, setting as admin for development");
+            // Check if user is admin from admin_users table
+            const { data, error: adminError } = await supabase
+              .from('admin_users')
+              .select('is_admin')
+              .eq('id', session.user.id)
+              .single();
+              
+            if (adminError) {
+              console.error("Error checking admin status:", adminError);
+              setIsAdmin(false);
+            } else {
+              setIsAdmin(!!data?.is_admin);
+              console.log("Admin status check:", { userId: session.user.id, isAdmin: !!data?.is_admin });
+            }
           } catch (error) {
             console.error("Error setting admin status:", error);
             setIsAdmin(false);
@@ -70,9 +82,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // For development: Set all authenticated users as admins temporarily
-        setIsAdmin(true);
-        console.log("Auth state changed: User authenticated, setting as admin for development");
+        // Check admin status when auth state changes
+        try {
+          const { data, error } = await supabase
+            .from('admin_users')
+            .select('is_admin')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (error) {
+            console.error("Error checking admin status:", error);
+            setIsAdmin(false);
+          } else {
+            setIsAdmin(!!data?.is_admin);
+            console.log("Auth state changed: Admin status:", { userId: session.user.id, isAdmin: !!data?.is_admin });
+          }
+        } catch (error) {
+          console.error("Failed to check admin status:", error);
+          setIsAdmin(false);
+        }
       } else {
         setIsAdmin(false);
       }

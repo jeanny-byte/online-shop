@@ -42,8 +42,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Temporarily bypass admin check to troubleshoot the issue
-  // For development purposes, allow any authenticated user to access admin pages
+  // Restore the admin check
+  if (!isAdmin) {
+    console.log("Not an admin user, access denied");
+    return (
+      <div className="min-h-screen flex items-center justify-center flex-col max-w-md mx-auto p-4">
+        <h2 className="text-xl font-bold mb-4">Access Denied</h2>
+        <p className="text-center mb-4">
+          Your account does not have admin privileges. Please contact the site administrator if you believe this is an error.
+        </p>
+        <Navigate to="/" replace />
+      </div>
+    );
+  }
+
   return <>{children}</>;
 }
 
