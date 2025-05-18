@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -10,9 +10,10 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, isLoading, isAdmin, isSupabaseReady } = useAuth();
+  const location = useLocation();
 
   // Add console logs to debug authentication flow
-  console.log("ProtectedRoute state:", { user, isLoading, isAdmin, isSupabaseReady });
+  console.log("ProtectedRoute state:", { user, isLoading, isAdmin, isSupabaseReady, path: location.pathname });
 
   if (isLoading) {
     return (
@@ -39,10 +40,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (!user) {
     console.log("No user found, redirecting to login");
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // Restore the admin check
+  // Check admin privileges
   if (!isAdmin) {
     console.log("Not an admin user, access denied");
     return (

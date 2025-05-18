@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -23,6 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSupabaseReady] = useState(isSupabaseConfigured());
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Setup auth state change listener
@@ -58,6 +60,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else {
               setIsAdmin(!!data?.is_admin);
               console.log("Admin status check:", { userId: session.user.id, isAdmin: !!data?.is_admin });
+              
+              // Navigate to admin dashboard if user is admin
+              if (!!data?.is_admin) {
+                navigate('/admin');
+              } else {
+                navigate('/account');
+              }
             }
           } catch (error) {
             console.error("Error setting admin status:", error);
@@ -94,8 +103,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.error("Error checking admin status:", error);
             setIsAdmin(false);
           } else {
-            setIsAdmin(!!data?.is_admin);
-            console.log("Auth state changed: Admin status:", { userId: session.user.id, isAdmin: !!data?.is_admin });
+            const newIsAdmin = !!data?.is_admin;
+            setIsAdmin(newIsAdmin);
+            console.log("Auth state changed: Admin status:", { userId: session.user.id, isAdmin: newIsAdmin });
+            
+            // Navigate based on admin status and current event
+            if (event === 'SIGNED_IN') {
+              if (newIsAdmin) {
+                navigate('/admin');
+              } else {
+                navigate('/account');
+              }
+            }
           }
         } catch (error) {
           console.error("Failed to check admin status:", error);
@@ -103,16 +122,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } else {
         setIsAdmin(false);
+        if (event === 'SIGNED_OUT') {
+          navigate('/');
+        }
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const signIn = async (email: string, password: string) => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         console.error("SignIn error:", error.message);
@@ -122,11 +145,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       console.error("Unexpected error during sign in:", error);
       return { error };
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string) => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) {
         console.error("SignUp error:", error.message);
@@ -142,6 +168,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       console.error("Unexpected error during sign up:", error);
       return { error };
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -167,6 +195,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           title: "Signed out",
           description: "You have been logged out successfully",
         });
+        
+        // No need to navigate here as the auth state change handler will do it
       }
     } catch (error) {
       console.error("Unexpected error signing out:", error);

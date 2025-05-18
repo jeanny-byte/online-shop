@@ -12,11 +12,11 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, isAdmin } = useAuth();
   
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    // Auth context will handle navigation after signout
   };
   
   const navItems = [
@@ -25,6 +25,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
     { name: 'Orders', path: '/admin/orders', icon: ShoppingBag },
     { name: 'Blog', path: '/admin/blog', icon: BookOpen },
   ];
+  
+  // Safety check - shouldn't happen due to ProtectedRoute, but just in case
+  if (!isAdmin) {
+    console.log("Non-admin tried to access AdminLayout");
+    return null;
+  }
   
   return (
     <div className="min-h-screen pt-16 pb-8">

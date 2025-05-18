@@ -29,6 +29,7 @@ const LoginPage: React.FC = () => {
           description: "Authentication service is not available",
           variant: "destructive",
         });
+        setIsSubmitting(false);
         return;
       }
 
@@ -41,7 +42,8 @@ const LoginPage: React.FC = () => {
         description: "You have been logged in to your account.",
       });
       
-      navigate('/account');
+      // We'll redirect in the auth state change handler in AuthContext
+      // This prevents race conditions with isAdmin check
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
@@ -49,7 +51,6 @@ const LoginPage: React.FC = () => {
         description: error.message || "Invalid email or password",
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
