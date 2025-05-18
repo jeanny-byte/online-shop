@@ -147,13 +147,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
-      toast({
-        title: "Signed out",
-        description: "You have been logged out successfully",
-      });
+      console.log("Signing out...");
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error signing out:", error);
+        toast({
+          title: "Error",
+          description: "Failed to sign out: " + error.message,
+          variant: "destructive",
+        });
+      } else {
+        console.log("Signed out successfully");
+        // Clear local state after signout
+        setUser(null);
+        setSession(null);
+        setIsAdmin(false);
+        
+        toast({
+          title: "Signed out",
+          description: "You have been logged out successfully",
+        });
+      }
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error("Unexpected error signing out:", error);
       toast({
         title: "Error",
         description: "Failed to sign out",

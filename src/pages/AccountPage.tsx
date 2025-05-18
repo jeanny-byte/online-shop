@@ -112,7 +112,7 @@ const AccountPage = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/login');
+    navigate('/');
   };
 
   if (isLoading || loadingProfile) {

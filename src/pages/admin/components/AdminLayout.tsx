@@ -16,7 +16,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   
   const handleSignOut = async () => {
     await signOut();
-    navigate('/login');
+    navigate('/');
   };
   
   const navItems = [

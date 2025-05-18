@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Menu, ShoppingBag, X, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -15,6 +15,13 @@ const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+    setIsOpen(false);
+  };
   
   useEffect(() => {
     const handleScroll = () => {
@@ -89,7 +96,7 @@ const Navbar: React.FC = () => {
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={signOut} className="cursor-pointer">
+                    <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
                       Log out
                     </DropdownMenuItem>
                   </>
@@ -159,10 +166,7 @@ const Navbar: React.FC = () => {
                       </Link>
                     )}
                     <button 
-                      onClick={() => {
-                        signOut();
-                        setIsOpen(false);
-                      }}
+                      onClick={handleSignOut}
                       className="text-lg font-medium w-full text-left py-2 text-red-500"
                     >
                       Log out
