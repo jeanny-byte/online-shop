@@ -81,6 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.email);
+      
+      // Important: Update state before any navigation
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -115,8 +117,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsAdmin(false);
         }
       } else {
+        // Important: Set isAdmin to false when user is not logged in
         setIsAdmin(false);
+        
+        // Only navigate on explicit SIGNED_OUT events from Supabase
+        // This prevents unwanted navigation on initial page load
         if (event === 'SIGNED_OUT') {
+          console.log("Auth state changed: User signed out, navigating to homepage");
           navigate('/');
         }
       }
@@ -171,9 +178,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log("Signing out...");
       setIsLoading(true);
+      
+      // First update our local state
+      // This ensures UI reflects logout immediately even if Supabase is slow
+      setUser(null);
+      setSession(null);
+      setIsAdmin(false);
+      
+      // Then perform the actual signout on Supabase
       const { error } = await supabase.auth.signOut();
+      
       if (error) {
         console.error("Error signing out:", error);
+        // Restore previous state if signout failed
+        const { data } = await supabase.auth.getSession();
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+        
         toast({
           title: "Error",
           description: "Failed to sign out: " + error.message,
@@ -181,10 +202,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       } else {
         console.log("Signed out successfully");
-        // Clear local state after signout
-        setUser(null);
-        setSession(null);
-        setIsAdmin(false);
         
         toast({
           title: "Signed out",

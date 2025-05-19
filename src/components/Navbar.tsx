@@ -14,13 +14,12 @@ import {
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
   
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
-    setIsOpen(false);
+    setIsOpen(false); // Close mobile menu if open
   };
   
   useEffect(() => {
@@ -88,7 +87,7 @@ const Navbar: React.FC = () => {
                         Account
                       </Link>
                     </DropdownMenuItem>
-                    {user && (
+                    {isAdmin && (
                       <DropdownMenuItem asChild>
                         <Link to="/admin" className="cursor-pointer w-full">
                           Admin Dashboard
@@ -160,7 +159,7 @@ const Navbar: React.FC = () => {
                     <Link to="/account" className="text-lg font-medium block py-2" onClick={() => setIsOpen(false)}>
                       Account
                     </Link>
-                    {user && (
+                    {isAdmin && (
                       <Link to="/admin" className="text-lg font-medium block py-2" onClick={() => setIsOpen(false)}>
                         Admin Dashboard
                       </Link>

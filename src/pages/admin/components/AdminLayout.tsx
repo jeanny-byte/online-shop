@@ -16,7 +16,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   
   const handleSignOut = async () => {
     await signOut();
-    // Auth context will handle navigation after signout
+    // Auth context will handle navigation
   };
   
   const navItems = [
