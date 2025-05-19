@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -25,6 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSupabaseReady] = useState(isSupabaseConfigured());
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     // Setup auth state change listener
@@ -60,13 +61,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else {
               setIsAdmin(!!data?.is_admin);
               console.log("Admin status check:", { userId: session.user.id, isAdmin: !!data?.is_admin });
-              
-              // Navigate to admin dashboard if user is admin
-              if (!!data?.is_admin) {
-                navigate('/admin');
-              } else {
-                navigate('/account');
-              }
             }
           } catch (error) {
             console.error("Error setting admin status:", error);
@@ -176,6 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       console.log("Signing out...");
+      setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Error signing out:", error);
@@ -196,7 +191,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: "You have been logged out successfully",
         });
         
-        // No need to navigate here as the auth state change handler will do it
+        // Navigate to home page after signout
+        navigate('/');
       }
     } catch (error) {
       console.error("Unexpected error signing out:", error);
@@ -205,6 +201,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Failed to sign out",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 

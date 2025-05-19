@@ -40,7 +40,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (!user) {
     console.log("No user found, redirecting to login");
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check admin privileges

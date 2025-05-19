@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +15,7 @@ interface LoginFormData {
 const LoginPage: React.FC = () => {
   const { signIn, isSupabaseReady } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
@@ -42,8 +43,7 @@ const LoginPage: React.FC = () => {
         description: "You have been logged in to your account.",
       });
       
-      // We'll redirect in the auth state change handler in AuthContext
-      // This prevents race conditions with isAdmin check
+      // Navigate is handled in AuthContext to ensure isAdmin check is completed
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
