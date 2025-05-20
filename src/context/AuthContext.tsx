@@ -27,6 +27,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Helper function to check admin status safely
+  const checkAdminStatus = async (userId: string) => {
+    try {
+      // Check if user is admin from admin_users table with error handling
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('is_admin')
+        .eq('id', userId)
+        .single();
+        
+      if (error) {
+        console.error("Error checking admin status:", error);
+        return false;
+      }
+      
+      const isUserAdmin = !!data?.is_admin;
+      console.log("Admin status check:", { userId, isAdmin: isUserAdmin });
+      return isUserAdmin;
+    } catch (error) {
+      console.error("Exception checking admin status:", error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     // Setup auth state change listener
     const getInitialSession = async () => {
@@ -48,20 +72,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           try {
-            // Check if user is admin from admin_users table
-            const { data, error: adminError } = await supabase
-              .from('admin_users')
-              .select('is_admin')
-              .eq('id', session.user.id)
-              .single();
-              
-            if (adminError) {
-              console.error("Error checking admin status:", adminError);
-              setIsAdmin(false);
-            } else {
-              setIsAdmin(!!data?.is_admin);
-              console.log("Admin status check:", { userId: session.user.id, isAdmin: !!data?.is_admin });
-            }
+            const isUserAdmin = await checkAdminStatus(session.user.id);
+            setIsAdmin(isUserAdmin);
           } catch (error) {
             console.error("Error setting admin status:", error);
             setIsAdmin(false);
@@ -89,27 +101,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.user) {
         // Check admin status when auth state changes
         try {
-          const { data, error } = await supabase
-            .from('admin_users')
-            .select('is_admin')
-            .eq('id', session.user.id)
-            .single();
+          const isUserAdmin = await checkAdminStatus(session.user.id);
+          setIsAdmin(isUserAdmin);
+          console.log("Auth state changed: Admin status:", { userId: session.user.id, isAdmin: isUserAdmin });
           
-          if (error) {
-            console.error("Error checking admin status:", error);
-            setIsAdmin(false);
-          } else {
-            const newIsAdmin = !!data?.is_admin;
-            setIsAdmin(newIsAdmin);
-            console.log("Auth state changed: Admin status:", { userId: session.user.id, isAdmin: newIsAdmin });
-            
-            // Navigate based on admin status and current event
-            if (event === 'SIGNED_IN') {
-              if (newIsAdmin) {
-                navigate('/admin');
-              } else {
-                navigate('/account');
-              }
+          // Navigate based on admin status and current event
+          if (event === 'SIGNED_IN') {
+            if (isUserAdmin) {
+              navigate('/admin');
+            } else {
+              navigate('/account');
             }
           }
         } catch (error) {
