@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
@@ -107,11 +106,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Navigate based on admin status and current event
           if (event === 'SIGNED_IN') {
-            if (isUserAdmin) {
-              navigate('/admin');
-            } else {
-              navigate('/account');
-            }
+            // Always navigate to homepage first after successful sign in
+            navigate('/');
           }
         } catch (error) {
           console.error("Failed to check admin status:", error);
@@ -143,6 +139,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error("SignIn error:", error.message);
         return { error };
       }
+      
+      // We'll navigate in the auth state change event
       return { error: null };
     } catch (error: any) {
       console.error("Unexpected error during sign in:", error);
@@ -209,8 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: "You have been logged out successfully",
         });
         
-        // Navigate to home page after signout
-        navigate('/');
+        // Navigation to home page is handled in the auth state change event
       }
     } catch (error) {
       console.error("Unexpected error signing out:", error);

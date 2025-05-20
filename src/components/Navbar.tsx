@@ -37,6 +37,10 @@ const Navbar: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    console.log("Navbar: Auth status updated:", { isSignedIn: !!user, isAdmin });
+  }, [user, isAdmin]);
+
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-sm py-3' : 'bg-transparent py-5'}`}>
       <div className="container-custom">
@@ -60,6 +64,11 @@ const Navbar: React.FC = () => {
             <Link to="/contact" className="text-foreground hover:text-primary-foreground transition-colors">
               Contact
             </Link>
+            {isAdmin && (
+              <Link to="/admin" className="text-foreground hover:text-primary-foreground transition-colors font-medium">
+                Admin
+              </Link>
+            )}
           </div>
           
           {/* Shopping Bag & Profile Menu & Mobile Menu Button */}
@@ -148,6 +157,11 @@ const Navbar: React.FC = () => {
               <Link to="/contact" className="text-lg font-medium" onClick={() => setIsOpen(false)}>
                 Contact
               </Link>
+              {isAdmin && (
+                <Link to="/admin" className="text-lg font-medium" onClick={() => setIsOpen(false)}>
+                  Admin Dashboard
+                </Link>
+              )}
               <Link to="/cart" className="text-lg font-medium flex items-center" onClick={() => setIsOpen(false)}>
                 <ShoppingBag size={20} className="mr-2" /> Cart
               </Link>
