@@ -40,16 +40,16 @@ const Footer: React.FC = () => {
                 <Link to="/shop" className="text-muted-foreground hover:text-foreground transition-colors">All Products</Link>
               </li>
               <li>
-                <Link to="/shop?category=cleansers" className="text-muted-foreground hover:text-foreground transition-colors">Cleansers</Link>
+                <Link to="/shop?category=cleanser" className="text-muted-foreground hover:text-foreground transition-colors">Cleansers</Link>
               </li>
               <li>
-                <Link to="/shop?category=moisturizers" className="text-muted-foreground hover:text-foreground transition-colors">Moisturizers</Link>
+                <Link to="/shop?category=moisturizer" className="text-muted-foreground hover:text-foreground transition-colors">Moisturizers</Link>
               </li>
               <li>
-                <Link to="/shop?category=serums" className="text-muted-foreground hover:text-foreground transition-colors">Serums</Link>
+                <Link to="/shop?category=serum" className="text-muted-foreground hover:text-foreground transition-colors">Serums</Link>
               </li>
               <li>
-                <Link to="/shop?category=masks" className="text-muted-foreground hover:text-foreground transition-colors">Masks</Link>
+                <Link to="/shop?category=mask" className="text-muted-foreground hover:text-foreground transition-colors">Masks</Link>
               </li>
             </ul>
           </div>
