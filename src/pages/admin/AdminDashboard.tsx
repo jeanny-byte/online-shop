@@ -1,7 +1,8 @@
 
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import axios from 'axios';
 import AdminLayout from './components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -37,53 +38,23 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Fetch total orders
-        const { count: totalOrders } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true });
-        
-        // Fetch total products
-        const { count: totalProducts } = await supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true });
-        
-        // Fetch pending orders
-        const { count: pendingOrders } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true })
-          .eq('order_status', 'pending');
-        
-        // Calculate total revenue
-        const { data: orders } = await supabase
-          .from('orders')
-          .select('order_total');
-        
-        const totalRevenue = orders?.reduce((sum, order) => sum + order.order_total, 0) || 0;
-        
-        // Fetch recent orders
-        const { data: recent } = await supabase
-          .from('orders')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(5);
-        
-        setStats({
-          totalOrders: totalOrders || 0,
-          totalProducts: totalProducts || 0,
-          pendingOrders: pendingOrders || 0,
-          totalRevenue,
-        });
-        
-        setRecentOrders(recent || []);
+        // TODO: Replace with actual backend API endpoints
+        // Example placeholder calls:
+        const statsRes = await axios.get('/api/dashboard-stats');
+        setStats(statsRes.data);
+
+        const ordersRes = await axios.get('/api/recent-orders');
+        setRecentOrders(ordersRes.data);
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error('Failed to fetch dashboard data:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    
     fetchDashboardData();
   }, []);
+        
+
   
   const getStatusColor = (status: string) => {
     switch (status) {

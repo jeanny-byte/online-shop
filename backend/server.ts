@@ -16,9 +16,9 @@ interface JwtPayload {
   exp?: number;
 }
 
-interface AuthenticatedRequest extends express.Request {
-  userId?: string;
-}
+import type { AuthenticatedRequest } from './middleware';
+
+
 
 interface User extends RowDataPacket {
   id: string;
@@ -42,47 +42,33 @@ const app = express();
 const port = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
+import blogRouter from './blog';
+import uploadRouter from './upload';
+import dashboardRouter from './dashboard';
+import productsRouter from './products';
+import ordersRouter from './orders';
+import { authenticateToken, isAdmin } from './middleware';
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 
+// Blog API
+app.use('/api/blog', blogRouter);
+// Upload API
+app.use('/api/upload', uploadRouter);
+// Dashboard API
+app.use('/api', dashboardRouter);
+// Products API
+app.use('/api/products', productsRouter);
+// Orders API
+app.use('/api/orders', ordersRouter);
+
 // Protected route middleware
-const authenticateToken = async (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
-  try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-    
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-    req.userId = decoded.userId;
-    
-    const [session] = await db.execute<Session[]>('SELECT * FROM sessions WHERE user_id = ? AND expires_at > NOW()', [req.userId]);
-    if (session.length === 0) {
-      return res.status(401).json({ error: 'Invalid session' });
-    }
-    
-    next();
-  } catch (error) {
-    res.status(401).json({ error: 'Invalid token' });
-  }
-};
+// (moved to middleware.ts)
 
 // Admin check middleware
-const isAdmin = async (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
-  try {
-    const [admin] = await db.execute<AdminUser[]>('SELECT is_admin FROM admin_users WHERE id = ?', [req.userId]);
-    if (admin.length === 0 || !admin[0].is_admin) {
-      return res.status(403).json({ error: 'Unauthorized - Admin access required' });
-    }
-    
-    next();
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-};
+// (moved to middleware.ts)
 
 // Authentication routes
 

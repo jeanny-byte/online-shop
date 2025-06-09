@@ -1,18 +1,28 @@
-
 import React, { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '../../lib/supabase';
+import axios from 'axios';
 import AdminLayout from './components/AdminLayout';
-import { Database } from '../../types/supabase';
 
-type Product = Database['public']['Tables']['products']['Row'];
+type Product = {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  how_to_use: string;
+  benefits: string[];
+  ingredients: string[];
+  stock_quantity: number;
+  featured: boolean;
+};
 
 const AdminProducts: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     name: '',
@@ -26,33 +36,29 @@ const AdminProducts: React.FC = () => {
     stock_quantity: 0,
     featured: false,
   });
-  
+
   useEffect(() => {
     fetchProducts();
   }, []);
-  
+
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
+      const response = await axios.get('/api/products');
+      setProducts(response.data);
+    } catch (error: any) {
       console.error('Error fetching products:', error);
+      const errorMsg = error?.response?.data?.error || error.message || 'Failed to load products.';
       toast({
         title: "Error",
-        description: "Failed to load products. Please try again later.",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const handleAddNew = () => {
     setCurrentProduct(null);
     setFormData({
@@ -69,7 +75,7 @@ const AdminProducts: React.FC = () => {
     });
     setIsEditing(true);
   };
-  
+
   const handleEdit = (product: Product) => {
     setCurrentProduct(product);
     setFormData({
@@ -86,39 +92,37 @@ const AdminProducts: React.FC = () => {
     });
     setIsEditing(true);
   };
-  
+
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this product?")) {
       return;
     }
-    
+
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
+      const token = localStorage.getItem('authToken');
+      await axios.delete(`/api/products/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
       toast({
         title: "Success",
         description: "Product deleted successfully",
       });
-      
       fetchProducts();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting product:', error);
+      const errorMsg = error?.response?.data?.error || error.message || 'Failed to delete product.';
       toast({
         title: "Error",
-        description: "Failed to delete product",
+        description: errorMsg,
         variant: "destructive",
       });
     }
   };
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
+
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData({ ...formData, [name]: checked });
@@ -130,78 +134,52 @@ const AdminProducts: React.FC = () => {
       setFormData({ ...formData, [name]: value });
     }
   };
-  
+
   const handleArrayChange = (name: 'benefits' | 'ingredients', value: string) => {
     const array = value.split('\n').filter(item => item.trim() !== '');
     setFormData({ ...formData, [name]: array });
   };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
+      const token = localStorage.getItem('authToken');
       if (currentProduct) {
         // Update existing product
-        const { error } = await supabase
-          .from('products')
-          .update({
-            name: formData.name,
-            description: formData.description,
-            price: formData.price,
-            image: formData.image,
-            category: formData.category,
-            how_to_use: formData.how_to_use,
-            benefits: formData.benefits,
-            ingredients: formData.ingredients,
-            stock_quantity: formData.stock_quantity,
-            featured: formData.featured,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', currentProduct.id);
-        
-        if (error) throw error;
-        
+        await axios.put(`/api/products/${currentProduct.id}`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
         toast({
           title: "Success",
           description: "Product updated successfully",
         });
       } else {
         // Add new product
-        const { error } = await supabase
-          .from('products')
-          .insert({
-            name: formData.name,
-            description: formData.description,
-            price: formData.price,
-            image: formData.image,
-            category: formData.category,
-            how_to_use: formData.how_to_use,
-            benefits: formData.benefits,
-            ingredients: formData.ingredients,
-            stock_quantity: formData.stock_quantity,
-            featured: formData.featured,
-          });
-        
-        if (error) throw error;
-        
+        await axios.post('/api/products', formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
         toast({
           title: "Success",
           description: "Product created successfully",
         });
       }
-      
+
       setIsEditing(false);
       fetchProducts();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving product:', error);
+      const errorMsg = error?.response?.data?.error || error.message || 'Failed to save product.';
       toast({
         title: "Error",
-        description: "Failed to save product",
+        description: errorMsg,
         variant: "destructive",
       });
     }
   };
-  
+
   return (
     <AdminLayout title="Products">
       <div className="mb-6 flex justify-between items-center">
@@ -215,13 +193,13 @@ const AdminProducts: React.FC = () => {
           Add New Product
         </button>
       </div>
-      
+
       {isEditing ? (
         <div className="bg-white border border-border rounded-md p-6">
           <h2 className="text-xl font-medium mb-6">
             {currentProduct ? 'Edit Product' : 'Add New Product'}
           </h2>
-          
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
@@ -239,7 +217,7 @@ const AdminProducts: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="price" className="block text-sm font-medium mb-1">
                     Price ($)*
@@ -255,7 +233,7 @@ const AdminProducts: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="category" className="block text-sm font-medium mb-1">
                     Category*
@@ -276,7 +254,7 @@ const AdminProducts: React.FC = () => {
                     <option value="sunscreen">Sunscreen</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <label htmlFor="stock_quantity" className="block text-sm font-medium mb-1">
                     Stock Quantity*
@@ -291,7 +269,7 @@ const AdminProducts: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="image" className="block text-sm font-medium mb-1">
                     Image URL*
@@ -306,7 +284,7 @@ const AdminProducts: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="flex items-center">
                   <input
                     id="featured"
@@ -321,7 +299,7 @@ const AdminProducts: React.FC = () => {
                   </label>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <label htmlFor="description" className="block text-sm font-medium mb-1">
@@ -336,7 +314,7 @@ const AdminProducts: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="how_to_use" className="block text-sm font-medium mb-1">
                     How to Use*
@@ -350,7 +328,7 @@ const AdminProducts: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="benefits" className="block text-sm font-medium mb-1">
                     Benefits (one per line)
@@ -363,7 +341,7 @@ const AdminProducts: React.FC = () => {
                     className="w-full p-2 border border-border rounded-md h-24"
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="ingredients" className="block text-sm font-medium mb-1">
                     Ingredients (one per line)
@@ -378,7 +356,7 @@ const AdminProducts: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex justify-end gap-4 pt-4">
               <button
                 type="button"

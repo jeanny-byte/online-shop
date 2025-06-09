@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import AdminLayout from './components/AdminLayout';
-import { fetchBlogPostById, createBlogPost, updateBlogPost, uploadBlogImage, generateSlug } from '@/lib/blogUtils';
+import { fetchBlogPostById, createBlogPost, updateBlogPost, generateSlug } from '@/lib/blogUtils';
+import axios from 'axios';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -49,7 +50,8 @@ const AdminBlogEditor: React.FC = () => {
       if (!id) return;
       
       try {
-        const post = await fetchBlogPostById(id);
+        const response = await axios.get(`/api/blog/${id}`);
+        const post = response.data;
         
         if (!post) {
           toast({
@@ -89,12 +91,16 @@ const AdminBlogEditor: React.FC = () => {
   const handleImageUpload = async (file: File) => {
     setUploadingImage(true);
     try {
-      const { url, error } = await uploadBlogImage(file);
-      
-      if (error || !url) {
-        throw new Error('Failed to upload image');
-      }
-      
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await axios.post('/api/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const { url } = response.data;
+      if (!url) throw new Error('No URL returned from upload');
+
       setImageUrl(url);
       return url;
     } catch (error) {

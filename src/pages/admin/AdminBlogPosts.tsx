@@ -35,11 +35,12 @@ const AdminBlogPosts: React.FC = () => {
     try {
       const data = await fetchAllBlogPosts(true);
       setPosts(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading blog posts:', error);
+      const errorMsg = error?.response?.data?.error || error.message || 'Failed to load blog posts';
       toast({
         title: "Error",
-        description: "Failed to load blog posts",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
@@ -71,11 +72,12 @@ const AdminBlogPosts: React.FC = () => {
       } else {
         throw error;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting blog post:', error);
+      const errorMsg = error?.response?.data?.error || error.message || 'Failed to delete blog post';
       toast({
         title: "Error",
-        description: "Failed to delete blog post",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
