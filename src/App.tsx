@@ -34,6 +34,7 @@ import AdminBlogPosts from "./pages/admin/AdminBlogPosts";
 import AdminBlogEditor from "./pages/admin/AdminBlogEditor";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import TestAdmin from "./pages/TestAdmin";
 
 // Create a function component to properly use React hooks
 const App = () => {
@@ -72,6 +73,11 @@ const App = () => {
                 <Route path="/terms-of-service" element={<TermsOfServicePage />} />
                 
                 {/* Admin Routes */}
+                <Route path="/test-admin" element={
+                  <ProtectedRoute>
+                    <TestAdmin />
+                  </ProtectedRoute>
+                } />
                 <Route path="/admin" element={
                   <ProtectedRoute>
                     <AdminDashboard />

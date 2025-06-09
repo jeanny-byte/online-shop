@@ -13,7 +13,7 @@ interface LoginFormData {
 }
 
 const LoginPage: React.FC = () => {
-  const { signIn, isSupabaseReady } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,15 +24,7 @@ const LoginPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      if (!isSupabaseReady) {
-        toast({
-          title: "Connection Error",
-          description: "Authentication service is not available",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
+      
 
       const { error } = await signIn(data.email, data.password);
       
@@ -48,7 +40,7 @@ const LoginPage: React.FC = () => {
       console.error('Login error:', error);
       toast({
         title: "Login failed",
-        description: error.message || "Invalid email or password",
+        description: error.response?.data?.error || error.message || "Invalid email or password",
         variant: "destructive",
       });
       setIsSubmitting(false);

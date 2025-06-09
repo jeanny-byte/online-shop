@@ -15,7 +15,7 @@ interface SignupFormData {
 }
 
 const SignupPage: React.FC = () => {
-  const { signUp, isSupabaseReady } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -26,14 +26,7 @@ const SignupPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      if (!isSupabaseReady) {
-        toast({
-          title: "Connection Error",
-          description: "Authentication service is not available",
-          variant: "destructive",
-        });
-        return;
-      }
+      
 
       const { error } = await signUp(data.email, data.password);
       
@@ -49,7 +42,7 @@ const SignupPage: React.FC = () => {
       console.error('Signup error:', error);
       toast({
         title: "Registration failed",
-        description: error.message || "There was a problem creating your account",
+        description: error.response?.data?.error || error.message || "There was a problem creating your account",
         variant: "destructive",
       });
     } finally {
