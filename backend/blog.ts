@@ -18,6 +18,7 @@ router.get('/', async (req, res) => {
       sql += ' LIMIT ?';
       params.push(Number(limitStr));
     }
+    console.log('SQL:', sql, 'PARAMS:', params);
     const [rows] = await db.execute<RowDataPacket[]>(sql, params);
     res.json(rows);
   } catch (error) {

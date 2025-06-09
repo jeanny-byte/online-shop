@@ -1,5 +1,5 @@
 import express from 'express';
-import db from './lib/db';
+import { db } from './lib/mysql';
 import { authenticateToken, isAdmin } from './middleware';
 import { RowDataPacket } from 'mysql2';
 

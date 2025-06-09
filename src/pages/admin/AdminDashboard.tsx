@@ -44,7 +44,7 @@ const AdminDashboard: React.FC = () => {
         setStats(statsRes.data);
 
         const ordersRes = await axios.get('/api/recent-orders');
-        setRecentOrders(ordersRes.data);
+        setRecentOrders(Array.isArray(ordersRes.data) ? ordersRes.data : []);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -128,7 +128,9 @@ const AdminDashboard: React.FC = () => {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
+                <div className="text-2xl font-bold">
+  ${typeof stats.totalRevenue === 'number' ? stats.totalRevenue.toFixed(2) : '0.00'}
+</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Lifetime store revenue
                 </p>
@@ -145,7 +147,7 @@ const AdminDashboard: React.FC = () => {
               </Button>
             </CardHeader>
             
-            {recentOrders.length > 0 ? (
+            {Array.isArray(recentOrders) && recentOrders.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>

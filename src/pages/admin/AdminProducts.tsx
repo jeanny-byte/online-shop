@@ -45,7 +45,7 @@ const AdminProducts: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await axios.get('/api/products');
-      setProducts(response.data);
+      setProducts(Array.isArray(response.data) ? response.data : []);
     } catch (error: any) {
       console.error('Error fetching products:', error);
       const errorMsg = error?.response?.data?.error || error.message || 'Failed to load products.';
@@ -380,7 +380,7 @@ const AdminProducts: React.FC = () => {
             <div className="p-8 text-center">
               <p>Loading products...</p>
             </div>
-          ) : products.length > 0 ? (
+          ) : Array.isArray(products) && products.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-muted/50">
