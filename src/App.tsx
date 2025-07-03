@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,9 +33,13 @@ import AdminBlogPosts from "./pages/admin/AdminBlogPosts";
 import AdminBlogEditor from "./pages/admin/AdminBlogEditor";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { testConnection } from './lib/db';
 
 // Create a function component to properly use React hooks
 const App = () => {
+  useEffect(() => {
+    testConnection();
+  }, []);
   // Create a new QueryClient instance within the component
   const queryClient = new QueryClient();
   

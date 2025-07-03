@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,20 +45,8 @@ const AccountPage = () => {
     
     try {
       setLoadingProfile(true);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('full_name, website, avatar_url, display_name')
-        .eq('id', user.id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching profile:', error);
-      } else if (data) {
-        setProfile(data);
-        setFullName(data.full_name || '');
-        setWebsite(data.website || '');
-        setDisplayName(data.display_name || '');
-      }
+      console.warn('Fetching profile is not implemented');
+      setLoadingProfile(false);
     } catch (error) {
       console.error('Unexpected error fetching profile:', error);
     } finally {
@@ -80,24 +67,7 @@ const AccountPage = () => {
         display_name: displayName,
         updated_at: new Date().toISOString(),
       };
-
-      const { error } = await supabase
-        .from('profiles')
-        .upsert(updates, { onConflict: 'id' });
-
-      if (error) {
-        toast({
-          title: 'Error updating profile',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Profile updated',
-          description: 'Your profile has been updated successfully',
-        });
-        fetchProfile();
-      }
+      console.warn('Updating profile is not implemented');
     } catch (error) {
       console.error('Unexpected error updating profile:', error);
       toast({

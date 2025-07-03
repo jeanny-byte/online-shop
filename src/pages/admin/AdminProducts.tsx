@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/db';
 import AdminLayout from './components/AdminLayout';
 import { Database } from '../../types/supabase';
 

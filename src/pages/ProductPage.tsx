@@ -4,10 +4,23 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Check, Heart, Share, ShoppingBag } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useCart } from '../context/CartContext';
-import { supabase } from '../lib/supabase';
-import { Database } from '../types/supabase';
+import { getConnection } from '../lib/db';
 
-type Product = Database['public']['Tables']['products']['Row'];
+
+import { getConnection } from '../lib/db';
+
+// Define the Product type to match the MySQL 'products' table
+export type Product = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  ingredients: string; // comma-separated
+  how_to_use: string;
+  // Add other fields as needed
+};
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,22 +39,31 @@ const ProductPage: React.FC = () => {
   }, [id]);
   
   const fetchProduct = async (productId: string) => {
-    setIsLoading(true);
+  setIsLoading(true);
+  try {
+    const conn = await getConnection();
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', productId)
-        .single();
-      
-      if (error) throw error;
-      setProduct(data);
-    } catch (error) {
-      console.error('Error fetching product:', error);
+      const [rows] = await conn.query('SELECT * FROM products WHERE id = ?', [productId]);
+      if (Array.isArray(rows) && rows.length > 0) {
+        // Parse ingredients as array if needed
+        const prod = rows[0] as Product;
+        setProduct({
+          ...prod,
+          ingredients: prod.ingredients || '',
+        });
+      } else {
+        setProduct(null);
+      }
     } finally {
-      setIsLoading(false);
+      conn.release();
     }
-  };
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    setProduct(null);
+  } finally {
+    setIsLoading(false);
+  }
+};
   
   const handleAddToCart = () => {
     if (product) {
@@ -205,12 +227,12 @@ const ProductPage: React.FC = () => {
                   <p>{product.description}</p>
                 )}
                 {selectedTab === 'ingredients' && (
-                  <ul className="list-disc pl-5 space-y-1">
-                    {product.ingredients.map((ingredient, index) => (
-                      <li key={index}>{ingredient}</li>
-                    ))}
-                  </ul>
-                )}
+  <ul className="list-disc pl-5 space-y-1">
+    {(product.ingredients ? product.ingredients.split(',').map(i => i.trim()) : []).map((ingredient, index) => (
+      <li key={index}>{ingredient}</li>
+    ))}
+  </ul>
+)}
                 {selectedTab === 'howToUse' && (
                   <p>{product.how_to_use}</p>
                 )}

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '../lib/supabase';
+import { getConnection } from '../lib/db';
 
 interface TrackingFormData {
   trackingCode: string;
@@ -42,21 +42,25 @@ const OrderTrackingPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const { data: order, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('tracking_code', data.trackingCode)
-        .single();
-      
-      if (error) throw error;
-      
-      if (order) {
-        setOrderDetails(order);
-        
-        // Update URL with tracking code
-        const params = new URLSearchParams(location.search);
-        params.set('code', data.trackingCode);
-        navigate(`${location.pathname}?${params.toString()}`);
+      // MySQL logic
+      const connection = await getConnection();
+      try {
+        const [rows] = await connection.execute(
+          'SELECT * FROM orders WHERE tracking_code = ? LIMIT 1',
+          [data.trackingCode]
+        );
+        const order = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+        if (order) {
+          setOrderDetails(order as OrderDetails);
+          // Update URL with tracking code
+          const params = new URLSearchParams(location.search);
+          params.set('code', data.trackingCode);
+          navigate(`${location.pathname}?${params.toString()}`);
+        } else {
+          throw new Error('Order not found');
+        }
+      } finally {
+        connection.release();
       }
     } catch (error) {
       console.error('Error fetching order:', error);

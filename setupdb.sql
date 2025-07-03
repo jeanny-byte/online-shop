@@ -1,0 +1,86 @@
+-- MySQL-compatible schema for Luxe Skincare Application
+use lskinDb;
+
+-- Products table
+CREATE TABLE products (
+  id CHAR(36) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+  price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
+  image TEXT NOT NULL,
+  category VARCHAR(100) NOT NULL,
+  featured TINYINT(1) DEFAULT 0,
+  benefits TEXT,
+  ingredients TEXT,
+  how_to_use TEXT NOT NULL,
+  stock_quantity INT DEFAULT 0 CHECK (stock_quantity >= 0),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Orders table
+CREATE TABLE orders (
+  id CHAR(36) PRIMARY KEY,
+  customer_name VARCHAR(255) NOT NULL,
+  customer_email VARCHAR(255) NOT NULL,
+  customer_phone VARCHAR(50) NOT NULL,
+  shipping_address TEXT NOT NULL,
+  order_total DECIMAL(10, 2) NOT NULL CHECK (order_total >= 0),
+  payment_method VARCHAR(50) NOT NULL,
+  order_status VARCHAR(50) DEFAULT 'pending',
+  tracking_code VARCHAR(100),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Order items table
+CREATE TABLE order_items (
+  id CHAR(36) PRIMARY KEY,
+  order_id CHAR(36) NOT NULL,
+  product_id CHAR(36),
+  quantity INT NOT NULL CHECK (quantity > 0),
+  price_per_item DECIMAL(10, 2) NOT NULL CHECK (price_per_item >= 0),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
+);
+
+-- Blog posts table
+CREATE TABLE blog_posts (
+  id CHAR(36) PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  content TEXT NOT NULL,
+  image TEXT NOT NULL,
+  excerpt TEXT NOT NULL,
+  author_id CHAR(36) NOT NULL,
+  published TINYINT(1) DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Admin users table
+CREATE TABLE admin_users (
+  id CHAR(36) PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  is_admin TINYINT(1) DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Profiles table
+CREATE TABLE profiles (
+  id CHAR(36) PRIMARY KEY,
+  full_name VARCHAR(255),
+  display_name VARCHAR(255),
+  avatar_url TEXT,
+  website TEXT,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Indexes
+CREATE INDEX idx_products_category ON products(category);
+CREATE INDEX idx_orders_status ON orders(order_status);
+CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_blog_posts_slug ON blog_posts(slug);
+
+-- Note: Partial indexes, PostgreSQL-specific features, and row-level security policies are omitted for MySQL compatibility.
