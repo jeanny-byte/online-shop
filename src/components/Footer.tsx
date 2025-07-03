@@ -9,9 +9,9 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-xl font-serif font-medium mb-4">LSkin</h3>
+            <h3 className="text-xl font-serif font-medium mb-4">Nelyluxe Royal Care</h3>
             <p className="text-muted-foreground mb-4">
-              Premium skincare products formulated with natural ingredients for radiant, healthy skin.
+              Luxurious beauty and skincare, curated by Nelyluxe Royal Care for your royal self-care ritual.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">

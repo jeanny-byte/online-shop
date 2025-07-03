@@ -4,10 +4,6 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Check, Heart, Share, ShoppingBag } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useCart } from '../context/CartContext';
-import { getConnection } from '../lib/db';
-
-
-import { getConnection } from '../lib/db';
 
 // Define the Product type to match the MySQL 'products' table
 export type Product = {
@@ -19,6 +15,7 @@ export type Product = {
   category: string;
   ingredients: string; // comma-separated
   how_to_use: string;
+  benefits?: string; // Optional, for MySQL rows that may have this field
   // Add other fields as needed
 };
 
@@ -39,32 +36,20 @@ const ProductPage: React.FC = () => {
   }, [id]);
   
   const fetchProduct = async (productId: string) => {
-  setIsLoading(true);
-  try {
-    const conn = await getConnection();
+    setIsLoading(true);
     try {
-      const [rows] = await conn.query('SELECT * FROM products WHERE id = ?', [productId]);
-      if (Array.isArray(rows) && rows.length > 0) {
-        // Parse ingredients as array if needed
-        const prod = rows[0] as Product;
-        setProduct({
-          ...prod,
-          ingredients: prod.ingredients || '',
-        });
-      } else {
-        setProduct(null);
-      }
+      const res = await fetch(`/api/products/${productId}`);
+      if (!res.ok) throw new Error('Failed to fetch product');
+      const prod = await res.json();
+      setProduct(prod);
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      setProduct(null);
     } finally {
-      conn.release();
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error('Error fetching product:', error);
-    setProduct(null);
-  } finally {
-    setIsLoading(false);
-  }
-};
-  
+  };
+
   const handleAddToCart = () => {
     if (product) {
       addToCart(product, quantity);
@@ -74,7 +59,7 @@ const ProductPage: React.FC = () => {
       });
     }
   };
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen pt-24 flex items-center justify-center">
@@ -82,7 +67,7 @@ const ProductPage: React.FC = () => {
       </div>
     );
   }
-  
+
   if (!product) {
     return (
       <div className="min-h-screen pt-24 flex items-center justify-center">
@@ -95,7 +80,14 @@ const ProductPage: React.FC = () => {
       </div>
     );
   }
-  
+
+  // Ensure benefits is always an array for rendering
+  const benefitsArray = Array.isArray(product?.benefits)
+    ? (product?.benefits as string[])
+    : (typeof product?.benefits === 'string' && product.benefits.length > 0)
+      ? product.benefits.split('\n').map((b: string) => b.trim()).filter((b: string) => b)
+      : [];
+
   return (
     <div className="min-h-screen pt-24">
       <div className="container-custom py-8">
@@ -141,17 +133,19 @@ const ProductPage: React.FC = () => {
             <p className="mb-6 text-muted-foreground">{product.description}</p>
             
             {/* Key Benefits */}
-            <div className="mb-8">
-              <h3 className="font-medium mb-2">Key Benefits:</h3>
-              <ul className="space-y-1">
-                {product.benefits.map((benefit, index) => (
-                  <li key={index} className="flex items-start">
-                    <Check size={16} className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                    <span>{benefit}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+{benefitsArray.length > 0 && (
+  <div className="mb-8">
+    <h3 className="font-medium mb-2">Key Benefits:</h3>
+    <ul className="space-y-1">
+      {benefitsArray.map((benefit, index) => (
+        <li key={index} className="flex items-start">
+          <Check size={16} className="text-green-500 mt-1 mr-2 flex-shrink-0" />
+          <span>{benefit}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+)}
             
             {/* Quantity */}
             <div className="mb-6">
@@ -227,12 +221,12 @@ const ProductPage: React.FC = () => {
                   <p>{product.description}</p>
                 )}
                 {selectedTab === 'ingredients' && (
-  <ul className="list-disc pl-5 space-y-1">
-    {(product.ingredients ? product.ingredients.split(',').map(i => i.trim()) : []).map((ingredient, index) => (
-      <li key={index}>{ingredient}</li>
-    ))}
-  </ul>
-)}
+                  <ul className="list-disc pl-5 space-y-1">
+                    {(product.ingredients ? product.ingredients.split(',').map(i => i.trim()) : []).map((ingredient, index) => (
+                      <li key={index}>{ingredient}</li>
+                    ))}
+                  </ul>
+                )}
                 {selectedTab === 'howToUse' && (
                   <p>{product.how_to_use}</p>
                 )}

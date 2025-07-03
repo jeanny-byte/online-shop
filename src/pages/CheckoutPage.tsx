@@ -251,7 +251,7 @@ const CheckoutPage: React.FC = () => {
               <div className="mb-8">
                 <h2 className="text-xl font-serif mb-4">Payment Method</h2>
                 <div className="space-y-4">
-                  <div className="flex items-center p-4 border rounded-md cursor-pointer hover:bg-lskin-lightGray transition-colors">
+                  <div className="flex items-center p-4 border rounded-md cursor-pointer hover:bg-Nelyluxe-lightGray transition-colors">
                     <input
                       id="whatsapp"
                       type="radio"
@@ -282,7 +282,7 @@ const CheckoutPage: React.FC = () => {
           
           {/* Order Summary */}
           <div>
-            <div className="bg-lskin-lightGray p-6 rounded-md">
+            <div className="bg-Nelyluxe-lightGray p-6 rounded-md">
               <h2 className="font-serif text-xl mb-4">Order Summary</h2>
               
               <div className="mb-4">

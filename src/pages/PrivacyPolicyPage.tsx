@@ -13,7 +13,7 @@ const PrivacyPolicyPage: React.FC = () => {
             <p className="italic">Last updated: May 13, 2025</p>
             
             <p className="mt-4">
-              This Privacy Policy describes how LSkin ("we," "us," or "our") collects, uses, and shares 
+              This Privacy Policy describes how Nelyluxe ("we," "us," or "our") collects, uses, and shares 
               your personal information when you visit our website, make a purchase, or interact with us.
             </p>
           </section>
@@ -89,7 +89,7 @@ const PrivacyPolicyPage: React.FC = () => {
               <li>The right to data portability</li>
               <li>The right to object to processing of your personal information</li>
             </ul>
-            <p className="mt-2">To exercise any of these rights, please contact us at privacy@lskin.com.</p>
+            <p className="mt-2">To exercise any of these rights, please contact us at privacy@Nelyluxe.com.</p>
           </section>
           
           <section className="mb-8">
@@ -104,8 +104,8 @@ const PrivacyPolicyPage: React.FC = () => {
           
           <section className="mb-8">
             <h2 className="text-2xl font-medium mb-4">Contact Us</h2>
-            <p>For more information about our privacy practices, if you have questions, or if you would like to make a complaint, please contact us by e‑mail at privacy@lskin.com or by mail using the details provided below:</p>
-            <p className="mt-2">LSkin<br />123 Skincare Drive, Suite 100<br />Los Angeles, CA 90001<br />United States</p>
+            <p>For more information about our privacy practices, if you have questions, or if you would like to make a complaint, please contact us by e‑mail at privacy@Nelyluxe.com or by mail using the details provided below:</p>
+            <p className="mt-2">Nelyluxe<br />123 Skincare Drive, Suite 100<br />Los Angeles, CA 90001<br />United States</p>
           </section>
         </div>
       </div>

@@ -71,7 +71,7 @@ const ReturnsRefundsPage: React.FC = () => {
           <section className="mb-8">
             <h3 className="text-xl font-medium mb-3">How to Initiate a Return</h3>
             <p>
-              To start the return process, please email us at returns@lskin.com or contact us through 
+              To start the return process, please email us at returns@Nelyluxe.com or contact us through 
               our contact form. Please include your order number and the reason for your return.
             </p>
           </section>

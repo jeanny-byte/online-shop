@@ -64,8 +64,8 @@ const ContactPage: React.FC = () => {
                 <div>
                   <h3 className="font-medium mb-1">Our Location</h3>
                   <p className="text-muted-foreground">
-                    123 Beauty Boulevard<br />
-                    Skincare City, SC 12345
+                    Tema Community 25<br />
+                    Accra-Ghana
                   </p>
                 </div>
               </div>
@@ -77,8 +77,8 @@ const ContactPage: React.FC = () => {
                 <div>
                   <h3 className="font-medium mb-1">Email Us</h3>
                   <p className="text-muted-foreground">
-                    <a href="mailto:hello@lskin.com" className="hover:underline">hello@lskin.com</a><br />
-                    <a href="mailto:support@lskin.com" className="hover:underline">support@lskin.com</a>
+                    <a href="mailto:hello@nelyluxe.com" className="hover:underline">hello@nelyluxe.com</a><br />
+                    <a href="mailto:support@nelyluxe.com" className="hover:underline">support@nelyluxe.com</a>
                   </p>
                 </div>
               </div>
@@ -90,8 +90,8 @@ const ContactPage: React.FC = () => {
                 <div>
                   <h3 className="font-medium mb-1">Call Us</h3>
                   <p className="text-muted-foreground">
-                    <a href="tel:+1234567890" className="hover:underline">(123) 456-7890</a><br />
-                    Monday - Friday, 9am - 5pm EST
+                    <a href="tel:+233 55 923 2921" className="hover:underline">+233 55 923 2921</a><br />
+                    Monday - Saturday, 9am - 10pm GMT
                   </p>
                 </div>
               </div>

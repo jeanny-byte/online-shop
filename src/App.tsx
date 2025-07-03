@@ -33,12 +33,13 @@ import AdminBlogPosts from "./pages/admin/AdminBlogPosts";
 import AdminBlogEditor from "./pages/admin/AdminBlogEditor";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { testConnection } from './lib/db';
 
+
+import React, { useEffect } from 'react';
 // Create a function component to properly use React hooks
 const App = () => {
   useEffect(() => {
-    testConnection();
+    // testConnection removed: backend-only
   }, []);
   // Create a new QueryClient instance within the component
   const queryClient = new QueryClient();

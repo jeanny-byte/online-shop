@@ -11,7 +11,7 @@ interface User {
 interface Session {
   user: User | null;
 }
-import { getConnection } from '../lib/db';
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -37,67 +37,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const location = useLocation();
 
   // Helper function to check admin status safely
-  const checkAdminStatus = async (userId: string) => {
+  // Check admin status using JWT
+  const checkAdminStatus = async () => {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) return false;
     try {
-      const connection = await getConnection();
-      const [rows] = await connection.execute(
-        'SELECT is_admin FROM admin_users WHERE id = ?',
-        [userId]
-      );
-      console.log("checkAdminStatus - SQL Result:", rows);
-      connection.release();
-
-      if (!Array.isArray(rows) || rows.length === 0) {
-        console.log("User not found or admin status not set");
-        return false;
-      }
-
-      const user = rows[0] as any;
-      const isUserAdmin = !!user?.is_admin;
-      console.log("Admin status check:", { userId, isAdmin: isUserAdmin });
-      return isUserAdmin;
-    } catch (error) {
-      console.error("Exception checking admin status:", error);
+      const response = await fetch('/api/auth/check-admin', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) return false;
+      const data = await response.json();
+      setIsAdmin(!!data.is_admin);
+      return !!data.is_admin;
+    } catch {
       return false;
     }
   };
 
+
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const connection = await getConnection();
-      const [rows] = await connection.execute(
-        'SELECT id, email, password, is_admin FROM admin_users WHERE email = ?',
-        [email]
-      );
-      console.log("signIn - SQL Result:", rows);
-      connection.release();
-
-      if (!Array.isArray(rows) || rows.length === 0) {
-        console.error("Invalid credentials");
-        return { error: 'Invalid credentials' };
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        return { error: result.error || 'Invalid credentials' };
       }
-
-      const user = rows[0] as any;
-
-      if (!user || user.password !== password) {
-        console.error("Invalid credentials");
-        return { error: 'Invalid credentials' };
-      }
-
       setUser({
-        id: user.id,
-        email: user.email,
-        app_metadata: {
-          provider: 'local',
-        },
+        id: result.user.id,
+        email: result.user.email,
+        app_metadata: { provider: 'local' },
         aud: 'authenticated',
         created_at: new Date().toISOString(),
       });
-      setIsAdmin(user.is_admin);
+      setIsAdmin(result.user.is_admin);
+      if (result.token) {
+        localStorage.setItem('jwt_token', result.token);
+      }
       return { error: null };
     } catch (error: any) {
-      console.error("Unexpected error during sign in:", error);
       return { error };
     } finally {
       setIsLoading(false);
@@ -107,19 +89,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const connection = await getConnection();
-      await connection.execute(
-        'INSERT INTO admin_users (email, password, id) VALUES (?, ?, UUID())',
-        [email, password]
-      );
-      console.log("signUp - User created with email:", email);
-      connection.release();
-
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        return { error: result.error || 'Failed to create account' };
+      }
+      // Optionally, auto-login after signup by calling signIn
+      // Or redirect user to login page
       toast({
         title: "Account created",
         description: "Account created successfully",
       });
-      
       return { error: null };
     } catch (error: any) {
       console.error("Unexpected error during sign up:", error);
@@ -129,17 +113,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+
+
   const signOut = async () => {
     try {
       console.log("Signing out...");
       setIsLoading(true);
-      
-      // First update our local state
-      // This ensures UI reflects logout immediately
+      localStorage.removeItem('jwt_token');
       setUser(null);
       setSession(null);
       setIsAdmin(false);
-      
       toast({
         title: "Signed out",
         description: "You have been logged out successfully",
@@ -155,6 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }
   };
+
 
   return (
     <AuthContext.Provider value={{

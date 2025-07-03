@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../../lib/db';
+
 import AdminLayout from './components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -37,50 +37,23 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Fetch total orders
-        const { count: totalOrders } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true });
-        
-        // Fetch total products
-        const { count: totalProducts } = await supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true });
-        
-        // Fetch pending orders
-        const { count: pendingOrders } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true })
-          .eq('order_status', 'pending');
-        
-        // Calculate total revenue
-        const { data: orders } = await supabase
-          .from('orders')
-          .select('order_total');
-        
-        const totalRevenue = orders?.reduce((sum, order) => sum + order.order_total, 0) || 0;
-        
-        // Fetch recent orders
-        const { data: recent } = await supabase
-          .from('orders')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(5);
-        
+        const res = await fetch('/api/dashboard');
+        if (!res.ok) throw new Error('Failed to fetch dashboard data');
+        const data = await res.json();
         setStats({
-          totalOrders: totalOrders || 0,
-          totalProducts: totalProducts || 0,
-          pendingOrders: pendingOrders || 0,
-          totalRevenue,
+          totalOrders: data.totalOrders || 0,
+          totalProducts: data.totalProducts || 0,
+          pendingOrders: data.pendingOrders || 0,
+          totalRevenue: data.totalRevenue || 0,
         });
-        
-        setRecentOrders(recent || []);
+        setRecentOrders(data.recentOrders || []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
         setIsLoading(false);
       }
     };
+
     
     fetchDashboardData();
   }, []);

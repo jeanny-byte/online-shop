@@ -1,14 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '../../lib/db';
 import AdminLayout from './components/AdminLayout';
-import { Database } from '../../types/supabase';
-
-type Order = Database['public']['Tables']['orders']['Row'];
 
 const AdminOrders: React.FC = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   
@@ -19,15 +14,13 @@ const AdminOrders: React.FC = () => {
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      let query = supabase.from('orders').select('*');
-      
-      if (filter !== 'all') {
-        query = query.eq('order_status', filter);
+      let url = `/api/orders`;
+      if (filter && filter !== 'all') {
+        url += `?status=${encodeURIComponent(filter)}`;
       }
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
-      
-      if (error) throw error;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch orders');
+      const data = await res.json();
       setOrders(data || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -43,21 +36,16 @@ const AdminOrders: React.FC = () => {
   
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({
-          order_status: newStatus,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', orderId);
-      
-      if (error) throw error;
-      
+      const res = await fetch('/api/orders', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: orderId, order_status: newStatus })
+      });
+      if (!res.ok) throw new Error('Failed to update order status');
       toast({
         title: "Success",
         description: "Order status updated successfully",
       });
-      
       // Update the status in the local state
       setOrders(orders.map(order => 
         order.id === orderId

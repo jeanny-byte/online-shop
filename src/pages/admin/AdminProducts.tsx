@@ -1,28 +1,23 @@
-
 import React, { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '../../lib/db';
 import AdminLayout from './components/AdminLayout';
-import { Database } from '../../types/supabase';
-
-type Product = Database['public']['Tables']['products']['Row'];
 
 const AdminProducts: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
+  const [currentProduct, setCurrentProduct] = useState<any | null>(null);
   
   // Form state
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     name: '',
     description: '',
     price: 0,
     image: '',
     category: '',
     how_to_use: '',
-    benefits: [] as string[],
-    ingredients: [] as string[],
+    benefits: [],
+    ingredients: [],
     stock_quantity: 0,
     featured: false,
   });
@@ -34,12 +29,9 @@ const AdminProducts: React.FC = () => {
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
+      const res = await fetch('/api/products');
+      if (!res.ok) throw new Error('Failed to fetch products');
+      const data = await res.json();
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -70,7 +62,7 @@ const AdminProducts: React.FC = () => {
     setIsEditing(true);
   };
   
-  const handleEdit = (product: Product) => {
+  const handleEdit = (product: any) => {
     setCurrentProduct(product);
     setFormData({
       name: product.name,
@@ -93,18 +85,16 @@ const AdminProducts: React.FC = () => {
     }
     
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
+      const res = await fetch('/api/products', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      if (!res.ok) throw new Error('Failed to delete product');
       toast({
         title: "Success",
         description: "Product deleted successfully",
       });
-      
       fetchProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
@@ -142,54 +132,29 @@ const AdminProducts: React.FC = () => {
     try {
       if (currentProduct) {
         // Update existing product
-        const { error } = await supabase
-          .from('products')
-          .update({
-            name: formData.name,
-            description: formData.description,
-            price: formData.price,
-            image: formData.image,
-            category: formData.category,
-            how_to_use: formData.how_to_use,
-            benefits: formData.benefits,
-            ingredients: formData.ingredients,
-            stock_quantity: formData.stock_quantity,
-            featured: formData.featured,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', currentProduct.id);
-        
-        if (error) throw error;
-        
+        const res = await fetch('/api/products', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: currentProduct.id, ...formData })
+        });
+        if (!res.ok) throw new Error('Failed to update product');
         toast({
           title: "Success",
           description: "Product updated successfully",
         });
       } else {
-        // Add new product
-        const { error } = await supabase
-          .from('products')
-          .insert({
-            name: formData.name,
-            description: formData.description,
-            price: formData.price,
-            image: formData.image,
-            category: formData.category,
-            how_to_use: formData.how_to_use,
-            benefits: formData.benefits,
-            ingredients: formData.ingredients,
-            stock_quantity: formData.stock_quantity,
-            featured: formData.featured,
-          });
-        
-        if (error) throw error;
-        
+        // Create new product
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        if (!res.ok) throw new Error('Failed to add product');
         toast({
           title: "Success",
-          description: "Product created successfully",
+          description: "Product added successfully",
         });
       }
-      
       setIsEditing(false);
       fetchProducts();
     } catch (error) {

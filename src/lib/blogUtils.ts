@@ -44,3 +44,9 @@ export const generateSlug = (title: string) => {
     .replace(/-+/g, '-')
     .trim();
 };
+
+// Stub for image upload used in AdminBlogEditor
+export const uploadBlogImage = async (file: File): Promise<{ url: string | null; error: any }> => {
+  console.warn('uploadBlogImage is not implemented');
+  return { url: null, error: null };
+};
