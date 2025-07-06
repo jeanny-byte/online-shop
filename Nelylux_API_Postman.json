@@ -1,0 +1,113 @@
+{
+    "info": {
+      "name": "Nelylux API",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "_postman_id": "nelylux-api-collection"
+    },
+    "item": [
+      {
+        "name": "Sign Up",
+        "request": {
+          "method": "POST",
+          "header": [],
+          "url": {
+            "raw": "{{baseUrl}}/api/auth/signup",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "auth", "signup"]
+          },
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}",
+            "options": { "raw": { "language": "json" } }
+          }
+        }
+      },
+      {
+        "name": "Sign In",
+        "request": {
+          "method": "POST",
+          "header": [],
+          "url": {
+            "raw": "{{baseUrl}}/api/auth/signin",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "auth", "signin"]
+          },
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}",
+            "options": { "raw": { "language": "json" } }
+          }
+        }
+      },
+      {
+        "name": "Check Admin",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}",
+              "type": "text"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/api/auth/check-admin",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "auth", "check-admin"]
+          }
+        }
+      },
+      {
+        "name": "Dashboard Stats",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}",
+              "type": "text"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/api/dashboard",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "dashboard"]
+          }
+        }
+      },
+      {
+        "name": "Get Product by ID",
+        "request": {
+          "method": "GET",
+          "header": [],
+          "url": {
+            "raw": "{{baseUrl}}/api/products/1",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "products", "1"]
+          }
+        }
+      },
+      {
+        "name": "Health Check",
+        "request": {
+          "method": "GET",
+          "header": [],
+          "url": {
+            "raw": "{{baseUrl}}/api/health",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "health"]
+          }
+        }
+      }
+    ],
+    "variable": [
+      {
+        "key": "baseUrl",
+        "value": "http://localhost:8080"
+      },
+      {
+        "key": "token",
+        "value": ""
+      }
+    ]
+  }

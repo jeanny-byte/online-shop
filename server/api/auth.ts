@@ -1,5 +1,5 @@
 import { getConnection } from '../lib/db';
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -37,14 +37,24 @@ export async function signUpHandler(req: Request, res: Response, next: NextFunct
   const { email, password } = req.body;
   const conn = await getConnection();
   try {
+    // Check if email already exists
+    const [existing] = await conn.query(
+      'SELECT id FROM admin_users WHERE email = ?',
+      [email]
+    );
+    if (Array.isArray(existing) && existing.length > 0) {
+      res.status(409).json({ error: 'Email already registered' });
+      return;
+    }
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     await conn.query(
       'INSERT INTO admin_users (email, password, id) VALUES (?, ?, UUID())',
       [email, hashedPassword]
     );
-    res.json({ message: 'Account created' });
+    res.status(201).json({ message: 'Account created' });
   } catch (error) {
+    // Always return JSON error
     res.status(500).json({ error: 'Internal server error' });
   } finally {
     conn.release();

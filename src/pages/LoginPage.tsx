@@ -13,7 +13,7 @@ interface LoginFormData {
 }
 
 const LoginPage: React.FC = () => {
-  const { signIn, isSupabaseReady } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,28 +22,14 @@ const LoginPage: React.FC = () => {
   
   const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
-    
     try {
-      if (!isSupabaseReady) {
-        toast({
-          title: "Connection Error",
-          description: "Authentication service is not available",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
       const { error } = await signIn(data.email, data.password);
-      
       if (error) throw error;
-      
       toast({
         title: "Login successful",
         description: "You have been logged in to your account.",
       });
-      
-      // Navigate is handled in AuthContext to ensure isAdmin check is completed
+      // Navigation is handled in AuthContext after admin check
     } catch (error: any) {
       console.error('Login error:', error);
       toast({

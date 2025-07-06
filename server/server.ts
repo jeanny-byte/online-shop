@@ -6,13 +6,13 @@ import { signInHandler, signUpHandler, checkAdminHandler } from './api/auth';
 import { verifyJWT, requireAdmin } from './middleware/auth';
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
 
 // Utility to wrap async route handlers
-import { Request, Response, NextFunction, RequestHandler } from 'express';
+import type { Request, Response, NextFunction, RequestHandler } from 'express';
 
 function asyncHandler(
   fn: (req: Request, res: Response, next: NextFunction) => Promise<void>

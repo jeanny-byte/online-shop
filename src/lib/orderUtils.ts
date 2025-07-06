@@ -1,12 +1,11 @@
 
+import { Product } from "@/data/products";
 import { ShoppingBag, CreditCard } from "lucide-react";
-import { Database } from "@/types/supabase";
 
 // Define the Product type using the Database types
-export type Product = Database['public']['Tables']['products']['Row'];
 
 export interface CartItem {
-  product: Product;
+  product:  Product;
   quantity: number;
 }
 
@@ -36,7 +35,7 @@ export const formatOrderItemsForWhatsApp = (items: CartItem[]): string => {
  */
 export const formatOrderForWhatsApp = (order: OrderDetails): string => {
   const orderItems = formatOrderItemsForWhatsApp(order.items);
-  const paymentIcon = order.payment_method === 'paystack' ? '💳' : '📱';
+  const paymentIcon = order.payment_method === 'Hubtel' ? '💳' : '📱';
   
   return (
     `*New Order #${order.tracking_code}* ${paymentIcon}\n\n` +
@@ -46,7 +45,7 @@ export const formatOrderForWhatsApp = (order: OrderDetails): string => {
     `*Address*: ${order.shipping_address}\n\n` +
     `*Order Items*:\n${orderItems}\n\n` +
     `*Total*: $${order.order_total.toFixed(2)}\n` +
-    `*Payment Method*: ${order.payment_method === 'paystack' ? 'Paystack (Online)' : 'WhatsApp (Pay on Delivery)'}\n` +
+    `*Payment Method*: ${order.payment_method === 'Hubtel' ? 'Hubtel (Online)' : 'WhatsApp (Pay on Delivery)'}\n` +
     `*Tracking Code*: ${order.tracking_code}`
   );
 };

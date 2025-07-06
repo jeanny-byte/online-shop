@@ -1,5 +1,5 @@
 import { getConnection } from '../lib/db';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 // GET: Fetch product by ID
 export async function getProductHandler(req: Request, res: Response) {

@@ -1,4 +1,4 @@
-import { Request as ExpressRequest, Response, NextFunction } from 'express';
+import type { Request as ExpressRequest, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme-secret-key';

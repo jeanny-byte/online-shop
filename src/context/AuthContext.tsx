@@ -36,23 +36,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Helper function to check admin status safely
-  // Check admin status using JWT
+  /**
+   * Checks JWT token in localStorage and validates admin status with backend.
+   * Updates user and isAdmin state accordingly.
+   */
   const checkAdminStatus = async () => {
     const token = localStorage.getItem('jwt_token');
-    if (!token) return false;
+    if (!token) {
+      setIsAdmin(false);
+      setUser(null);
+      return false;
+    }
     try {
       const response = await fetch('/api/auth/check-admin', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      if (!response.ok) return false;
+      if (!response.ok) {
+        setIsAdmin(false);
+        setUser(null);
+        return false;
+      }
       const data = await response.json();
       setIsAdmin(!!data.is_admin);
+      // Optionally, fetch user info from token or backend if needed
       return !!data.is_admin;
     } catch {
+      setIsAdmin(false);
+      setUser(null);
       return false;
     }
   };
+
+  // On mount, check for JWT and validate admin status
+  React.useEffect(() => {
+    (async () => {
+      setIsLoading(true);
+      await checkAdminStatus();
+      setIsLoading(false);
+    })();
+    // eslint-disable-next-line
+  }, []);
 
 
   const signIn = async (email: string, password: string) => {
@@ -65,6 +88,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       const result = await response.json();
       if (!response.ok) {
+        setUser(null);
+        setIsAdmin(false);
+        localStorage.removeItem('jwt_token');
         return { error: result.error || 'Invalid credentials' };
       }
       setUser({
@@ -78,8 +104,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (result.token) {
         localStorage.setItem('jwt_token', result.token);
       }
+      // Refresh admin status after login
+      await checkAdminStatus();
       return { error: null };
     } catch (error: any) {
+      setUser(null);
+      setIsAdmin(false);
+      localStorage.removeItem('jwt_token');
       return { error };
     } finally {
       setIsLoading(false);
@@ -98,12 +129,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!response.ok) {
         return { error: result.error || 'Failed to create account' };
       }
-      // Optionally, auto-login after signup by calling signIn
-      // Or redirect user to login page
       toast({
         title: "Account created",
         description: "Account created successfully",
       });
+      // Optionally, auto-login after signup by calling signIn
+      // await signIn(email, password);
+      // Or redirect user to login page
       return { error: null };
     } catch (error: any) {
       console.error("Unexpected error during sign up:", error);
@@ -117,7 +149,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      console.log("Signing out...");
       setIsLoading(true);
       localStorage.removeItem('jwt_token');
       setUser(null);
@@ -127,6 +158,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Signed out",
         description: "You have been logged out successfully",
       });
+      // Optionally, redirect to login or home page
+      // navigate('/login');
     } catch (error) {
       console.error("Unexpected error signing out:", error);
       toast({
