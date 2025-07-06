@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, isLoading, isAdmin, isSupabaseReady } = useAuth();
+  const { user, isLoading, isAdmin } = useAuth();
   const location = useLocation();
 
   // Add console logs to debug authentication flow
@@ -18,30 +18,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       user: user?.email, 
       isLoading, 
       isAdmin, 
-      isSupabaseReady, 
       path: location.pathname 
     });
-  }, [user, isLoading, isAdmin, isSupabaseReady, location.pathname]);
+  }, [user, isLoading, isAdmin, location.pathname]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="ml-2">Loading authentication...</p>
-      </div>
-    );
-  }
-
-  // If Supabase is not configured correctly, show a helpful message
-  if (!isSupabaseReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center flex-col max-w-md mx-auto p-4">
-        <h2 className="text-xl font-bold mb-4">Supabase Configuration Required</h2>
-        <p className="text-center mb-4">
-          This feature requires Supabase to be properly configured. Please make sure you've connected 
-          your application to Supabase and set the required environment variables.
-        </p>
-        <Navigate to="/" replace />
       </div>
     );
   }
