@@ -29,7 +29,7 @@ const LoginPage: React.FC = () => {
         title: "Login successful",
         description: "You have been logged in to your account.",
       });
-      // Navigation is handled in AuthContext after admin check
+      navigate('/'); // Automatically redirect to homepage after successful login
     } catch (error: any) {
       console.error('Login error:', error);
       toast({

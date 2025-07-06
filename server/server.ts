@@ -4,9 +4,13 @@ import { dashboardHandler } from './api/dashboard';
 import { getProductHandler } from './api/products';
 import { signInHandler, signUpHandler, checkAdminHandler } from './api/auth';
 import { verifyJWT, requireAdmin } from './middleware/auth';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+
+
+const PORT = process.env.PORT || 5080;
 
 app.use(cors());
 app.use(express.json());

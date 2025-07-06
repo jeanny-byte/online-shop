@@ -77,6 +77,12 @@ CREATE TABLE profiles (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+CREATE TABLE users (
+    id CHAR(36) NOT NULL PRIMARY KEY,         -- UUID (CHAR(36) for string UUID)
+    email VARCHAR(255) NOT NULL UNIQUE,       -- User email, unique
+    password VARCHAR(255) NOT NULL,           -- Hashed password
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Optional: track when user was created
+);
 -- Indexes
 CREATE INDEX idx_products_category ON products(category);
 CREATE INDEX idx_orders_status ON orders(order_status);
