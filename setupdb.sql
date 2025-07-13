@@ -1,5 +1,5 @@
 -- MySQL-compatible schema for Luxe Skincare Application
-use nelyluxDb;
+use nelyluxdb;
 
 -- Products table
 CREATE TABLE products (
@@ -45,6 +45,13 @@ CREATE TABLE order_items (
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
 );
 
+-- Admin users table
+CREATE TABLE admin_users (
+  id CHAR(36) PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  is_admin TINYINT(1) DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 -- Blog posts table
 CREATE TABLE blog_posts (
   id CHAR(36) PRIMARY KEY,
@@ -53,19 +60,13 @@ CREATE TABLE blog_posts (
   content TEXT NOT NULL,
   image TEXT NOT NULL,
   excerpt TEXT NOT NULL,
-  author_id CHAR(36) NOT NULL,
+  author_id CHAR(36), -- allow NULL for SET NULL to work
   published TINYINT(1) DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (author_id) REFERENCES admin_users(id) ON DELETE SET NULL
 );
 
--- Admin users table
-CREATE TABLE admin_users (
-  id CHAR(36) PRIMARY KEY,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  is_admin TINYINT(1) DEFAULT 1,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
 
 -- Profiles table
 CREATE TABLE profiles (
@@ -78,7 +79,7 @@ CREATE TABLE profiles (
 );
 
 CREATE TABLE users (
-    id CHAR(36) NOT NULL PRIMARY KEY,         -- UUID (CHAR(36) for string UUID)
+    id CHAR(36) PRIMARY KEY,         -- UUID (CHAR(36) for string UUID)
     email VARCHAR(255) NOT NULL UNIQUE,       -- User email, unique
     password VARCHAR(255) NOT NULL,           -- Hashed password
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Optional: track when user was created
@@ -89,4 +90,3 @@ CREATE INDEX idx_orders_status ON orders(order_status);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX idx_blog_posts_slug ON blog_posts(slug);
 
--- Note: Partial indexes, PostgreSQL-specific features, and row-level security policies are omitted for MySQL compatibility.
