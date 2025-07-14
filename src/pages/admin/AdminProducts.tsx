@@ -13,7 +13,8 @@ const AdminProducts: React.FC = () => {
     name: '',
     description: '',
     price: 0,
-    images: [],
+    existingImages: [], // URLs of images already in DB
+    newImages: [],      // Files newly added
     category: '',
     how_to_use: '',
     benefits: [],
@@ -29,11 +30,29 @@ const AdminProducts: React.FC = () => {
     return [];
   };
 
+  // Remove image handler
+  const handleRemoveImage = (type: 'existing' | 'new', idx: number) => {
+    setFormData((prev: any) => {
+      if (type === 'existing') {
+        const updated = [...(prev.existingImages || [])];
+        updated.splice(idx, 1);
+        return { ...prev, existingImages: updated };
+      } else {
+        const updated = [...(prev.newImages || [])];
+        updated.splice(idx, 1);
+        return { ...prev, newImages: updated };
+      }
+    });
+  };
+
   // Handle image uploads and store File objects
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    setFormData((prev: any) => ({ ...prev, images: Array.from(files) }));
+    setFormData((prev: any) => ({
+      ...prev,
+      newImages: [...(prev.newImages || []), ...Array.from(files)],
+    }));
   };
 
   useEffect(() => {
@@ -65,7 +84,8 @@ const AdminProducts: React.FC = () => {
       name: '',
       description: '',
       price: 0,
-      images: [],
+      existingImages: [],
+      newImages: [],
       category: '',
       how_to_use: '',
       benefits: [],
@@ -82,7 +102,8 @@ const AdminProducts: React.FC = () => {
       name: product.name,
       description: product.description,
       price: product.price,
-      images: product.images,
+      existingImages: Array.isArray(product.images) ? product.images : [],
+      newImages: [],
       category: product.category,
       how_to_use: product.how_to_use,
       benefits: normalizeArrayField(product.benefits),
@@ -151,20 +172,26 @@ const AdminProducts: React.FC = () => {
       form.append('featured', formData.featured ? '1' : '0');
       form.append('benefits', Array.isArray(formData.benefits) ? formData.benefits.join('\n') : formData.benefits);
       form.append('ingredients', Array.isArray(formData.ingredients) ? formData.ingredients.join(', ') : formData.ingredients);
-      if (formData.images && formData.images.length > 0) {
-        for (let img of formData.images) {
+      // Send URLs of images to keep
+      form.append('existingImages', JSON.stringify(formData.existingImages || []));
+      // Send new files
+      if (formData.newImages && formData.newImages.length > 0) {
+        for (let img of formData.newImages) {
           form.append('images', img);
         }
       }
-      // TODO: Add update support for PUT if needed
+      // If editing, include the product id for update
+      if (currentProduct && currentProduct.id) {
+        form.append('id', currentProduct.id);
+      }
       const res = await fetch('/api/products', {
-        method: 'POST',
+        method: currentProduct && currentProduct.id ? 'PUT' : 'POST',
         body: form,
       });
-      if (!res.ok) throw new Error('Failed to add product');
+      if (!res.ok) throw new Error(currentProduct ? 'Failed to update product' : 'Failed to add product');
       toast({
         title: "Success",
-        description: "Product added successfully",
+        description: currentProduct ? "Product updated successfully" : "Product added successfully",
       });
       setIsEditing(false);
       fetchProducts();
@@ -284,13 +311,35 @@ const AdminProducts: React.FC = () => {
                       required
                     />
                     <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                      {formData.images && formData.images.map((img: File, idx: number) => (
-                        <img
-                          key={idx}
-                          src={URL.createObjectURL(img)}
-                          alt={`Preview ${idx + 1}`}
-                          style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ccc' }}
-                        />
+                      {formData.existingImages && formData.existingImages.map((img: string, idx: number) => (
+                        <div key={`existing-${idx}`} style={{ position: 'relative' }}>
+                          <img
+                            src={img}
+                            alt={`Preview ${idx + 1}`}
+                            style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ccc' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage('existing', idx)}
+                            style={{ position: 'absolute', top: 0, right: 0, background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer' }}
+                            title="Remove"
+                          >×</button>
+                        </div>
+                      ))}
+                      {formData.newImages && formData.newImages.map((img: File, idx: number) => (
+                        <div key={`new-${idx}`} style={{ position: 'relative' }}>
+                          <img
+                            src={URL.createObjectURL(img)}
+                            alt={`Preview new ${idx + 1}`}
+                            style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ccc' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage('new', idx)}
+                            style={{ position: 'absolute', top: 0, right: 0, background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer' }}
+                            title="Remove"
+                          >×</button>
+                        </div>
                       ))}
                     </div>
                   </div>

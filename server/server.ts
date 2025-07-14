@@ -36,6 +36,7 @@ app.get('/api/dashboard', verifyJWT, requireAdmin, asyncHandler(dashboardHandler
 app.get('/api/products/:id', asyncHandler(getProductHandler));
 app.use('/uploads', express.static('uploads'));
 app.post('/api/products', upload.array('images', 5), asyncHandler(submitProductHandler));
+app.put('/api/products', upload.array('images', 5), asyncHandler(submitProductHandler));
 app.get('/api/products', asyncHandler(getAllProductsHandler));
 app.delete('/api/products/:id', asyncHandler(DeleteProductsHandler));
 app.post('/api/auth/signin', asyncHandler(signInHandler));

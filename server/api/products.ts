@@ -7,32 +7,64 @@ export async function submitProductHandler(req: Request, res: Response, next: Ne
   try {
     // Accept images as files (handled by multer)
     const { name, description, price, category, how_to_use, benefits, ingredients, stock_quantity, featured } = req.body;
+    let existingImages: string[] = [];
+    if (req.body.existingImages) {
+      try {
+        existingImages = JSON.parse(req.body.existingImages);
+      } catch (e) {
+        // fallback: ignore if not valid JSON
+      }
+    }
     const files = req.files as Express.Multer.File[];
-    if (!files || files.length === 0) {
+    // Accept zero or more files, but at least one image must exist overall
+    const newImageUrls = files && files.length > 0 ? files.map(file => `/uploads/${path.basename(file.path)}`) : [];
+    const allImages = [...existingImages, ...newImageUrls];
+    if (allImages.length === 0) {
       res.status(400).json({ error: "At least one image is required" });
       return;
     }
-    // Construct URLs to serve images
-    const imageUrls = files.map(file => `/uploads/${path.basename(file.path)}`);
-    const image = imageUrls[0];
+    const image = allImages[0];
 
-    await conn.query(
-      'INSERT INTO products (id, name, description, price, image, images, category, how_to_use, benefits, ingredients, stock_quantity, featured) VALUES ( UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        name,
-        description,
-        price,
-        image,
-        JSON.stringify(imageUrls),
-        category,
-        how_to_use,
-        benefits,
-        ingredients,
-        stock_quantity,
-        featured
-      ]
-    );
-    res.status(201).json({ message: 'Product created successfully' });
+    if (req.body.id) {
+      // Update existing product
+      await conn.query(
+        'UPDATE products SET name=?, description=?, price=?, image=?, images=?, category=?, how_to_use=?, benefits=?, ingredients=?, stock_quantity=?, featured=? WHERE id=?',
+        [
+          name,
+          description,
+          price,
+          image,
+          JSON.stringify(allImages),
+          category,
+          how_to_use,
+          benefits,
+          ingredients,
+          stock_quantity,
+          featured,
+          req.body.id
+        ]
+      );
+      res.status(200).json({ message: 'Product updated successfully' });
+    } else {
+      // Insert new product
+      await conn.query(
+        'INSERT INTO products (id, name, description, price, image, images, category, how_to_use, benefits, ingredients, stock_quantity, featured) VALUES ( UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          name,
+          description,
+          price,
+          image,
+          JSON.stringify(allImages),
+          category,
+          how_to_use,
+          benefits,
+          ingredients,
+          stock_quantity,
+          featured
+        ]
+      );
+      res.status(201).json({ message: 'Product created successfully' });
+    }
     return;
   } catch (error) {
     console.error('Error creating product:', error);
@@ -98,6 +130,25 @@ export async function DeleteProductsHandler(req: Request, res: Response){
     }
   } catch (error) {
     console.error('Failed to delete product from database', error)
+    res.status(500).json({ error: 'Internal Server Error' });
+  } finally {
+    conn.release();
+  }
+}
+
+//PUT: Update products in database
+export async function UpdateProductsHandler(req: Request, res: Response){
+  const conn = await getConnection();
+  const { id } = req.params;
+  try {
+    const [result]: any = await conn.query('UPDATE products SET name=?, description=?, price=?, image=?, images=?, category=?, how_to_use=?, benefits=?, ingredients=?, stock_quantity=?, featured=? WHERE id=?', [id]);
+    if (result.affectedRows > 0){
+      res.status(200).json({ message: 'Product updated successfully' });
+    } else {
+      res.status(404).json({ error: 'Product not found in Database' }); 
+    }
+  } catch (error) {
+    console.error('Failed to update product from database', error)
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
     conn.release();
