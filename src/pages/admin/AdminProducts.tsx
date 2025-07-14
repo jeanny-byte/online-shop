@@ -29,27 +29,13 @@ const AdminProducts: React.FC = () => {
     return [];
   };
 
-  // Handle image uploads and convert to base64
+  // Handle image uploads and store File objects
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    const fileArr = Array.from(files);
-    Promise.all(
-      fileArr.map(
-        file =>
-          new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          })
-      )
-    ).then((base64Images) => {
-      setFormData((prev: any) => ({ ...prev, images: base64Images }));
-    });
+    setFormData((prev: any) => ({ ...prev, images: Array.from(files) }));
   };
 
-  
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -79,7 +65,7 @@ const AdminProducts: React.FC = () => {
       name: '',
       description: '',
       price: 0,
-      image: '',
+      images: [],
       category: '',
       how_to_use: '',
       benefits: [],
@@ -96,7 +82,7 @@ const AdminProducts: React.FC = () => {
       name: product.name,
       description: product.description,
       price: product.price,
-      image: product.image,
+      images: product.images,
       category: product.category,
       how_to_use: product.how_to_use,
       benefits: normalizeArrayField(product.benefits),
@@ -108,28 +94,28 @@ const AdminProducts: React.FC = () => {
   };
   
   const handleDelete = async (id: string) => {
-  if (!window.confirm("Are you sure you want to delete this product?")) {
-    return;
-  }
-  try {
-    const res = await fetch(`/api/products/${id}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) throw new Error('Failed to delete product');
-    toast({
-      title: "Success",
-      description: "Product deleted successfully",
-    });
-    fetchProducts();
-  } catch (error) {
-    console.error('Error deleting product:', error);
-    toast({
-      title: "Error",
-      description: "Failed to delete product",
-      variant: "destructive",
-    });
-  }
-};
+    if (!window.confirm("Are you sure you want to delete this product?")) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete product');
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
+      fetchProducts();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
+    }
+  };
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -153,40 +139,33 @@ const AdminProducts: React.FC = () => {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
+
     try {
-      // Convert arrays to strings for DB
-      const submitData = {
-        ...formData,
-        benefits: Array.isArray(formData.benefits) ? formData.benefits.join('\n') : formData.benefits,
-        ingredients: Array.isArray(formData.ingredients) ? formData.ingredients.join(', ') : formData.ingredients,
-      };
-  
-      if (currentProduct) {
-        // Update existing product
-        const res = await fetch('/api/products', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: currentProduct.id, ...submitData })
-        });
-        if (!res.ok) throw new Error('Failed to update product');
-        toast({
-          title: "Success",
-          description: "Product updated successfully",
-        });
-      } else {
-        // Create new product
-        const res = await fetch('/api/products', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(submitData)
-        });
-        if (!res.ok) throw new Error('Failed to add product');
-        toast({
-          title: "Success",
-          description: "Product added successfully",
-        });
+      const form = new FormData();
+      form.append('name', formData.name);
+      form.append('description', formData.description);
+      form.append('price', formData.price);
+      form.append('category', formData.category);
+      form.append('how_to_use', formData.how_to_use);
+      form.append('stock_quantity', formData.stock_quantity);
+      form.append('featured', formData.featured ? '1' : '0');
+      form.append('benefits', Array.isArray(formData.benefits) ? formData.benefits.join('\n') : formData.benefits);
+      form.append('ingredients', Array.isArray(formData.ingredients) ? formData.ingredients.join(', ') : formData.ingredients);
+      if (formData.images && formData.images.length > 0) {
+        for (let img of formData.images) {
+          form.append('images', img);
+        }
       }
+      // TODO: Add update support for PUT if needed
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        body: form,
+      });
+      if (!res.ok) throw new Error('Failed to add product');
+      toast({
+        title: "Success",
+        description: "Product added successfully",
+      });
       setIsEditing(false);
       fetchProducts();
     } catch (error) {
@@ -305,26 +284,17 @@ const AdminProducts: React.FC = () => {
                       required
                     />
                     <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                      {formData.images && formData.images.map((img: string, idx: number) => (
+                      {formData.images && formData.images.map((img: File, idx: number) => (
                         <img
                           key={idx}
-                          src={img}
-                          alt={`Preview Ghs{idx + 1}`}
+                          src={URL.createObjectURL(img)}
+                          alt={`Preview ${idx + 1}`}
                           style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ccc' }}
                         />
                       ))}
                     </div>
                   </div>
-                  
-                  {/* <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-border rounded-md"
-                    required
-                  /> */}
+  
                 </div>
                 
                 

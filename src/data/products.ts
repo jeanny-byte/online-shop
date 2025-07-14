@@ -3,12 +3,13 @@ export interface Product {
   id: string;
   name: string;
   price: number;
-  image: string;
+  images: string[];
   category: string;
   description: string;
   benefits: string[];
   ingredients: string[];
   howToUse: string;
+  stock_quantity: number;
   featured?: boolean;
   bestSeller?: boolean;
 }

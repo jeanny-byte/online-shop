@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { dashboardHandler } from './api/dashboard';
 import { DeleteProductsHandler, getAllProductsHandler, getProductHandler, submitProductHandler } from './api/products';
+import { upload } from './upload';
 import { signInHandler, signUpHandler, checkAdminHandler } from './api/auth';
 import { verifyJWT, requireAdmin } from './middleware/auth';
 import dotenv from 'dotenv';
@@ -32,10 +33,11 @@ function asyncHandler(
 // API routes
 app.get('/api/dashboard', verifyJWT, requireAdmin, asyncHandler(dashboardHandler));
 
-app.get('/api/products/:id', getProductHandler);
-app.post('/api/products', submitProductHandler);
-app.get('/api/products', getAllProductsHandler);
-app.delete('/api/products/:id', DeleteProductsHandler);
+app.get('/api/products/:id', asyncHandler(getProductHandler));
+app.use('/uploads', express.static('uploads'));
+app.post('/api/products', upload.array('images', 5), asyncHandler(submitProductHandler));
+app.get('/api/products', asyncHandler(getAllProductsHandler));
+app.delete('/api/products/:id', asyncHandler(DeleteProductsHandler));
 app.post('/api/auth/signin', asyncHandler(signInHandler));
 app.post('/api/auth/signup', asyncHandler(signUpHandler));
 app.get('/api/auth/check-admin', verifyJWT, asyncHandler(checkAdminHandler));
