@@ -83,7 +83,6 @@ export async function checkAdminHandler(req: Request, res: Response, next: NextF
     res.json({ is_admin: !!payload.is_admin }); return;
   } catch {
     res.status(401).json({ error: 'Invalid token' }); return;
-    res.status(401).json({ error: 'Invalid token' });
   }
 }
 

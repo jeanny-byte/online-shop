@@ -13,7 +13,7 @@ const AdminProducts: React.FC = () => {
     name: '',
     description: '',
     price: 0,
-    images: [], // Changed from image: '' to images: []
+    images: [],
     category: '',
     how_to_use: '',
     benefits: [],
@@ -21,6 +21,13 @@ const AdminProducts: React.FC = () => {
     stock_quantity: 0,
     featured: false,
   });
+
+  // Utility to ensure array fields are always arrays
+  const normalizeArrayField = (field: any) => {
+    if (Array.isArray(field)) return field;
+    if (typeof field === 'string') return field.split('\n').filter((item: string) => item.trim() !== '');
+    return [];
+  };
 
   // Handle image uploads and convert to base64
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,8 +99,8 @@ const AdminProducts: React.FC = () => {
       image: product.image,
       category: product.category,
       how_to_use: product.how_to_use,
-      benefits: product.benefits || [],
-      ingredients: product.ingredients || [],
+      benefits: normalizeArrayField(product.benefits),
+      ingredients: normalizeArrayField(product.ingredients),
       stock_quantity: product.stock_quantity,
       featured: product.featured,
     });
@@ -101,31 +108,28 @@ const AdminProducts: React.FC = () => {
   };
   
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) {
-      return;
-    }
-    
-    try {
-      const res = await fetch('/api/products', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      if (!res.ok) throw new Error('Failed to delete product');
-      toast({
-        title: "Success",
-        description: "Product deleted successfully",
-      });
-      fetchProducts();
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete product",
-        variant: "destructive",
-      });
-    }
-  };
+  if (!window.confirm("Are you sure you want to delete this product?")) {
+    return;
+  }
+  try {
+    const res = await fetch(`/api/products/${id}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('Failed to delete product');
+    toast({
+      title: "Success",
+      description: "Product deleted successfully",
+    });
+    fetchProducts();
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    toast({
+      title: "Error",
+      description: "Failed to delete product",
+      variant: "destructive",
+    });
+  }
+};
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -149,14 +153,21 @@ const AdminProducts: React.FC = () => {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+  
     try {
+      // Convert arrays to strings for DB
+      const submitData = {
+        ...formData,
+        benefits: Array.isArray(formData.benefits) ? formData.benefits.join('\n') : formData.benefits,
+        ingredients: Array.isArray(formData.ingredients) ? formData.ingredients.join(', ') : formData.ingredients,
+      };
+  
       if (currentProduct) {
         // Update existing product
         const res = await fetch('/api/products', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: currentProduct.id, ...formData })
+          body: JSON.stringify({ id: currentProduct.id, ...submitData })
         });
         if (!res.ok) throw new Error('Failed to update product');
         toast({
@@ -168,7 +179,7 @@ const AdminProducts: React.FC = () => {
         const res = await fetch('/api/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
+          body: JSON.stringify(submitData)
         });
         if (!res.ok) throw new Error('Failed to add product');
         toast({
@@ -229,13 +240,13 @@ const AdminProducts: React.FC = () => {
                   
                   <div>
                     <label htmlFor="price" className="block text-sm font-medium mb-1">
-                      Price ($)*
+                      Price (Ghs)*
                     </label>
                     <input
                       id="price"
                       name="price"
                       type="number"
-                      step="0.01"
+                      step="1"
                       value={formData.price}
                       onChange={handleInputChange}
                       className="w-full p-2 border border-border rounded-md"
@@ -298,27 +309,14 @@ const AdminProducts: React.FC = () => {
                         <img
                           key={idx}
                           src={img}
-                          alt={`Preview ${idx + 1}`}
+                          alt={`Preview Ghs{idx + 1}`}
                           style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ccc' }}
                         />
                       ))}
                     </div>
                   </div>
                   
-                  <div className="flex items-center">
-                    <input
-                      id="featured"
-                      name="featured"
-                      type="checkbox"
-                      checked={formData.featured}
-                      onChange={(e) => setFormData({...formData, featured: e.target.checked})}
-                      className="mr-2"
-                    />
-                    <label htmlFor="featured" className="text-sm font-medium">
-                      Featured Product
-                    </label>
-                  </div>
-                  <input
+                  {/* <input
                     id="name"
                     name="name"
                     type="text"
@@ -326,7 +324,7 @@ const AdminProducts: React.FC = () => {
                     onChange={handleInputChange}
                     className="w-full p-2 border border-border rounded-md"
                     required
-                  />
+                  /> */}
                 </div>
                 
                 
@@ -384,7 +382,7 @@ const AdminProducts: React.FC = () => {
                   <textarea
                     id="benefits"
                     name="benefits"
-                    value={formData.benefits.join('\n')}
+                    value={Array.isArray(formData.benefits) ? formData.benefits.join('\n') : ''}
                     onChange={(e) => handleArrayChange('benefits', e.target.value)}
                     className="w-full p-2 border border-border rounded-md h-24"
                   />
@@ -397,7 +395,7 @@ const AdminProducts: React.FC = () => {
                   <textarea
                     id="ingredients"
                     name="ingredients"
-                    value={formData.ingredients.join('\n')}
+                    value={Array.isArray(formData.ingredients) ? formData.ingredients.join('\n') : ''}
                     onChange={(e) => handleArrayChange('ingredients', e.target.value)}
                     className="w-full p-2 border border-border rounded-md h-24"
                   />
@@ -455,7 +453,7 @@ const AdminProducts: React.FC = () => {
                       {product.category}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      ${product.price.toFixed(2)}
+                      Ghs{product.price}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       {product.stock_quantity}
