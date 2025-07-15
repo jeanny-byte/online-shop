@@ -48,9 +48,9 @@ const OrderTrackingPage: React.FC = () => {
         setOrderDetails(null);
         return;
       }
-      const data = await response.json();
-      if (data && data.order) {
-        setOrderDetails(data.order);
+      const responseData = await response.json();
+      if (responseData && responseData.order) {
+        setOrderDetails(responseData.order);
       } else {
         setOrderDetails(null);
       }

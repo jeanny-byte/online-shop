@@ -66,7 +66,7 @@ const CheckoutPage: React.FC = () => {
       if (data.paymentMethod === 'whatsapp') {
         // Format order details for WhatsApp
         const orderDetails = {
-          id: 'fake_order_id', // Replace with actual order ID
+          id: 'fake_order_id', // You can ignore this field for frontend
           customer_name: data.fullName,
           customer_email: data.email,
           customer_phone: data.phone,
@@ -76,17 +76,86 @@ const CheckoutPage: React.FC = () => {
           tracking_code,
           items: cart
         };
-        
-        const whatsappMessage = formatOrderForWhatsApp(orderDetails);
-        
-        // Send to admin WhatsApp
-        const adminWhatsappNumber = process.env(ADMIN_PHONE); // Replace with your actual WhatsApp number
-        sendOrderToWhatsApp(whatsappMessage, adminWhatsappNumber);
-        
-        toast({
-          title: "Order placed successfully",
-          description: "You will be redirected to WhatsApp to complete your order.",
-        });
+
+        // 1. Store order in database
+        try {
+          const response = await fetch('/api/orders/whatsapp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              customer_name: orderDetails.customer_name,
+              customer_email: orderDetails.customer_email,
+              customer_phone: orderDetails.customer_phone,
+              shipping_address: orderDetails.shipping_address,
+              order_total: orderDetails.order_total,
+              payment_method: orderDetails.payment_method,
+              tracking_code: orderDetails.tracking_code
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to store order. Please try again.');
+          }
+
+          // 2. Prepare WhatsApp message and redirect
+          const whatsappMessage = formatOrderForWhatsApp(orderDetails);
+          const adminWhatsappNumber = '233557246424'; // Ghana format, change to your number
+          sendOrderToWhatsApp(whatsappMessage, adminWhatsappNumber);
+
+          toast({
+            title: "Order placed successfully",
+            description: "You will be redirected to WhatsApp to complete your order.",
+          });
+          clearCart();
+          navigate(`/track-order?code=${tracking_code}`);
+          return;
+        } catch (err: any) {
+          toast({
+            title: "Order failed",
+            description: err.message || "Could not create order in store.",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      if (data.paymentMethod === 'hubtel') {
+        // Online payment via Hubtel
+        try {
+          const response = await fetch('/api/payments/hubtel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: cartTotal,
+              customerName: data.fullName,
+              customerEmail: data.email,
+              customerPhone: data.phone,
+              orderId: tracking_code,
+              description: `Order for ${data.fullName}`
+            })
+          });
+          const result = await response.json();
+          if (response.ok && result.paymentUrl) {
+            toast({
+              title: "Redirecting to payment",
+              description: "You will be redirected to Hubtel to complete your payment.",
+            });
+            clearCart();
+            window.location.href = result.paymentUrl;
+            return;
+          } else {
+            throw new Error(result.error || 'Failed to initiate payment');
+          }
+        } catch (err: any) {
+          toast({
+            title: "Payment failed",
+            description: err.message || 'Could not connect to payment gateway.',
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
       }
       
       // Clear the cart and navigate to success page
@@ -268,6 +337,26 @@ const CheckoutPage: React.FC = () => {
                     </label>
                   </div>
                 </div>
+                {/* Pay via Hubtel */}
+                <div className="space-y-4">
+                  <div className="flex items-center p-4 border rounded-md cursor-pointer hover:bg-Nelyluxe-lightGray transition-colors">
+                    <input
+                      id="Hubtel"
+                      type="radio"
+                      value="hubtel"
+                      className="mr-2"
+                      {...register('paymentMethod')}
+                    />
+                    <label htmlFor="hubtel" className="flex items-center cursor-pointer w-full">
+                      <ShoppingBag className="h-5 w-5 mr-2" />
+                      <div>
+                        <span className="font-medium">Order Online</span>
+                        <p className="text-sm text-muted-foreground">Complete your order Now</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
               </div>
               
               <Button
@@ -275,7 +364,7 @@ const CheckoutPage: React.FC = () => {
                 className="w-full py-6 text-base font-medium"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Processing...' : 'Place Order via WhatsApp'}
+                {isSubmitting ? 'Processing...' : 'Place Order'}
               </Button>
             </form>
           </div>
@@ -292,7 +381,7 @@ const CheckoutPage: React.FC = () => {
                       <span>{item.quantity}x </span>
                       <span className="font-medium">{item.product.name}</span>
                     </div>
-                    <span>${(item.product.price * item.quantity).toFixed(2)}</span>
+                    <span>Ghs{(item.product.price * item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -300,7 +389,7 @@ const CheckoutPage: React.FC = () => {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>Ghs{cartTotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
@@ -311,7 +400,7 @@ const CheckoutPage: React.FC = () => {
               <div className="border-t border-border pt-4">
                 <div className="flex justify-between font-medium">
                   <span>Total</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>Ghs{cartTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>

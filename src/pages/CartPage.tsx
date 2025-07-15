@@ -50,7 +50,7 @@ const CartPage: React.FC = () => {
                       <Link to={`/product/${item.product.id}`} className="font-medium hover:underline">
                         {item.product.name}
                       </Link>
-                      <span className="font-medium">Ghs{(item.product.price * item.quantity).toFixed(2)}</span>
+                      <span className="font-medium"> Ghs{(item.product.price * item.quantity).toFixed(2)}</span>
                     </div>
                     <p className="text-sm text-muted-foreground my-2">
                       Ghs{item.product.price} each

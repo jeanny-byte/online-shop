@@ -1,12 +1,16 @@
 import express from 'express';
 import cors from 'cors';
+import { createWhatsappOrderHandler } from './api/orders';
 import { dashboardHandler } from './api/dashboard';
+import { createHubtelPaymentHandler } from './api/payments';
 import { DeleteProductsHandler, getAllProductsHandler, getProductHandler, submitProductHandler } from './api/products';
 import { upload } from './upload';
+import { getOrdersHandler, updateOrderStatusHandler } from './api/orders';
 import { signInHandler, signUpHandler, checkAdminHandler } from './api/auth';
 import { verifyJWT, requireAdmin } from './middleware/auth';
 import dotenv from 'dotenv';
 dotenv.config();
+import { trackOrderHandler } from './api/orderTracking';
 
 const app = express();
 
@@ -32,7 +36,9 @@ function asyncHandler(
 
 // API routes
 app.get('/api/dashboard', verifyJWT, requireAdmin, asyncHandler(dashboardHandler));
-
+// Hubtel payment endpoint
+app.post('/api/payments/hubtel', asyncHandler(createHubtelPaymentHandler));
+app.post('/api/orders/whatsapp', asyncHandler(createWhatsappOrderHandler));
 app.get('/api/products/:id', asyncHandler(getProductHandler));
 app.use('/uploads', express.static('uploads'));
 app.post('/api/products', upload.array('images', 5), asyncHandler(submitProductHandler));
@@ -42,7 +48,9 @@ app.delete('/api/products/:id', asyncHandler(DeleteProductsHandler));
 app.post('/api/auth/signin', asyncHandler(signInHandler));
 app.post('/api/auth/signup', asyncHandler(signUpHandler));
 app.get('/api/auth/check-admin', verifyJWT, asyncHandler(checkAdminHandler));
-
+app.get('/api/order-tracking/:trackingCode', asyncHandler(trackOrderHandler));
+app.get('/api/orders', asyncHandler(getOrdersHandler));
+app.put('/api/orders/:orderId', asyncHandler(updateOrderStatusHandler));
 // Health check
 app.get('/api/health', (req, res) => { res.json({ status: 'ok' }); });
 
