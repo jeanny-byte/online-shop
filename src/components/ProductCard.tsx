@@ -58,7 +58,7 @@ const ProductCard: React.FC<ProductProps> = ({ id, name, price, image, category,
               <Link to={`/product/${id}`} className="hover:underline">{name}</Link>
             </h3>
           </div>
-          <p className="text-sm font-medium">${price.toFixed(2)}</p>
+          <p className="text-sm font-medium">Ghs{price}</p>
         </div>
       </div>
     </div>

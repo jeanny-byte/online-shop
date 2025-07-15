@@ -127,7 +127,7 @@ const ProductPage: React.FC = () => {
             
             {/* Name & Price */}
             <h1 className="text-3xl md:text-4xl font-serif font-medium mt-1 mb-4">{product.name}</h1>
-            <p className="text-2xl font-medium mb-6">${product.price.toFixed(2)}</p>
+            <p className="text-2xl font-medium mb-6">Ghs{product.price}</p>
             
             {/* Description */}
             <p className="mb-6 text-muted-foreground">{product.description}</p>

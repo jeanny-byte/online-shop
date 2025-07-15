@@ -50,10 +50,10 @@ const CartPage: React.FC = () => {
                       <Link to={`/product/${item.product.id}`} className="font-medium hover:underline">
                         {item.product.name}
                       </Link>
-                      <span className="font-medium">${(item.product.price * item.quantity).toFixed(2)}</span>
+                      <span className="font-medium">Ghs{(item.product.price * item.quantity).toFixed(2)}</span>
                     </div>
                     <p className="text-sm text-muted-foreground my-2">
-                      ${item.product.price.toFixed(2)} each
+                      Ghs{item.product.price} each
                     </p>
                     
                     {/* Quantity & Remove */}
@@ -109,7 +109,7 @@ const CartPage: React.FC = () => {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>Ghs{cartTotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
@@ -120,7 +120,7 @@ const CartPage: React.FC = () => {
               <div className="border-t border-border pt-4 mb-6">
                 <div className="flex justify-between font-medium">
                   <span>Total</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>Ghs{cartTotal}</span>
                 </div>
               </div>
               

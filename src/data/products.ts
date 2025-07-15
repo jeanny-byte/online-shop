@@ -14,7 +14,7 @@ export interface Product {
   bestSeller?: boolean;
 }
 
-export const products: Product[] = [
+export const defaultProducts: Product[] = [
   {
     id: '1',
     name: 'Hydrating Rose Serum',
@@ -201,3 +201,22 @@ export const products: Product[] = [
     bestSeller: true
   }
 ];
+
+/**
+ * Fetch products from the backend database. If none are found or request fails, return defaultProducts.
+ */
+export async function fetchProducts(): Promise<Product[]> {
+  try {
+    const response = await fetch('/api/products');
+    if (!response.ok) throw new Error('Network response was not ok');
+    const data = await response.json();
+    if (Array.isArray(data) && data.length > 0) {
+      return data;
+    } else {
+      return defaultProducts;
+    }
+  } catch (error) {
+    // Fallback to default products on error
+    return defaultProducts;
+  }
+}

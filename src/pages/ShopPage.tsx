@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { products } from '../data/products';
+import { fetchProducts } from '../data/products';
+//import { products } from '../data/products';
 import { Filter, X } from 'lucide-react';
 
 const ShopPage: React.FC = () => {
@@ -10,8 +11,17 @@ const ShopPage: React.FC = () => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState('featured');
-  const [filteredProducts, setFilteredProducts] = useState(products);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   
+  // Fetch products on mount
+  useEffect(() => {
+    fetchProducts().then((data) => {
+      setProducts(data);
+      setFilteredProducts(data);
+    });
+  }, []);
+
   // Extract category from URL if present
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -24,12 +34,12 @@ const ShopPage: React.FC = () => {
   // Apply filters and sorting
   useEffect(() => {
     let result = [...products];
-    
+
     // Apply category filter
     if (selectedCategory) {
       result = result.filter(product => product.category === selectedCategory);
     }
-    
+
     // Apply sorting
     switch (sortOption) {
       case 'price-low':
@@ -50,10 +60,10 @@ const ShopPage: React.FC = () => {
         });
         break;
     }
-    
+
     setFilteredProducts(result);
-  }, [selectedCategory, sortOption]);
-  
+  }, [products, selectedCategory, sortOption]);
+
   // Get unique categories
   const categories = Array.from(new Set(products.map(product => product.category)));
 
