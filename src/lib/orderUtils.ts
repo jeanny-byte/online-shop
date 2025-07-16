@@ -26,7 +26,7 @@ export interface OrderDetails {
  */
 export const formatOrderItemsForWhatsApp = (items: CartItem[]): string => {
   return items.map(item => 
-    `${item.quantity}x ${item.product.name} - $${(item.product.price * item.quantity).toFixed(2)}`
+    `${item.quantity}x ${item.product.name} - Ghs${(item.product.price * item.quantity).toFixed(2)}`
   ).join('\n');
 };
 
@@ -39,14 +39,14 @@ export const formatOrderForWhatsApp = (order: OrderDetails): string => {
   
   return (
     `🛍️ *New Order #${order.tracking_code}* ${paymentIcon} 💰\n\n` +
-    `*Customer*: ${order.customer_name} 👨\n` +
-    `*Phone*: ${order.customer_phone} 📞\n` +
-    `*Email*: ${order.customer_email} 📧\n` +
-    `*Address*: ${order.shipping_address} 🏠\n\n` +
-    `*Order Items*:\n${orderItems}\n\n` +
-    `*Total*: Ghs${order.order_total.toFixed(2)} 💸\n` +
-    `*Payment Method*: ${order.payment_method === 'Hubtel' ? 'Hubtel (Online) 💻' : 'WhatsApp (Pay on Delivery) 📱'}\n` +
-    `*Tracking Code*: ${order.tracking_code} ✨`
+    `👨 *Customer*: ${order.customer_name} \n` +
+    `📞 *Phone*: ${order.customer_phone} \n` +
+    `📧 *Email*: ${order.customer_email} \n` +
+    `🏠 *Address*: ${order.shipping_address} \n\n` +
+    `📦 *Order Items*:\n${orderItems}\n\n` +
+    `💸 *Total*: Ghs${order.order_total.toFixed(2)} \n` +
+    `*Payment Method*: ${order.payment_method === 'Hubtel' ? '💻 Hubtel (Online) ' : '📱 WhatsApp (Pay on Delivery) '}\n` +
+    `✨ *Tracking Code*: ${order.tracking_code} `
   );
 };
 
