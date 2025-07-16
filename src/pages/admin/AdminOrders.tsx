@@ -35,18 +35,27 @@ const AdminOrders: React.FC = () => {
   };
   
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: orderId, order_status: newStatus })
-      });
-      if (!res.ok) throw new Error('Failed to update order status');
-      toast({
-        title: "Success",
-        description: "Order status updated successfully",
-      });
-      // Update the status in the local state
+  // Map the status to the correct casing
+  const statusMap: Record<string, string> = {
+    pending: 'Pending',
+    processing: 'Processing',
+    shipped: 'Shipped',
+    delivered: 'Delivered',
+    cancelled: 'Cancelled',
+  };
+  const mappedStatus = statusMap[newStatus.toLowerCase()] || newStatus;
+  try {
+    const res = await fetch(`/api/orders/${orderId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: mappedStatus })
+    });
+    if (!res.ok) throw new Error('Failed to update order status');
+    toast({
+      title: "Success",
+      description: "Order status updated successfully",
+    });
+    // Update the status in the local state
       setOrders(orders.map(order => 
         order.id === orderId
           ? { ...order, order_status: newStatus, updated_at: new Date().toISOString() }
@@ -141,7 +150,7 @@ const AdminOrders: React.FC = () => {
                       {new Date(order.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      ${order.order_total.toFixed(2)}
+                      Ghs{order.order_total}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(order.order_status)}`}>

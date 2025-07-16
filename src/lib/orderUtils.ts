@@ -38,15 +38,15 @@ export const formatOrderForWhatsApp = (order: OrderDetails): string => {
   const paymentIcon = order.payment_method === 'Hubtel' ? '💳' : '📱';
   
   return (
-    `*New Order #${order.tracking_code}* ${paymentIcon}\n\n` +
-    `*Customer*: ${order.customer_name}\n` +
-    `*Phone*: ${order.customer_phone}\n` +
-    `*Email*: ${order.customer_email}\n` +
-    `*Address*: ${order.shipping_address}\n\n` +
+    `🛍️ *New Order #${order.tracking_code}* ${paymentIcon} 💰\n\n` +
+    `*Customer*: ${order.customer_name} 👨\n` +
+    `*Phone*: ${order.customer_phone} 📞\n` +
+    `*Email*: ${order.customer_email} 📧\n` +
+    `*Address*: ${order.shipping_address} 🏠\n\n` +
     `*Order Items*:\n${orderItems}\n\n` +
-    `*Total*: $${order.order_total.toFixed(2)}\n` +
-    `*Payment Method*: ${order.payment_method === 'Hubtel' ? 'Hubtel (Online)' : 'WhatsApp (Pay on Delivery)'}\n` +
-    `*Tracking Code*: ${order.tracking_code}`
+    `*Total*: Ghs${order.order_total.toFixed(2)} 💸\n` +
+    `*Payment Method*: ${order.payment_method === 'Hubtel' ? 'Hubtel (Online) 💻' : 'WhatsApp (Pay on Delivery) 📱'}\n` +
+    `*Tracking Code*: ${order.tracking_code} ✨`
   );
 };
 
@@ -54,10 +54,15 @@ export const formatOrderForWhatsApp = (order: OrderDetails): string => {
  * Send order details to WhatsApp
  */
 export const sendOrderToWhatsApp = (message: string, phoneNumber: string = '1234567890'): void => {
-  // Encode the message for WhatsApp
   const encodedMessage = encodeURIComponent(message);
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-  
-  // Open WhatsApp in a new tab
-  window.open(whatsappUrl, '_blank');
+
+  // Simple mobile detection
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    window.location.href = whatsappUrl; // Best for mobile
+  } else {
+    window.open(whatsappUrl, '_blank'); // Best for desktop
+  }
 };

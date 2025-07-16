@@ -85,7 +85,7 @@ const OrderTrackingPage: React.FC = () => {
   };
   
   const getStatusStepCompleted = (orderStatus: string, stepStatus: string) => {
-    const statuses = ['pending', 'processing', 'shipped', 'delivered'];
+    const statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
     const orderIndex = statuses.indexOf(orderStatus);
     const stepIndex = statuses.indexOf(stepStatus);
     
@@ -155,19 +155,20 @@ const OrderTrackingPage: React.FC = () => {
                     {/* Progress Bar */}
                     <div className="absolute top-4 left-4 right-4 h-1 bg-gray-200">
                       <div 
-                        className="h-1 bg-green-500" 
+                        className="h-1 bg-green-500 transition-all duration-700 ease-in-out" 
                         style={{ 
                           width: orderDetails.order_status === 'pending' ? '0%' :
                                  orderDetails.order_status === 'processing' ? '33%' :
                                  orderDetails.order_status === 'shipped' ? '66%' :
-                                 orderDetails.order_status === 'delivered' ? '100%' : '0%'
+                                 orderDetails.order_status === 'delivered' ? '100%' :
+                                 orderDetails.order_status === 'cancelled' ? '100%' : '0%',
                         }}
                       ></div>
                     </div>
                     
                     {/* Status Steps */}
                     <div className="flex justify-between">
-                      {['pending', 'processing', 'shipped', 'delivered'].map((status) => {
+                      {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => {
                         const isCompleted = getStatusStepCompleted(orderDetails.order_status, status);
                         
                         return (

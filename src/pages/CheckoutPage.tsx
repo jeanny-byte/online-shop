@@ -15,22 +15,45 @@ type CheckoutFormData = {
   city: string;
   state: string;
   zipCode: string;
-  paymentMethod: 'whatsapp';
+  paymentMethod: 'whatsapp' | 'hubtel';
+  deliveryOption: 'personal_rider' | 'delivery_service';
 };
 
 const CheckoutPage: React.FC = () => {
+  // Delivery fee logic
+  function getDeliveryFee(city: string, region: string, deliveryOption: string): number {
+    if (deliveryOption !== 'delivery_service') return 0;
+    const cityLower = city.trim().toLowerCase();
+    const regionLower = region.trim().toLowerCase();
+    if (cityLower === 'accra') return 45;
+    if (cityLower === 'tema' || cityLower === 'nsawam') return 55;
+    if (regionLower !== 'greater accra') return 30;
+    return 0;
+  }
+
   const { cart, cartTotal, clearCart } = useCart();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { register, handleSubmit, formState: { errors }, watch } = useForm<CheckoutFormData>({
     defaultValues: {
-      paymentMethod: 'whatsapp'
+      paymentMethod: 'whatsapp',
+      deliveryOption: 'delivery_service'
     }
   });
   
   const paymentMethod = watch('paymentMethod');
-  
+  const city = watch('city') || '';
+  const region = watch('state') || '';
+  const deliveryOption = watch('deliveryOption') || '';
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  const totalWithDelivery = cartTotal + deliveryFee;
+
+  // Update deliveryFee whenever city, region, or deliveryOption changes
+  React.useEffect(() => {
+    setDeliveryFee(getDeliveryFee(city, region, deliveryOption));
+  }, [city, region, deliveryOption]);
+
   const onSubmit = async (data: CheckoutFormData) => {
     if (cart.length === 0) {
       toast({
@@ -97,15 +120,19 @@ const CheckoutPage: React.FC = () => {
             throw new Error('Failed to store order. Please try again.');
           }
 
+          toast({
+            title: "Order placed successfully",
+            description: "You will be redirected to WhatsApp to complete your order.",
+          });
+          setTimeout(() => {
+            
+          }, 2000);
+
           // 2. Prepare WhatsApp message and redirect
           const whatsappMessage = formatOrderForWhatsApp(orderDetails);
           const adminWhatsappNumber = '233557246424'; // Ghana format, change to your number
           sendOrderToWhatsApp(whatsappMessage, adminWhatsappNumber);
 
-          toast({
-            title: "Order placed successfully",
-            description: "You will be redirected to WhatsApp to complete your order.",
-          });
           clearCart();
           navigate(`/track-order?code=${tracking_code}`);
           return;
@@ -283,6 +310,10 @@ const CheckoutPage: React.FC = () => {
                         type="text"
                         className={`w-full p-2 border rounded-md ${errors.city ? 'border-red-500' : 'border-border'}`}
                         {...register('city', { required: 'City is required' })}
+                        onChange={e => {
+                          register('city').onChange(e);
+                          setDeliveryFee(getDeliveryFee(e.target.value, region, deliveryOption));
+                        }}
                       />
                       {errors.city && <span className="text-sm text-red-500">{errors.city.message}</span>}
                     </div>
@@ -291,12 +322,33 @@ const CheckoutPage: React.FC = () => {
                       <label htmlFor="state" className="block text-sm font-medium mb-1">
                         State/Province*
                       </label>
-                      <input
+                      <select
                         id="state"
-                        type="text"
                         className={`w-full p-2 border rounded-md ${errors.state ? 'border-red-500' : 'border-border'}`}
                         {...register('state', { required: 'State is required' })}
-                      />
+                        onChange={e => {
+                          register('state').onChange(e);
+                          setDeliveryFee(getDeliveryFee(city, e.target.value, deliveryOption));
+                        }}
+                      >
+                        <option value="">Select a region</option>
+                        <option value="Ahafo">Ahafo</option>
+                        <option value="Ashanti">Ashanti</option>
+                        <option value="Bono">Bono</option>
+                        <option value="Bono East">Bono East</option>
+                        <option value="Central">Central</option>
+                        <option value="Eastern">Eastern</option>
+                        <option value="Greater Accra">Greater Accra</option>
+                        <option value="North East">North East</option>
+                        <option value="Northern">Northern</option>
+                        <option value="Oti">Oti</option>
+                        <option value="Savannah">Savannah</option>
+                        <option value="Upper East">Upper East</option>
+                        <option value="Upper West">Upper West</option>
+                        <option value="Volta">Volta</option>
+                        <option value="Western">Western</option>
+                        <option value="Western North">Western North</option>
+                      </select>
                       {errors.state && <span className="text-sm text-red-500">{errors.state.message}</span>}
                     </div>
                     
@@ -312,6 +364,32 @@ const CheckoutPage: React.FC = () => {
                       />
                       {errors.zipCode && <span className="text-sm text-red-500">{errors.zipCode.message}</span>}
                     </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Delivery Options */}
+              <div className="mb-8">
+                <h2 className="text-xl font-serif mb-4">Delivery Options</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="deliveryOption" className="block text-sm font-medium mb-1">
+                      Delivery Options*
+                    </label>
+                    <select
+                      id="deliveryOption"
+                      className={`w-full p-2 border rounded-md ${errors.deliveryOption ? 'border-red-500' : 'border-border'}`}
+                      {...register('deliveryOption', { required: 'Delivery option is required' })}
+                      onChange={e => {
+                        register('deliveryOption').onChange(e);
+                        setDeliveryFee(getDeliveryFee(city, region, e.target.value));
+                      }}
+                    >
+                      <option value="">Select an option</option>
+                      <option value="personal_rider">Pick up by Personal Rider</option>
+                      <option value="delivery_service">Delivery service</option>
+                    </select>
+                    {errors.deliveryOption && <span className="text-sm text-red-500">{errors.deliveryOption.message}</span>}
                   </div>
                 </div>
               </div>
@@ -341,7 +419,7 @@ const CheckoutPage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex items-center p-4 border rounded-md cursor-pointer hover:bg-Nelyluxe-lightGray transition-colors">
                     <input
-                      id="Hubtel"
+                      id="hubtel"
                       type="radio"
                       value="hubtel"
                       className="mr-2"
@@ -391,16 +469,18 @@ const CheckoutPage: React.FC = () => {
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>Ghs{cartTotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Shipping</span>
-                  <span>Free</span>
-                </div>
+                {deliveryOption === 'delivery_service' && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Delivery</span>
+                    <span>Ghs{deliveryFee.toFixed(2)}</span>
+                  </div>
+                )}
               </div>
               
               <div className="border-t border-border pt-4">
                 <div className="flex justify-between font-medium">
                   <span>Total</span>
-                  <span>Ghs{cartTotal.toFixed(2)}</span>
+                  <span>Ghs{totalWithDelivery.toFixed(2)}</span>
                 </div>
               </div>
             </div>

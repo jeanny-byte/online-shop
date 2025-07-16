@@ -69,7 +69,7 @@ export async function getOrdersHandler(req: Request, res: Response) {
 export async function updateOrderStatusHandler(req: Request, res: Response) {
   const { orderId } = req.params;
   const { status } = req.body;
-  const allowedStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered'];
+  const allowedStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
   if (!allowedStatuses.includes(status)) {
     res.status(400).json({ error: 'Invalid status' });
