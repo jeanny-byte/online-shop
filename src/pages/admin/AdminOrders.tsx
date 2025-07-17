@@ -6,7 +6,37 @@ const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
-  
+
+  // Export orders to CSV
+  const handleExportCSV = () => {
+    if (!orders.length) return;
+    // Get all keys from the first order for headers
+    const headers = Object.keys(orders[0]);
+    const csvRows = [headers.join(",")];
+    for (const order of orders) {
+      const row = headers.map(key => {
+        let val = order[key];
+        if (val === null || val === undefined) return '';
+        // Escape quotes
+        val = String(val).replace(/"/g, '""');
+        // Wrap fields with commas or newlines in quotes
+        if (val.search(/([",\n])/g) >= 0) {
+          val = `"${val}"`;
+        }
+        return val;
+      });
+      csvRows.push(row.join(","));
+    }
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders_${filter}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     fetchOrders();
   }, [filter]);
@@ -115,6 +145,12 @@ const AdminOrders: React.FC = () => {
           className="btn btn-outline py-2 px-4"
         >
           Refresh
+        </button>
+        <button
+          onClick={handleExportCSV}
+          className="btn btn-outline py-2 px-4 ml-2"
+        >
+          Export CSV
         </button>
       </div>
       
