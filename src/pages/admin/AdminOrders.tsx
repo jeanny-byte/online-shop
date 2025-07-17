@@ -7,6 +7,8 @@ const AdminOrders: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [search, setSearch] = useState<string>('');
+const [startDate, setStartDate] = useState<string>('');
+const [endDate, setEndDate] = useState<string>('');
 
   // Export orders to CSV
   const handleExportCSV = () => {
@@ -155,7 +157,7 @@ const AdminOrders: React.FC = () => {
         </button>
       </div>
       
-      <div className="mb-4 flex items-center">
+      <div className="mb-4 flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
         <input
           type="text"
           value={search}
@@ -163,6 +165,22 @@ const AdminOrders: React.FC = () => {
           placeholder="Search: Name, Tracking Code, Phone, Email"
           className="p-2 border border-border rounded-md w-full max-w-md"
         />
+        <div className="flex gap-2 items-center">
+          <label className="text-sm">From:</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+            className="p-2 border border-border rounded-md"
+          />
+          <label className="text-sm">To:</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
+            className="p-2 border border-border rounded-md"
+          />
+        </div>
       </div>
       <div className="bg-white border border-border rounded-md overflow-hidden">
         {isLoading ? (
@@ -185,15 +203,28 @@ const AdminOrders: React.FC = () => {
               <tbody className="divide-y divide-border">
                 {orders
                   .filter(order => {
-                    if (!search.trim()) return true;
-                    const fields = [order.customer_name, order.tracking_code, order.customer_phone, order.customer_email];
-                    try {
-                      const regex = new RegExp(search, 'i');
-                      return fields.some(f => typeof f === 'string' && regex.test(f));
-                    } catch {
-                      // Invalid regex: fallback to case-insensitive substring
-                      return fields.some(f => typeof f === 'string' && f.toLowerCase().includes(search.toLowerCase()));
+                    // Search filter
+                    if (search.trim()) {
+                      const fields = [order.customer_name, order.tracking_code, order.customer_phone, order.customer_email];
+                      try {
+                        const regex = new RegExp(search, 'i');
+                        if (!fields.some(f => typeof f === 'string' && regex.test(f))) return false;
+                      } catch {
+                        // Invalid regex: fallback to case-insensitive substring
+                        if (!fields.some(f => typeof f === 'string' && f.toLowerCase().includes(search.toLowerCase()))) return false;
+                      }
                     }
+                    // Date range filter
+                    if (startDate) {
+                      if (!order.created_at || new Date(order.created_at) < new Date(startDate)) return false;
+                    }
+                    if (endDate) {
+                      // Set endDate to the end of the day
+                      const end = new Date(endDate);
+                      end.setHours(23,59,59,999);
+                      if (!order.created_at || new Date(order.created_at) > end) return false;
+                    }
+                    return true;
                   })
                   .map((order) => (
                   <tr key={order.id}>
