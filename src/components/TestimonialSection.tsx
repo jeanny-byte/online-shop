@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Star } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface TestimonialProps {
   name: string;
@@ -10,30 +11,80 @@ interface TestimonialProps {
   image?: string;
 }
 
-const testimonials: TestimonialProps[] = [
-  {
-    name: 'Sophia Williams',
-    location: 'New York, NY',
-    quote: 'I\'ve tried countless skincare products, but LSkin\'s Vitamin C serum has transformed my skin. My hyperpigmentation has faded, and my skin looks more radiant than ever!',
-    rating: 5,
-    image: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Emma Johnson',
-    location: 'Los Angeles, CA',
-    quote: 'The Overnight Renewal Mask is a game-changer! I wake up with plump, hydrated skin every time I use it. Totally worth every penny.',
-    rating: 5
-  },
-  {
-    name: 'Olivia Davis',
-    location: 'Chicago, IL',
-    quote: 'After struggling with sensitive skin for years, I finally found LSkin\'s Gentle Enzyme Cleanser. It removes all my makeup without irritation. I\'m a customer for life!',
-    rating: 5,
-    image: 'https://images.unsplash.com/photo-1499887142886-791eca5918cd?q=80&w=2080&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  }
-];
+// Removed static testimonials array. Will fetch dynamically.
 
 const TestimonialSection: React.FC = () => {
+  const { user } = useAuth();
+  const [testimonials, setTestimonials] = useState<TestimonialProps[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Form state
+  const [quote, setQuote] = useState('');
+  const [rating, setRating] = useState(5);
+  const [location, setLocation] = useState('');
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+
+  // Fetch testimonials
+  const fetchTestimonials = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch('/api/testimonials');
+      if (!res.ok) throw new Error('Failed to load testimonials');
+      const data = await res.json();
+      setTestimonials(data);
+    } catch (err: any) {
+      setError(err.message || 'Error loading testimonials');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTestimonials();
+    // eslint-disable-next-line
+  }, []);
+
+  // Handle testimonial submit
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitLoading(true);
+    setSubmitError(null);
+    setSubmitSuccess(null);
+    try {
+      const token = localStorage.getItem('jwt_token');
+      const res = await fetch('/api/testimonials', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: user?.email || 'Anonymous',
+          location,
+          quote,
+          rating,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to submit testimonial');
+      }
+      setSubmitSuccess('Testimonial submitted! Thank you.');
+      setQuote('');
+      setLocation('');
+      setRating(5);
+      fetchTestimonials();
+    } catch (err: any) {
+      setSubmitError(err.message || 'Error submitting testimonial');
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
   return (
     <section className="section bg-white">
       <div className="container-custom">
@@ -41,46 +92,107 @@ const TestimonialSection: React.FC = () => {
           <span className="text-sm font-medium text-primary-foreground">Testimonials</span>
           <h2 className="text-3xl md:text-4xl font-serif font-medium mt-1">What Our Customers Say</h2>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <div key={index} className="bg-lskin-lightGray p-6 rounded-lg">
-              {/* Rating */}
-              <div className="flex mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={16}
-                    className={`${i < testimonial.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                  />
-                ))}
+
+        {/* Testimonial Submission Form for Signed-in Users */}
+        {user && (
+          <div className="mb-12 max-w-xl mx-auto">
+            <form onSubmit={handleSubmit} className="bg-Nelysah-lightGray p-6 rounded-lg shadow">
+              <h3 className="font-medium mb-4 text-lg">Share your experience</h3>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Your Testimonial</label>
+                <textarea
+                  className="w-full border rounded p-2"
+                  rows={3}
+                  value={quote}
+                  onChange={e => setQuote(e.target.value)}
+                  required
+                  placeholder="Write your testimonial..."
+                />
               </div>
-              
-              {/* Quote */}
-              <blockquote className="text-foreground mb-4">"{testimonial.quote}"</blockquote>
-              
-              {/* Customer */}
-              <div className="flex items-center">
-                {testimonial.image ? (
-                  <img 
-                    src={testimonial.image}
-                    alt={testimonial.name}
-                    className="w-10 h-10 rounded-full object-cover mr-3"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-lskin-pink flex items-center justify-center mr-3">
-                    <span className="text-primary-foreground font-medium">
-                      {testimonial.name.charAt(0)}
-                    </span>
-                  </div>
-                )}
-                <div>
-                  <p className="font-medium">{testimonial.name}</p>
-                  <p className="text-sm text-muted-foreground">{testimonial.location}</p>
+              {/* <div className="mb-4">
+                <label className="block mb-1 font-medium">Location (optional)</label>
+                <input
+                  className="w-full border rounded p-2"
+                  value={location}
+                  onChange={e => setLocation(e.target.value)}
+                  placeholder="e.g. Accra, Ghana"
+                />
+              </div> */}
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Rating</label>
+                <div className="flex items-center space-x-1">
+                  {[1,2,3,4,5].map(i => (
+                    <button
+                      type="button"
+                      key={i}
+                      onClick={() => setRating(i)}
+                      className={`focus:outline-none ${i <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                    >
+                      <Star size={20} fill={i <= rating ? '#facc15' : 'none'} />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm">{rating} / 5</span>
                 </div>
               </div>
-            </div>
-          ))}
+              {submitError && <div className="text-red-500 mb-2">{submitError}</div>}
+              {submitSuccess && <div className="text-green-600 mb-2">{submitSuccess}</div>}
+              <button
+                type="submit"
+                className="btn-secondary px-4 py-2 rounded font-medium"
+                disabled={submitLoading}
+              >
+                {submitLoading ? 'Saving...' : 'Save to Testimonials'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {loading ? (
+            <div className="col-span-full text-center">Loading testimonials...</div>
+          ) : error ? (
+            <div className="col-span-full text-center text-red-500">{error}</div>
+          ) : testimonials.length === 0 ? (
+            <div className="col-span-full text-center text-muted-foreground">No testimonials available yet.</div>
+          ) : (
+            testimonials.map((testimonial, index) => (
+              <div key={index} className="bg-Nelysah-lightGray p-6 rounded-lg">
+                {/* Rating */}
+                <div className="flex mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      size={16}
+                      className={`${i < testimonial.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                    />
+                  ))}
+                </div>
+                {/* Quote */}
+                <blockquote className="text-foreground mb-4">"{testimonial.quote}"</blockquote>
+                {/* Customer */}
+                <div className="flex items-center">
+                  {testimonial.image ? (
+                    <img 
+                      src={testimonial.image}
+                      alt={testimonial.name}
+                      className="w-10 h-10 rounded-full object-cover mr-3"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-Nelysah-pink flex items-center justify-center mr-3">
+                      <span className="text-primary-foreground font-medium">
+                        {testimonial.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-medium">{testimonial.name}</p>
+                    <p className="text-sm text-muted-foreground">{testimonial.location}</p>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </section>

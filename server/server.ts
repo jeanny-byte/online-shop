@@ -35,6 +35,8 @@ function asyncHandler(
 
 
 // API routes
+app.get('/api/testimonials', asyncHandler(require('./api/testimonials').getTestimonialsHandler));
+app.post('/api/testimonials', verifyJWT, asyncHandler(require('./api/testimonials').submitTestimonialHandler));
 app.get('/api/dashboard', verifyJWT, requireAdmin, asyncHandler(dashboardHandler));
 // Hubtel payment endpoint
 app.post('/api/payments/hubtel', asyncHandler(createHubtelPaymentHandler));

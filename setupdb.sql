@@ -47,6 +47,16 @@ CREATE TABLE order_items (
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
 );
 
+-- Testimonials table
+CREATE TABLE testimonials (
+    id CHAR(36) NOT NULL PRIMARY KEY,      -- UUID for uniqueness
+    name VARCHAR(100) NOT NULL,
+    location VARCHAR(100),
+    quote TEXT NOT NULL,
+    rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    image VARCHAR(255),                    -- URL or path to image (optional)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 -- Admin users table
 CREATE TABLE admin_users (
   id CHAR(36) PRIMARY KEY,
