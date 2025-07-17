@@ -105,7 +105,7 @@ const [endDate, setEndDate] = useState<string>('');
   };
   
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
       case 'processing':
@@ -188,8 +188,8 @@ const [endDate, setEndDate] = useState<string>('');
             <p>Loading orders...</p>
           </div>
         ) : orders.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto" style={{ maxWidth: '100vw' }}>
+            <table className="w-full min-w-[900px]" style={{ minWidth: 900 }}>
               <thead className="bg-muted/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Order ID</th>
