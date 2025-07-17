@@ -6,6 +6,7 @@ const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [search, setSearch] = useState<string>('');
 
   // Export orders to CSV
   const handleExportCSV = () => {
@@ -154,6 +155,15 @@ const AdminOrders: React.FC = () => {
         </button>
       </div>
       
+      <div className="mb-4 flex items-center">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Regex search: Name, Tracking Code, Phone, Email"
+          className="p-2 border border-border rounded-md w-full max-w-md"
+        />
+      </div>
       <div className="bg-white border border-border rounded-md overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center">
@@ -173,7 +183,19 @@ const AdminOrders: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {orders.map((order) => (
+                {orders
+                  .filter(order => {
+                    if (!search.trim()) return true;
+                    const fields = [order.customer_name, order.tracking_code, order.customer_phone, order.customer_email];
+                    try {
+                      const regex = new RegExp(search, 'i');
+                      return fields.some(f => typeof f === 'string' && regex.test(f));
+                    } catch {
+                      // Invalid regex: fallback to case-insensitive substring
+                      return fields.some(f => typeof f === 'string' && f.toLowerCase().includes(search.toLowerCase()));
+                    }
+                  })
+                  .map((order) => (
                   <tr key={order.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       #{order.tracking_code}
