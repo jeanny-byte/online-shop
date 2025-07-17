@@ -8,14 +8,14 @@ import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
 
 
-type CheckoutFormData = {
-  fullName: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
+type CheckoutFormData = { 
+  fullName: string; 
+  email: string; 
+  phone: string; 
+  address: string; 
+  city: string; 
+  state: string; 
+  zipCode: string; 
   paymentMethod: 'whatsapp' | 'hubtel';
   deliveryOption: 'personal_rider' | 'delivery_service';
 };
@@ -113,7 +113,12 @@ const CheckoutPage: React.FC = () => {
               shipping_address: orderDetails.shipping_address,
               order_total: orderDetails.order_total,
               payment_method: orderDetails.payment_method,
-              tracking_code: orderDetails.tracking_code
+              tracking_code: orderDetails.tracking_code,
+              items: cart.map(item => ({
+                product_id: item.product.id,
+                quantity: item.quantity,
+                price_per_item: item.product.price
+              }))
             })
           });
 

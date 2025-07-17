@@ -84,10 +84,25 @@ const [endDate, setEndDate] = useState<string>('');
       body: JSON.stringify({ status: mappedStatus })
     });
     if (!res.ok) throw new Error('Failed to update order status');
+    const data = await res.json();
     toast({
       title: "Success",
       description: "Order status updated successfully",
     });
+    if (data.stockRestored) {
+      toast({
+        title: "Stock Restored",
+        description: "Product stock has been restored for this cancelled order.",
+        variant: "default",
+      });
+    }
+    if (data.stockDecremented) {
+      toast({
+        title: "Stock Decremented",
+        description: "Product stock has been re-allocated to this order (status changed from Cancelled).",
+        variant: "default",
+      });
+    }
     // Update the status in the local state
       setOrders(orders.map(order => 
         order.id === orderId

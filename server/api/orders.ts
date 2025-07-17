@@ -40,11 +40,32 @@ export async function createWhatsappOrderHandler(req: Request, res: Response) {
     tracking_code
   ];
 
+  const { items } = req.body;
+  if (!Array.isArray(items) || items.length === 0) {
+    res.status(400).json({ error: 'Order must include at least one item' });
+    return;
+  }
+
   const conn = await getConnection();
   try {
+    await conn.beginTransaction();
     await conn.query(sql, values);
+    // Insert order items
+    for (const item of items) {
+      if (!item.product_id || typeof item.quantity !== 'number' || item.quantity <= 0) {
+        await conn.rollback();
+        res.status(400).json({ error: 'Invalid item in order' });
+        return;
+      }
+      await conn.query(
+        'INSERT INTO order_items (id, order_id, product_id, quantity, price_per_item) VALUES (?, ?, ?, ?, ?)',
+        [uuidv4(), id, item.product_id, item.quantity, item.price_per_item || 0]
+      );
+    }
+    await conn.commit();
     res.status(201).json({ id, tracking_code, message: 'Order created successfully' });
   } catch (error) {
+    await conn.rollback();
     console.error('Error inserting WhatsApp order:', error);
     res.status(500).json({ error: 'Internal server error' });
   } finally {
@@ -92,12 +113,63 @@ export async function updateOrderStatusHandler(req: Request, res: Response) {
 
   const conn = await getConnection();
   try {
-    const [result] = await conn.query(
+    await conn.beginTransaction();
+
+    // Get current order status
+    const [orderRows] = await conn.query('SELECT order_status FROM orders WHERE id = ?', [orderId]);
+    const statusRows = orderRows as { order_status: string }[];
+    const prevStatus = statusRows.length > 0 ? statusRows[0].order_status : null;
+    console.log('updateOrderStatusHandler:', { orderId, prevStatus, status });
+
+    // Update order status
+    await conn.query(
       'UPDATE orders SET order_status = ? WHERE id = ?',
       [status, orderId]
     );
-    res.status(200).json({ message: 'Order status updated' });
+
+    // If cancelling, restore stock for all products in the order
+    let stockRestored = false;
+    if (status && status.toLowerCase() === 'cancelled') {
+      // Get all order items for this order
+      const [rows] = await conn.query(
+        'SELECT product_id, quantity FROM order_items WHERE order_id = ?',
+        [orderId]
+      );
+      const items = rows as { product_id: string; quantity: number }[];
+      console.log(`[CANCELLED] Restoring stock for order ${orderId}, items:`, items);
+      for (const item of items) {
+        // Increment stock for each product
+        const [updateResult]: any = await conn.query(
+          'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
+          [item.quantity, item.product_id]
+        );
+        console.log(`[CANCELLED] Updated product ${item.product_id}: +${item.quantity}, affectedRows:`, updateResult.affectedRows);
+      }
+      stockRestored = true;
+    }
+
+    // If the previous status was Cancelled and the new status is not, decrement stock for all products in the order
+    let stockDecremented = false;
+    if (prevStatus && prevStatus.toLowerCase() === 'cancelled' && status && status.toLowerCase() !== 'cancelled') {
+      const [rows] = await conn.query(
+        'SELECT product_id, quantity FROM order_items WHERE order_id = ?',
+        [orderId]
+      );
+      const items = rows as { product_id: string; quantity: number }[];
+      console.log(`[FROM CANCELLED] Decrementing stock for order ${orderId}, items:`, items);
+      for (const item of items) {
+        const [updateResult]: any = await conn.query(
+          'UPDATE products SET stock_quantity = GREATEST(stock_quantity - ?, 0) WHERE id = ?',
+          [item.quantity, item.product_id]
+        );
+        console.log(`[FROM CANCELLED] Updated product ${item.product_id}: -${item.quantity}, affectedRows:`, updateResult.affectedRows);
+      }
+      stockDecremented = true;
+    }
+    await conn.commit();
+    res.status(200).json({ message: 'Order status updated', stockRestored, stockDecremented });
   } catch (error) {
+    await conn.rollback();
     console.error('Error updating order status:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
