@@ -13,7 +13,7 @@ const ShippingPolicyPage: React.FC = () => {
           <section className="mb-8">
             <h2 className="text-2xl font-medium mb-4">Shipping Information</h2>
             <p>
-              At Nelyluxe, we strive to deliver your products as quickly and efficiently as possible. 
+              At Nelysah, we strive to deliver your products as quickly and efficiently as possible. 
               Please review our shipping information below.
             </p>
           </section>
@@ -56,7 +56,7 @@ const ShippingPolicyPage: React.FC = () => {
             <h3 className="text-xl font-medium mb-3">International Shipping</h3>
             <p>
               We ship to most countries worldwide. Please note that international orders may be subject 
-              to import duties and taxes, which are the responsibility of the recipient. Nelyluxe is not 
+              to import duties and taxes, which are the responsibility of the recipient. Nelysah is not 
               responsible for delays due to customs processing.
             </p>
           </section>

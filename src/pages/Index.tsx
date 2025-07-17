@@ -12,10 +12,10 @@ const Index: React.FC = () => {
       <div className="container-custom py-16">
         <div className="text-center max-w-2xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-serif font-medium mb-6">
-            Welcome to Nelyluxe Royal Care
+            Welcome to Nelysah Royal Care
           </h1>
           <p className="text-xl text-muted-foreground mb-8">
-            Discover the Nelyluxe Royal Care experience—premium skincare, luxurious beauty, and effortless Paystack payments.
+            Discover the Nelysah Royal Care experience—premium skincare, luxurious beauty, and effortless Paystack payments.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 

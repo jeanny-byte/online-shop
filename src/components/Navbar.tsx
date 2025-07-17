@@ -47,7 +47,7 @@ const Navbar: React.FC = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="text-2xl font-serif font-semibold">
-            Nelyluxe
+            Nelysah
           </Link>
           
           {/* Desktop Navigation */}
@@ -138,7 +138,7 @@ const Navbar: React.FC = () => {
           <div className="container-custom py-5">
             <div className="flex justify-between items-center">
               <Link to="/" className="text-2xl font-serif font-semibold" onClick={() => setIsOpen(false)}>
-                Nelyluxe Royal Care
+                Nelysah Royal Care
               </Link>
               <button onClick={() => setIsOpen(false)}>
                 <X size={24} />

@@ -77,8 +77,8 @@ const ContactPage: React.FC = () => {
                 <div>
                   <h3 className="font-medium mb-1">Email Us</h3>
                   <p className="text-muted-foreground">
-                    <a href="mailto:hello@nelyluxe.com" className="hover:underline">hello@nelyluxe.com</a><br />
-                    <a href="mailto:support@nelyluxe.com" className="hover:underline">support@nelyluxe.com</a>
+                    <a href="mailto:hello@Nelysah.com" className="hover:underline">hello@Nelysah.com</a><br />
+                    <a href="mailto:support@Nelysah.com" className="hover:underline">support@Nelysah.com</a>
                   </p>
                 </div>
               </div>

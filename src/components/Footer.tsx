@@ -9,9 +9,9 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-xl font-serif font-medium mb-4">Nelyluxe Royal Care</h3>
+            <h3 className="text-xl font-serif font-medium mb-4">Nelysah Royal Care</h3>
             <p className="text-muted-foreground mb-4">
-              Luxurious beauty and skincare, curated by Nelyluxe Royal Care for your royal self-care ritual.
+              Luxurious beauty and skincare, curated by Nelysah Royal Care for your royal self-care ritual.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
@@ -40,17 +40,21 @@ const Footer: React.FC = () => {
                 <Link to="/shop" className="text-muted-foreground hover:text-foreground transition-colors">All Products</Link>
               </li>
               <li>
-                <Link to="/shop?category=cleansers" className="text-muted-foreground hover:text-foreground transition-colors">Cleansers</Link>
+                <Link to="/shop?category=cleanser" className="text-muted-foreground hover:text-foreground transition-colors">Cleanser</Link>
               </li>
               <li>
-                <Link to="/shop?category=moisturizers" className="text-muted-foreground hover:text-foreground transition-colors">Moisturizers</Link>
+                <Link to="/shop?category=moisturizer" className="text-muted-foreground hover:text-foreground transition-colors">Moisturizer</Link>
               </li>
               <li>
-                <Link to="/shop?category=serums" className="text-muted-foreground hover:text-foreground transition-colors">Serums</Link>
+                <Link to="/shop?category=serum" className="text-muted-foreground hover:text-foreground transition-colors">Serum</Link>
               </li>
               <li>
-                <Link to="/shop?category=masks" className="text-muted-foreground hover:text-foreground transition-colors">Masks</Link>
+                <Link to="/shop?category=mask" className="text-muted-foreground hover:text-foreground transition-colors">Mask</Link>
               </li>
+              <li>
+                <Link to="/shop?category=toner" className="text-muted-foreground hover:text-foreground transition-colors">Toner</Link>
+              </li>
+              
             </ul>
           </div>
           
@@ -95,7 +99,7 @@ const Footer: React.FC = () => {
         
         <div className="border-t border-border pt-8">
           <p className="text-muted-foreground text-center text-sm">
-            &copy; {new Date().getFullYear()} LSkin. All rights reserved.
+            &copy; {new Date().getFullYear()} Nelysah. All rights reserved.
           </p>
         </div>
       </div>
