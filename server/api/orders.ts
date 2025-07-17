@@ -5,15 +5,16 @@ import { v4 as uuidv4 } from 'uuid';
 export async function createWhatsappOrderHandler(req: Request, res: Response) {
   const {
     customer_name,
-    customer_email,
+    customer_email = '',
     customer_phone,
-    shipping_address,
+    shipping_address = '',
     order_total,
     payment_method,
     tracking_code
   } = req.body;
 
-  if (!customer_name || !customer_email || !customer_phone || !shipping_address || !order_total || !payment_method || !tracking_code) {
+  // Only require the truly compulsory fields
+  if (!customer_name || !customer_phone || !order_total || !payment_method || !tracking_code) {
     res.status(400).json({ error: 'Missing required fields' });
     return;
   }
@@ -55,7 +56,19 @@ export async function createWhatsappOrderHandler(req: Request, res: Response) {
 export async function getOrdersHandler(req: Request, res: Response) {
   const conn = await getConnection();
   try {
-    const [rows] = await conn.query('SELECT * FROM orders');
+    let sql = 'SELECT * FROM orders';
+    const params: any[] = [];
+    let status: string | undefined;
+    if (typeof req.query.status === 'string') {
+      status = req.query.status;
+    } else if (Array.isArray(req.query.status) && typeof req.query.status[0] === 'string') {
+      status = req.query.status[0];
+    }
+    if (status && status !== 'all') {
+      sql += ' WHERE order_status = ?';
+      params.push(status.charAt(0).toUpperCase() + status.slice(1));
+    }
+    const [rows] = await conn.query(sql, params);
     res.status(200).json(rows);
   } catch (error) {
     console.error('Error fetching orders:', error);

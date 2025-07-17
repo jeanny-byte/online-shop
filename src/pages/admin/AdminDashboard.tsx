@@ -36,23 +36,28 @@ const AdminDashboard: React.FC = () => {
   
   useEffect(() => {
     const fetchDashboardData = async () => {
-      try {
-        const res = await fetch('/api/dashboard');
-        if (!res.ok) throw new Error('Failed to fetch dashboard data');
-        const data = await res.json();
-        setStats({
-          totalOrders: data.totalOrders || 0,
-          totalProducts: data.totalProducts || 0,
-          pendingOrders: data.pendingOrders || 0,
-          totalRevenue: data.totalRevenue || 0,
-        });
-        setRecentOrders(data.recentOrders || []);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  try {
+    const token = localStorage.getItem('jwt_token');
+    const res = await fetch('/api/dashboard', {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    });
+    if (!res.ok) throw new Error('Failed to fetch dashboard data');
+    const data = await res.json();
+    setStats({
+      totalOrders: data.totalOrders || 0,
+      totalProducts: data.totalProducts || 0,
+      pendingOrders: data.pendingOrders || 0,
+      totalRevenue: data.totalRevenue || 0,
+    });
+    setRecentOrders(data.recentOrders || []);
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
     
     fetchDashboardData();
@@ -130,7 +135,7 @@ const AdminDashboard: React.FC = () => {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
+                <div className="text-2xl font-bold">  Ghs{Number(stats.totalRevenue).toFixed(2)}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Lifetime store revenue
                 </p>
@@ -163,7 +168,7 @@ const AdminDashboard: React.FC = () => {
                     <TableRow key={order.id}>
                       <TableCell className="font-medium">#{order.tracking_code}</TableCell>
                       <TableCell>{order.customer_name}</TableCell>
-                      <TableCell>${order.order_total.toFixed(2)}</TableCell>
+                      <TableCell>Ghs{order.order_total}</TableCell>
                       <TableCell>
                         <span className={cn("px-2 py-1 rounded-full text-xs", getStatusColor(order.order_status))}>
                           {order.order_status.charAt(0).toUpperCase() + order.order_status.slice(1)}

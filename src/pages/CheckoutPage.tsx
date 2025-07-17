@@ -7,6 +7,7 @@ import { formatOrderForWhatsApp, sendOrderToWhatsApp } from '../lib/orderUtils';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
 
+
 type CheckoutFormData = {
   fullName: string;
   email: string;
@@ -133,6 +134,28 @@ const CheckoutPage: React.FC = () => {
           const adminWhatsappNumber = '233557246424'; // Ghana format, change to your number
           sendOrderToWhatsApp(whatsappMessage, adminWhatsappNumber);
 
+          // Update stock after order is placed
+          try {
+            const stockResponse = await fetch('/api/products/update-stock', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(cart.map(item => ({
+                productId: item.product.id,
+                quantity: item.quantity
+              })))
+            });
+            if (!stockResponse.ok) {
+              throw new Error('Failed to update product stock');
+            }
+          } catch (stockErr) {
+            toast({
+              title: 'Order placed, but stock update failed',
+              description: 'Please contact support if you have issues.',
+              variant: 'destructive',
+            });
+            setIsSubmitting(false);
+            return;
+          }
           clearCart();
           navigate(`/track-order?code=${tracking_code}`);
           return;
@@ -168,6 +191,28 @@ const CheckoutPage: React.FC = () => {
               title: "Redirecting to payment",
               description: "You will be redirected to Hubtel to complete your payment.",
             });
+            // Update stock after initiating payment
+            try {
+              const stockResponse = await fetch('/api/products/update-stock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cart.map(item => ({
+                  productId: item.product.id,
+                  quantity: item.quantity
+                })))
+              });
+              if (!stockResponse.ok) {
+                throw new Error('Failed to update product stock');
+              }
+            } catch (stockErr) {
+              toast({
+                title: 'Order placed, but stock update failed',
+                description: 'Please contact support if you have issues.',
+                variant: 'destructive',
+              });
+              setIsSubmitting(false);
+              return;
+            }
             clearCart();
             window.location.href = result.paymentUrl;
             return;
@@ -250,14 +295,13 @@ const CheckoutPage: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium mb-1">
-                        Email*
+                        Email
                       </label>
                       <input
                         id="email"
                         type="email"
                         className={`w-full p-2 border rounded-md ${errors.email ? 'border-red-500' : 'border-border'}`}
                         {...register('email', { 
-                          required: 'Email is required',
                           pattern: {
                             value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                             message: 'Invalid email address'
@@ -289,13 +333,13 @@ const CheckoutPage: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="address" className="block text-sm font-medium mb-1">
-                      Street Address*
+                      Street Address
                     </label>
                     <input
                       id="address"
                       type="text"
                       className={`w-full p-2 border rounded-md ${errors.address ? 'border-red-500' : 'border-border'}`}
-                      {...register('address', { required: 'Address is required' })}
+                      {...register('address')}
                     />
                     {errors.address && <span className="text-sm text-red-500">{errors.address.message}</span>}
                   </div>
@@ -354,13 +398,13 @@ const CheckoutPage: React.FC = () => {
                     
                     <div>
                       <label htmlFor="zipCode" className="block text-sm font-medium mb-1">
-                        ZIP/Postal Code*
+                        ZIP/Postal Code
                       </label>
                       <input
                         id="zipCode"
                         type="text"
                         className={`w-full p-2 border rounded-md ${errors.zipCode ? 'border-red-500' : 'border-border'}`}
-                        {...register('zipCode', { required: 'ZIP code is required' })}
+                        {...register('zipCode')}
                       />
                       {errors.zipCode && <span className="text-sm text-red-500">{errors.zipCode.message}</span>}
                     </div>

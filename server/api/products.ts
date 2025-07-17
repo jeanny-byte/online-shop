@@ -136,6 +136,46 @@ export async function DeleteProductsHandler(req: Request, res: Response){
   }
 }
 
+// Batch update stock quantities for products
+export async function updateStockBatchHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const updates: { productId: string, quantity: number }[] = req.body;
+  if (!Array.isArray(updates) || updates.length === 0) {
+    res.status(400).json({ error: 'No updates provided' });
+    return;
+  }
+  const conn = await getConnection();
+  try {
+    await conn.beginTransaction();
+    for (const { productId, quantity } of updates) {
+      // Decrement stock only if quantity is positive
+      if (!productId || typeof quantity !== 'number' || quantity <= 0) {
+        await conn.rollback();
+        res.status(400).json({ error: 'Invalid productId or quantity' });
+        return;
+      }
+      // Decrement stock, but prevent negative stock
+      const [result]: any = await conn.query(
+        'UPDATE products SET stock_quantity = GREATEST(stock_quantity - ?, 0) WHERE id = ?',
+        [quantity, productId]
+      );
+      if (result.affectedRows === 0) {
+        await conn.rollback();
+        res.status(404).json({ error: `Product not found: ${productId}` });
+        return;
+      }
+    }
+    await conn.commit();
+    res.status(200).json({ message: 'Stock updated successfully' });
+    return;
+  } catch (error) {
+    await conn.rollback();
+    console.error('Failed to update stock in batch', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  } finally {
+    conn.release();
+  }
+}
+
 //PUT: Update products in database
 export async function UpdateProductsHandler(req: Request, res: Response){
   const conn = await getConnection();
