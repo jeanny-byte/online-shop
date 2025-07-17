@@ -23,7 +23,34 @@ const OrderTrackingPage: React.FC = () => {
   const navigate = useNavigate();
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [progressWidth, setProgressWidth] = useState('0%');
+
+  // Animate progress bar width on mount and when order status changes
+  React.useEffect(() => {
+    if (!orderDetails) {
+      setProgressWidth('0%');
+      return;
+    }
+    let width = '0%';
+    switch (orderDetails.order_status) {
+      case 'pending':
+        width = '0%'; break;
+      case 'processing':
+        width = '33%'; break;
+      case 'shipped':
+        width = '66%'; break;
+      case 'delivered':
+      case 'cancelled':
+        width = '100%'; break;
+      default:
+        width = '0%';
+    }
+    setProgressWidth('0%');
+    // Use requestAnimationFrame to ensure the DOM updates before animating
+    const raf = requestAnimationFrame(() => setProgressWidth(width));
+    return () => cancelAnimationFrame(raf);
+  }, [orderDetails]);
+
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<TrackingFormData>();
   
   // Extract tracking code from URL if present
@@ -153,27 +180,50 @@ const OrderTrackingPage: React.FC = () => {
                   
                   <div className="relative">
                     {/* Progress Bar */}
-                    <div className="absolute top-4 left-4 right-4 h-1 bg-gray-200">
-                      <div 
-                        className="h-1 bg-green-500 transition-all duration-700 ease-in-out" 
-                        style={{ 
-                          width: orderDetails.order_status === 'pending' ? '0%' :
-                                 orderDetails.order_status === 'processing' ? '33%' :
-                                 orderDetails.order_status === 'shipped' ? '66%' :
-                                 orderDetails.order_status === 'delivered' ? '100%' :
-                                 orderDetails.order_status === 'cancelled' ? '100%' : '0%',
-                        }}
-                      ></div>
-                    </div>
+                    {orderDetails && (
+                      <div className="absolute top-4 left-4 right-4 h-1 bg-gray-200">
+                        <div
+                          className={`h-1 transition-all duration-700 ease-in-out ${
+                            orderDetails.order_status === 'cancelled' ? 'bg-red-500' : 'bg-green-500'
+                          }`}
+                          style={{ width: progressWidth }}
+                        ></div>
+                      </div>
+                    )} 
                     
                     {/* Status Steps */}
                     <div className="flex justify-between">
                       {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => {
                         const isCompleted = getStatusStepCompleted(orderDetails.order_status, status);
-                        
+                        const isActive = orderDetails.order_status === status;
+
+                        let colorClass = '';
+                        if (isActive) {
+                          switch (status) {
+                            case 'processing':
+                              colorClass = 'bg-blue-500 text-white';
+                              break;
+                            case 'shipped':
+                              colorClass = 'bg-purple-500 text-white';
+                              break;
+                            case 'delivered':
+                              colorClass = 'bg-green-500 text-white';
+                              break;
+                            case 'cancelled':
+                              colorClass = 'bg-red-500 text-white';
+                              break;
+                            default:
+                              colorClass = 'bg-yellow-500 text-white';
+                          }
+                        } else if (isCompleted) {
+                          colorClass = 'bg-green-500 text-white';
+                        } else {
+                          colorClass = 'bg-gray-200';
+                        }
+
                         return (
                           <div key={status} className="flex flex-col items-center relative z-10">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted ? 'bg-green-500 text-white' : 'bg-gray-200'}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${colorClass}`}>
                               {isCompleted ? '✓' : ''}
                             </div>
                             <span className="text-xs font-medium mt-2 text-center capitalize">
