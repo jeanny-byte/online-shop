@@ -16,6 +16,7 @@ const AdminProducts: React.FC = () => {
     existingImages: [], // URLs of images already in DB
     newImages: [],      // Files newly added
     category: '',
+    brands: '',
     how_to_use: '',
     benefits: [],
     ingredients: [],
@@ -87,6 +88,7 @@ const AdminProducts: React.FC = () => {
       existingImages: [],
       newImages: [],
       category: '',
+      brands: '',
       how_to_use: '',
       benefits: [],
       ingredients: [],
@@ -105,6 +107,7 @@ const AdminProducts: React.FC = () => {
       existingImages: Array.isArray(product.images) ? product.images : [],
       newImages: [],
       category: product.category,
+      brands: product.brands || '',
       how_to_use: product.how_to_use,
       benefits: normalizeArrayField(product.benefits),
       ingredients: normalizeArrayField(product.ingredients),
@@ -167,6 +170,7 @@ const AdminProducts: React.FC = () => {
       form.append('description', formData.description);
       form.append('price', formData.price);
       form.append('category', formData.category);
+      form.append('brands', formData.brands);
       form.append('how_to_use', formData.how_to_use);
       form.append('stock_quantity', formData.stock_quantity);
       form.append('featured', formData.featured ? '1' : '0');
@@ -278,9 +282,25 @@ const AdminProducts: React.FC = () => {
                       <option value="serum">Serum</option>
                       <option value="mask">Mask</option>
                       <option value="sunscreen">Sunscreen</option>
+                      <option value="toner">Toner</option>
+                      <option value="eye cream">Eye Cream</option>
                     </select>
                   </div>
                   
+                  <div>
+                    <label htmlFor="brands" className="block text-sm font-medium mb-1">
+                      Brands
+                    </label>
+                    <input
+                      id="brands"
+                      name="brands"
+                      type="text"
+                      value={formData.brands}
+                      onChange={handleInputChange}
+                      className="w-full p-2 border border-border rounded-md"
+                      placeholder="e.g. Neutrogena, CeraVe"
+                    />
+                  </div>
                   <div>
                     <label htmlFor="stock_quantity" className="block text-sm font-medium mb-1">
                       Stock Quantity*
@@ -308,7 +328,7 @@ const AdminProducts: React.FC = () => {
                       accept="image/*"
                       onChange={handleImageUpload}
                       className="w-full p-2 border border-border rounded-md"
-                      required
+                      required={!currentProduct}
                     />
                     <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                       {formData.existingImages && formData.existingImages.map((img: string, idx: number) => (

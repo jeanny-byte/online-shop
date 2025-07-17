@@ -160,7 +160,7 @@ const AdminOrders: React.FC = () => {
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Regex search: Name, Tracking Code, Phone, Email"
+          placeholder="Search: Name, Tracking Code, Phone, Email"
           className="p-2 border border-border rounded-md w-full max-w-md"
         />
       </div>

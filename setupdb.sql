@@ -10,6 +10,7 @@ CREATE TABLE products (
   image TEXT NULL,
   images LONGTEXT,
   category VARCHAR(100) NOT NULL,
+  brand VARCHAR(100) NOT NULL,
   featured TINYINT(1) DEFAULT 0,
   benefits TEXT,
   ingredients TEXT,
@@ -74,6 +75,9 @@ CREATE TABLE profiles (
   id CHAR(36) PRIMARY KEY,
   full_name VARCHAR(255),
   display_name VARCHAR(255),
+  email VARCHAR(255),
+  phone VARCHAR(255),
+  shipping_address VARCHAR(255),
   avatar_url TEXT,
   website TEXT,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

@@ -6,7 +6,7 @@ export async function submitProductHandler(req: Request, res: Response, next: Ne
   const conn = await getConnection();
   try {
     // Accept images as files (handled by multer)
-    const { name, description, price, category, how_to_use, benefits, ingredients, stock_quantity, featured } = req.body;
+    const { name, description, price, category, brands, how_to_use, benefits, ingredients, stock_quantity, featured } = req.body;
     let existingImages: string[] = [];
     if (req.body.existingImages) {
       try {
@@ -56,6 +56,7 @@ export async function submitProductHandler(req: Request, res: Response, next: Ne
           image,
           JSON.stringify(allImages),
           category,
+          brands,
           how_to_use,
           benefits,
           ingredients,
@@ -80,7 +81,7 @@ export async function getProductHandler(req: Request, res: Response) {
   const { id } = req.params;
   const conn = await getConnection();
   try {
-    const [rows] = await conn.query('SELECT * FROM products WHERE id = ?', [id]);
+    const [rows] = await conn.query('SELECT * FROM products WHERE id = ?', [id]); 
     if (Array.isArray(rows) && rows.length > 0) {
       res.status(200).json(rows[0]);
     } else {
@@ -98,7 +99,7 @@ export async function getProductHandler(req: Request, res: Response) {
 export async function getAllProductsHandler(req: Request, res: Response){
   const conn = await getConnection();
   try {
-    const [rows] = await conn.query('SELECT * FROM products');
+    const [rows] = await conn.query('SELECT * FROM products'); 
     if (Array.isArray(rows) && rows.length > 0){
       // Ensure every product has an images array
       const products = rows.map((row: any) => ({
@@ -181,7 +182,38 @@ export async function UpdateProductsHandler(req: Request, res: Response){
   const conn = await getConnection();
   const { id } = req.params;
   try {
-    const [result]: any = await conn.query('UPDATE products SET name=?, description=?, price=?, image=?, images=?, category=?, how_to_use=?, benefits=?, ingredients=?, stock_quantity=?, featured=? WHERE id=?', [id]);
+    const {
+      name,
+      description,
+      price,
+      image,
+      images,
+      category,
+      brands,
+      how_to_use,
+      benefits,
+      ingredients,
+      stock_quantity,
+      featured
+    } = req.body;
+    const [result]: any = await conn.query(
+      'UPDATE products SET name=?, description=?, price=?, image=?, images=?, category=?, brands=?, how_to_use=?, benefits=?, ingredients=?, stock_quantity=?, featured=? WHERE id=?',
+      [
+        name,
+        description,
+        price,
+        image,
+        images,
+        category,
+        brands,
+        how_to_use,
+        benefits,
+        ingredients,
+        stock_quantity,
+        featured,
+        id
+      ]
+    );
     if (result.affectedRows > 0){
       res.status(200).json({ message: 'Product updated successfully' });
     } else {
