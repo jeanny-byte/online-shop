@@ -15,12 +15,15 @@ interface UserProfile {
   avatar_url?: string;
   website?: string;
   display_name?: string;
+  phone?: string;
+  shipping_address?: string;
 } 
 
 const AccountPage = () => {
   const { user, signOut, isLoading } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [updating, setUpdating] = useState(false);
   
@@ -28,6 +31,10 @@ const AccountPage = () => {
   const [fullName, setFullName] = useState('');
   const [website, setWebsite] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [shippingAddress, setShippingAddress] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user && !isLoading) {
@@ -50,9 +57,13 @@ const AccountPage = () => {
       }
       const data = await res.json();
       setProfile(data);
+      setUserId(data.id || null);
       setFullName(data.full_name || '');
       setWebsite(data.website || '');
       setDisplayName(data.display_name || '');
+      setPhone(data.phone || '');
+      setShippingAddress(data.shipping_address || '');
+      setAvatarUrl(data.avatar_url || null);
     } catch (error) {
       console.error('Unexpected error fetching profile:', error);
       toast({
@@ -70,21 +81,30 @@ const AccountPage = () => {
     if (!user || !user.email) return;
     try {
       setUpdating(true);
-      const updates = {
-        email: user.email,
-        full_name: fullName,
-        website: website,
-        display_name: displayName,
-      };
+      const formData = new FormData();
+      formData.append('id', userId ?? '');
+      formData.append('email', user.email);
+      formData.append('full_name', fullName);
+      formData.append('website', website);
+      formData.append('display_name', displayName);
+      formData.append('phone', phone);
+      formData.append('shipping_address', shippingAddress);
+      if (avatarFile) {
+        formData.append('avatar', avatarFile);
+      }
+      if (avatarUrl) {
+        formData.append('avatar_url', avatarUrl);
+      }
       const res = await fetch('/api/profile', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
+        body: formData,
       });
       if (!res.ok) {
         throw new Error('Failed to update profile');
+      }
+      const result = await res.json();
+      if (result.avatar_url) {
+        setAvatarUrl(result.avatar_url);
       }
       toast({
         title: 'Profile updated',
@@ -102,6 +122,7 @@ const AccountPage = () => {
       setUpdating(false);
     }
   };
+
 
 
   const handleSignOut = async () => {
@@ -178,6 +199,36 @@ const AccountPage = () => {
                 <CardDescription>Update your profile information</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Avatar upload and preview */}
+                <div className="space-y-2">
+                  <Label htmlFor="avatar">Profile Picture</Label>
+                  <div className="flex items-center gap-4">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt="Avatar"
+                        className="rounded-full object-cover"
+                        style={{ width: 64, height: 64 }}
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                        <User className="text-muted-foreground w-8 h-8" />
+                      </div>
+                    )}
+                    <Input
+                      id="avatar"
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        if (e.target.files && e.target.files[0]) {
+                          setAvatarFile(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Upload a profile picture (optional)</p>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input 
@@ -198,13 +249,33 @@ const AccountPage = () => {
                   />
                 </div>
                 
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="website">Website</Label>
                   <Input 
                     id="website" 
                     value={website} 
                     onChange={(e) => setWebsite(e.target.value)} 
                     placeholder="https://example.com" 
+                  />
+                </div> */}
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input 
+                    id="phone" 
+                    value={phone} 
+                    onChange={(e) => setPhone(e.target.value)} 
+                    placeholder="Enter your phone number" 
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="shippingAddress">Shipping Address</Label>
+                  <Input 
+                    id="shippingAddress" 
+                    value={shippingAddress} 
+                    onChange={(e) => setShippingAddress(e.target.value)} 
+                    placeholder="Enter your shipping address" 
                   />
                 </div>
 

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
@@ -36,14 +37,15 @@ const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<CheckoutFormData>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<CheckoutFormData>({
     defaultValues: {
       paymentMethod: 'whatsapp',
       deliveryOption: 'delivery_service'
     }
   });
   
-  const paymentMethod = watch('paymentMethod');
+  const { user } = useAuth();
+const paymentMethod = watch('paymentMethod');
   const city = watch('city') || '';
   const region = watch('state') || '';
   const deliveryOption = watch('deliveryOption') || '';
@@ -54,6 +56,30 @@ const CheckoutPage: React.FC = () => {
   React.useEffect(() => {
     setDeliveryFee(getDeliveryFee(city, region, deliveryOption));
   }, [city, region, deliveryOption]);
+
+  // Autofill user profile data if logged in
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user && user.email) {
+        try {
+          const res = await fetch(`/api/profile/email/${encodeURIComponent(user.email)}`);
+          if (!res.ok) return;
+          const profile = await res.json();
+          if (profile.full_name) setValue('fullName', profile.full_name);
+          if (profile.email) setValue('email', profile.email);
+          if (profile.phone) setValue('phone', profile.phone);
+          if (profile.shipping_address) setValue('address', profile.shipping_address);
+          if (profile.city) setValue('city', profile.city);
+          if (profile.state) setValue('state', profile.state);
+        } catch (error) {
+          // Optionally handle error
+        }
+      }
+    };
+    fetchProfile();
+    // Only run when user changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, setValue]);
 
   const onSubmit = async (data: CheckoutFormData) => {
     if (cart.length === 0) {

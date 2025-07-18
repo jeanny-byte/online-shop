@@ -88,6 +88,8 @@ CREATE TABLE users (
     display_name VARCHAR(255),
     phone VARCHAR(255),
     shipping_address VARCHAR(255),
+    city VARCHAR(255),
+    state VARCHAR(255),
     avatar_url TEXT,
     website TEXT,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
