@@ -15,7 +15,7 @@ interface UserProfile {
   avatar_url?: string;
   website?: string;
   display_name?: string;
-}
+} 
 
 const AccountPage = () => {
   const { user, signOut, isLoading } = useAuth();
@@ -41,33 +41,56 @@ const AccountPage = () => {
   }, [user, isLoading, navigate]);
 
   const fetchProfile = async () => {
-    if (!user) return;
-    
+    if (!user || !user.email) return;
     try {
       setLoadingProfile(true);
-      console.warn('Fetching profile is not implemented');
-      setLoadingProfile(false);
+      const res = await fetch(`/api/profile/email/${encodeURIComponent(user.email)}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+      const data = await res.json();
+      setProfile(data);
+      setFullName(data.full_name || '');
+      setWebsite(data.website || '');
+      setDisplayName(data.display_name || '');
     } catch (error) {
       console.error('Unexpected error fetching profile:', error);
+      toast({
+        title: 'Error fetching profile',
+        description: 'Could not load your profile information.',
+        variant: 'destructive',
+      });
     } finally {
       setLoadingProfile(false);
     }
   };
 
+
   const updateProfile = async () => {
-    if (!user) return;
-    
+    if (!user || !user.email) return;
     try {
       setUpdating(true);
-      
       const updates = {
-        id: user.id,
+        email: user.email,
         full_name: fullName,
         website: website,
         display_name: displayName,
-        updated_at: new Date().toISOString(),
       };
-      console.warn('Updating profile is not implemented');
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) {
+        throw new Error('Failed to update profile');
+      }
+      toast({
+        title: 'Profile updated',
+        description: 'Your profile has been updated successfully.',
+      });
+      fetchProfile(); // Refresh profile after update
     } catch (error) {
       console.error('Unexpected error updating profile:', error);
       toast({
@@ -79,6 +102,7 @@ const AccountPage = () => {
       setUpdating(false);
     }
   };
+
 
   const handleSignOut = async () => {
     await signOut();
@@ -117,7 +141,7 @@ const AccountPage = () => {
                   <div>
                     <p className="text-sm font-medium">Name</p>
                     <p className="text-sm text-muted-foreground">
-                      {profile?.full_name || user?.user_metadata?.full_name || 'Not set'}
+                      {profile?.full_name || profile?.display_name || user?.email || 'Not set'}
                     </p>
                   </div>
                 </div>

@@ -52,6 +52,7 @@ export async function signUpHandler(req: Request, res: Response, next: NextFunct
       'SELECT id FROM users WHERE email = ?',
       [email]
     );
+    
     if (Array.isArray(existing) && existing.length > 0) {
       res.status(409).json({ error: 'Email already registered' });
       return;
@@ -62,6 +63,7 @@ export async function signUpHandler(req: Request, res: Response, next: NextFunct
       'INSERT INTO users (email, password, id) VALUES (?, ?, UUID())',
       [email, hashedPassword]
     );
+    
     res.status(201).json({ message: 'Account created' });
   } catch (error) {
     // Always return JSON error

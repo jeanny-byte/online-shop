@@ -35,6 +35,9 @@ function asyncHandler(
 
 
 // API routes
+import profileRouter from './api/profile';
+
+app.use('/api/profile', profileRouter);
 app.get('/api/testimonials', asyncHandler(require('./api/testimonials').getTestimonialsHandler));
 app.post('/api/testimonials', verifyJWT, asyncHandler(require('./api/testimonials').submitTestimonialHandler));
 app.get('/api/dashboard', verifyJWT, requireAdmin, asyncHandler(dashboardHandler));

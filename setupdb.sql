@@ -80,23 +80,17 @@ CREATE TABLE blog_posts (
 );
 
 
--- Profiles table
-CREATE TABLE profiles (
-  id CHAR(36) PRIMARY KEY,
-  full_name VARCHAR(255),
-  display_name VARCHAR(255),
-  email VARCHAR(255),
-  phone VARCHAR(255),
-  shipping_address VARCHAR(255),
-  avatar_url TEXT,
-  website TEXT,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
 CREATE TABLE users (
     id CHAR(36) PRIMARY KEY,         -- UUID (CHAR(36) for string UUID)
     email VARCHAR(255) NOT NULL UNIQUE,       -- User email, unique
-    password VARCHAR(255) NOT NULL,           -- Hashed password
+    password VARCHAR(255) NOT NULL,           -- Hashed 
+    full_name VARCHAR(255),
+    display_name VARCHAR(255),
+    phone VARCHAR(255),
+    shipping_address VARCHAR(255),
+    avatar_url TEXT,
+    website TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Optional: track when user was created
 );
 -- Indexes
