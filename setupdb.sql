@@ -1,5 +1,5 @@
 -- MySQL-compatible schema for Luxe Skincare Application
-use Nelysahdb;
+use nelysahdb;
 
 -- Products table
 CREATE TABLE products (

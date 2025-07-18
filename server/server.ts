@@ -11,7 +11,7 @@ import { verifyJWT, requireAdmin } from './middleware/auth';
 import dotenv from 'dotenv';
 dotenv.config();
 import { trackOrderHandler } from './api/orderTracking';
-
+import { testDbConnectionHandler } from './api/testDbConnection';
 const app = express();
 
 
@@ -59,6 +59,7 @@ app.get('/api/orders', asyncHandler(getOrdersHandler));
 app.put('/api/orders/:orderId', asyncHandler(updateOrderStatusHandler));
 // Health check
 app.get('/api/health', (req, res) => { res.json({ status: 'ok' }); });
+app.get('/api/test-db-connection', asyncHandler(testDbConnectionHandler));
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
