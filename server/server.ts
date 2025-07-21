@@ -5,7 +5,7 @@ import { dashboardHandler } from './api/dashboard';
 import { createHubtelPaymentHandler } from './api/payments';
 import { DeleteProductsHandler, getAllProductsHandler, getProductHandler, submitProductHandler, updateStockBatchHandler } from './api/products';
 import { upload } from './upload';
-import { getOrdersHandler, updateOrderStatusHandler } from './api/orders';
+import { getOrdersHandler, updateOrderStatusHandler, getOrdersByUserEmailHandler } from './api/orders';
 import { signInHandler, signUpHandler, checkAdminHandler } from './api/auth';
 import { verifyJWT, requireAdmin } from './middleware/auth';
 import dotenv from 'dotenv';
@@ -56,6 +56,7 @@ app.post('/api/auth/signup', asyncHandler(signUpHandler));
 app.get('/api/auth/check-admin', verifyJWT, asyncHandler(checkAdminHandler));
 app.get('/api/order-tracking/:trackingCode', asyncHandler(trackOrderHandler));
 app.get('/api/orders', asyncHandler(getOrdersHandler));
+app.get('/api/orders/user/:email', asyncHandler(getOrdersByUserEmailHandler));
 app.put('/api/orders/:orderId', asyncHandler(updateOrderStatusHandler));
 // Health check
 app.get('/api/health', (req, res) => { res.json({ status: 'ok' }); });

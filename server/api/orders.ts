@@ -74,6 +74,41 @@ export async function createWhatsappOrderHandler(req: Request, res: Response) {
 }
 
 // GET: Fetch all orders
+export async function getOrdersByUserEmailHandler(req: Request, res: Response) {
+  const { email } = req.params;
+  if (!email) {
+    res.status(400).json({ error: 'Email is required' });
+    return;
+  }
+  const conn = await getConnection();
+  try {
+    // Get all orders for this user
+    const [orders] = await conn.query(
+      'SELECT id, order_status, tracking_code, created_at, updated_at, order_total FROM orders WHERE customer_email = ? ORDER BY created_at DESC',
+      [email]
+    );
+    // For each order, get its items
+    for (const order of orders as any[]) {
+      const [items] = await conn.query(
+        `SELECT oi.product_id, p.name as product_name, oi.quantity, oi.price_per_item,
+                (oi.quantity * oi.price_per_item) as total_price
+         FROM order_items oi
+         LEFT JOIN products p ON oi.product_id = p.id
+         WHERE oi.order_id = ?`,
+        [order.id]
+      );
+      order.items = items;
+    }
+    res.status(200).json({ orders });
+  } catch (error) {
+    console.error('Error fetching orders by user email:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  } finally {
+    conn.release();
+  }
+}
+
+
 export async function getOrdersHandler(req: Request, res: Response) {
   const conn = await getConnection();
   try {

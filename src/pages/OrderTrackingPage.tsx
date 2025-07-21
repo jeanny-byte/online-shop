@@ -1,5 +1,8 @@
 
 import React, { useState } from 'react';
+
+// Use API URL from .env
+const API_URL = import.meta.env.VITE_API_URL;
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
@@ -70,7 +73,7 @@ const OrderTrackingPage: React.FC = () => {
     
     try {
       // Fetch order tracking info from backend API
-      const response = await fetch(`/api/order-tracking/${data.trackingCode}`);
+      const response = await fetch(`${API_URL}/api/order-tracking/${data.trackingCode}`);
       if (!response.ok) {
         setOrderDetails(null);
         return;

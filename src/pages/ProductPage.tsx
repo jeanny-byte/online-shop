@@ -1,5 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
+
+// Use API URL from .env
+const API_URL = import.meta.env.VITE_API_URL;
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Check, Heart, Share, ShoppingBag } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -38,7 +41,7 @@ const ProductPage: React.FC = () => {
   const fetchProduct = async (productId: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/products/${productId}`);
+      const res = await fetch(`${API_URL}/api/products/${productId}`);
       if (!res.ok) throw new Error('Failed to fetch product');
       const prod = await res.json();
       setProduct(prod);

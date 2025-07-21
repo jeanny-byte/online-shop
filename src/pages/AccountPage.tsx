@@ -1,5 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
+
+// Use API URL from .env
+const API_URL = import.meta.env.VITE_API_URL;
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -51,7 +54,7 @@ const AccountPage = () => {
     if (!user || !user.email) return;
     try {
       setLoadingProfile(true);
-      const res = await fetch(`/api/profile/email/${encodeURIComponent(user.email)}`);
+      const res = await fetch(`${API_URL}/api/profile/email/${encodeURIComponent(user.email)}`);
       if (!res.ok) {
         throw new Error('Failed to fetch profile');
       }
@@ -95,7 +98,7 @@ const AccountPage = () => {
       if (avatarUrl) {
         formData.append('avatar_url', avatarUrl);
       }
-      const res = await fetch('/api/profile', {
+      const res = await fetch(`${API_URL}/api/profile`, {
         method: 'PUT',
         body: formData,
       });
@@ -146,6 +149,11 @@ const AccountPage = () => {
   return (
     <div className="min-h-screen pt-24">
       <div className="container-custom py-8">
+  <div className="flex justify-end mb-6">
+    <Button variant="outline" onClick={() => navigate('/user-orders')}>
+      My Orders
+    </Button>
+  </div>
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl font-serif font-medium mb-8">My Account</h1>
           

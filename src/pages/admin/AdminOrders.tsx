@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+
+// Use API URL from .env
+const API_URL = import.meta.env.VITE_API_URL;
 import { toast } from '@/hooks/use-toast';
 import AdminLayout from './components/AdminLayout';
 
@@ -51,7 +54,7 @@ const [endDate, setEndDate] = useState<string>('');
       if (filter && filter !== 'all') {
         url += `?status=${encodeURIComponent(filter)}`;
       }
-      const res = await fetch(url);
+      const res = await fetch(url.startsWith('/api') ? `${API_URL}${url}` : url);
       if (!res.ok) throw new Error('Failed to fetch orders');
       const data = await res.json();
       setOrders(data || []);
@@ -78,7 +81,7 @@ const [endDate, setEndDate] = useState<string>('');
   };
   const mappedStatus = statusMap[newStatus.toLowerCase()] || newStatus;
   try {
-    const res = await fetch(`/api/orders/${orderId}`, {
+    const res = await fetch(`${API_URL}/api/orders/${orderId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: mappedStatus })

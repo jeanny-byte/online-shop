@@ -1,5 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
+
+// Use API URL from .env
+const API_URL = import.meta.env.VITE_API_URL;
 import { Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -32,7 +35,7 @@ const TestimonialSection: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch('/api/testimonials');
+      const res = await fetch(`${API_URL}/api/testimonials`);
       if (!res.ok) throw new Error('Failed to load testimonials');
       const data = await res.json();
       setTestimonials(data);
@@ -56,7 +59,7 @@ const TestimonialSection: React.FC = () => {
     setSubmitSuccess(null);
     try {
       const token = localStorage.getItem('jwt_token');
-      const res = await fetch('/api/testimonials', {
+      const res = await fetch(`${API_URL}/api/testimonials`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

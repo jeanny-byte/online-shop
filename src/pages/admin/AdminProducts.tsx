@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+
+// Use API URL from .env
+const API_URL = import.meta.env.VITE_API_URL;
 import { toast } from '@/hooks/use-toast';
 import AdminLayout from './components/AdminLayout';
 
@@ -63,7 +66,7 @@ const AdminProducts: React.FC = () => {
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/products');
+      const res = await fetch(`${API_URL}/api/products`);
       if (!res.ok) throw new Error('Failed to fetch products');
       const data = await res.json();
       setProducts(data || []);
@@ -122,7 +125,7 @@ const AdminProducts: React.FC = () => {
       return;
     }
     try {
-      const res = await fetch(`/api/products/${id}`, {
+      const res = await fetch(`${API_URL}/api/products/${id}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Failed to delete product');
@@ -188,7 +191,7 @@ const AdminProducts: React.FC = () => {
       if (currentProduct && currentProduct.id) {
         form.append('id', currentProduct.id);
       }
-      const res = await fetch('/api/products', {
+      const res = await fetch(`${API_URL}/api/products`, {
         method: currentProduct && currentProduct.id ? 'PUT' : 'POST',
         body: form,
       });

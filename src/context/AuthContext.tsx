@@ -13,6 +13,9 @@ interface Session {
 }
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+
+// Use API URL from .env
+const API_URL = import.meta.env.VITE_API_URL;
 import { toast } from '@/hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -48,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
     try {
-      const response = await fetch('/api/auth/check-admin', {
+      const response = await fetch(`${API_URL}/api/auth/check-admin`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (!response.ok) {
@@ -81,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/auth/signin', {
+      const response = await fetch(`${API_URL}/api/auth/signin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -120,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/auth/signup', {
+      const response = await fetch(`${API_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

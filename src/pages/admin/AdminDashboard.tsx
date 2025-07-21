@@ -1,6 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+
+// Use API URL from .env
+const API_URL = import.meta.env.VITE_API_URL;
 
 import AdminLayout from './components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +40,7 @@ const AdminDashboard: React.FC = () => {
     const fetchDashboardData = async () => {
   try {
     const token = localStorage.getItem('jwt_token');
-    const res = await fetch('/api/dashboard', {
+    const res = await fetch(`${API_URL}/api/dashboard`, {
       headers: {
         Authorization: token ? `Bearer ${token}` : '',
       },

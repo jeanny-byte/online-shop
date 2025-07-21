@@ -7,7 +7,7 @@ import { useCart } from '../context/CartContext';
 import { formatOrderForWhatsApp, sendOrderToWhatsApp } from '../lib/orderUtils';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
-
+const API_URL = import.meta.env.VITE_API_URL;
 
 type CheckoutFormData = { 
   fullName: string; 
@@ -27,9 +27,9 @@ const CheckoutPage: React.FC = () => {
     if (deliveryOption !== 'delivery_service') return 0;
     const cityLower = city.trim().toLowerCase();
     const regionLower = region.trim().toLowerCase();
-    if (cityLower === 'accra') return 45;
-    if (cityLower === 'tema' || cityLower === 'nsawam') return 55;
-    if (regionLower !== 'greater accra') return 30;
+    if (regionLower === 'greater accra' && cityLower !== 'accra') return 45;
+    if (regionLower === 'greater accra' && cityLower === 'tema' || cityLower === 'nsawam') return 55;
+    if (regionLower !== 'greater accra' ) return 45; 
     return 0;
   }
 
@@ -62,7 +62,7 @@ const paymentMethod = watch('paymentMethod');
     const fetchProfile = async () => {
       if (user && user.email) {
         try {
-          const res = await fetch(`/api/profile/email/${encodeURIComponent(user.email)}`);
+          const res = await fetch(`${API_URL}/api/profile/email/${encodeURIComponent(user.email)}`);
           if (!res.ok) return;
           const profile = await res.json();
           if (profile.full_name) setValue('fullName', profile.full_name);
@@ -129,7 +129,7 @@ const paymentMethod = watch('paymentMethod');
 
         // 1. Store order in database
         try {
-          const response = await fetch('/api/orders/whatsapp', {
+          const response = await fetch(`${API_URL}/api/orders/whatsapp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -204,7 +204,7 @@ const paymentMethod = watch('paymentMethod');
       if (data.paymentMethod === 'hubtel') {
         // Online payment via Hubtel
         try {
-          const response = await fetch('/api/payments/hubtel', {
+          const response = await fetch(`${API_URL}/api/payments/hubtel`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

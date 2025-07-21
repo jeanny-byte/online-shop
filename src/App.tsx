@@ -16,6 +16,7 @@ import ContactPage from "./pages/ContactPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderTrackingPage from "./pages/OrderTrackingPage";
+import UserOrdersPage from "./pages/UserOrdersPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import AccountPage from "./pages/AccountPage";
@@ -65,6 +66,7 @@ const App = () => {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/account" element={<AccountPage />} />
+<Route path="/user-orders" element={<UserOrdersPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 
