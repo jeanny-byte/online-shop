@@ -1,10 +1,52 @@
-# Welcome to your Lovable project
+# Nelysah Beauty Boutique
 
-## Project info
+A modern e-commerce platform for beauty products with admin and driver management capabilities.
 
-**URL**: https://lovable.dev/projects/81a3c9a4-6e5e-40ee-b626-f25363e70396
+## Project Overview
 
-## How can I edit this code?
+Nelysah Beauty Boutique is a full-stack e-commerce application with the following features:
+
+- User authentication (login/signup)
+- Product catalog and shopping cart
+- Order management
+- Admin dashboard for product and order management
+- **Driver role** for order delivery management
+- Responsive design for all devices
+
+### User Roles
+
+1. **Customers**: Can browse products, place orders, and track their orders
+2. **Drivers**: Can view assigned orders and update delivery status
+3. **Admins**: Full access to all administrative functions
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 16+ and npm
+- PostgreSQL database
+- Git
+
+## Driver Role Features
+
+### Backend
+- JWT authentication with driver role claim
+- Protected API endpoints for driver operations
+- Order status management endpoints
+- Driver-specific order queries
+
+### Frontend
+- Protected driver dashboard route
+- Order management interface for drivers
+- Real-time order status updates
+- Responsive design for mobile use
+
+### Database
+- `is_driver` column in users table
+- Order status tracking
+- Driver assignment tracking
+
+## Setup Instructions
 
 There are several ways of editing your application.
 

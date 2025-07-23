@@ -32,8 +32,10 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminBlogPosts from "./pages/admin/AdminBlogPosts";
 import AdminBlogEditor from "./pages/admin/AdminBlogEditor";
+import DriverDashboard from "./pages/DriverDashboard";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import DriverRoute from "./components/DriverRoute";
 
 
 import React, { useEffect } from 'react';
@@ -79,9 +81,16 @@ const App = () => {
                 
                 {/* Admin Routes */}
                 <Route path="/admin" element={
-                  <ProtectedRoute>
+                  <ProtectedRoute adminOnly>
                     <AdminDashboard />
                   </ProtectedRoute>
+                } />
+
+                {/* Driver Routes */}
+                <Route path="/driver" element={
+                  <DriverRoute>
+                    <DriverDashboard />
+                  </DriverRoute>
                 } />
                 <Route path="/admin/products" element={
                   <ProtectedRoute>

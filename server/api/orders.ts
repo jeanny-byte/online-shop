@@ -1,6 +1,7 @@
 import { getConnection } from '../lib/db';
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import jwt from 'jsonwebtoken';
 
 export async function createWhatsappOrderHandler(req: Request, res: Response) {
   const {
@@ -108,6 +109,73 @@ export async function getOrdersByUserEmailHandler(req: Request, res: Response) {
   }
 }
 
+
+export async function getDriverOrdersHandler(req: Request, res: Response) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  try {
+    // Verify the token and get the user ID
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { id: string };
+    const driverId = decoded.id;
+
+    const conn = await getConnection();
+    try {
+      // First, verify the user is a driver
+      const [userRows] = await conn.query(
+        'SELECT is_driver FROM users WHERE id = ?',
+        [driverId]
+      );
+      
+      const user = (userRows as any[])[0];
+      if (!user || !user.is_driver) {
+        return res.status(403).json({ error: 'Access denied. Driver privileges required.' });
+      }
+
+      // Get all orders assigned to this driver
+      const [orders] = await conn.query(
+        `SELECT o.*, 
+          (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
+         FROM orders o
+         ORDER BY 
+           CASE 
+             WHEN o.order_status = 'Pending' THEN 1
+             WHEN o.order_status = 'Processing' THEN 2
+             WHEN o.order_status = 'Shipped' THEN 3
+             WHEN o.order_status = 'Delivered' THEN 4
+             ELSE 5
+           END,
+           o.updated_at DESC`,
+      );
+
+      // Get order items for each order
+      const ordersWithItems = await Promise.all(
+        (orders as any[]).map(async (order) => {
+          const [items] = await conn.query(
+            `SELECT oi.*, p.name as product_name, p.image 
+             FROM order_items oi
+             LEFT JOIN products p ON oi.product_id = p.id
+             WHERE oi.order_id = ?`,
+            [order.id]
+          );
+          return { ...order, items };
+        })
+      );
+
+      res.status(200).json({ orders: ordersWithItems });
+    } catch (error) {
+      console.error('Error fetching driver orders:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    } finally {
+      conn.release();
+    }
+  } catch (error) {
+    console.error('Invalid token:', error);
+    res.status(401).json({ error: 'Invalid token' });
+  }
+}
 
 export async function getOrdersHandler(req: Request, res: Response) {
   const conn = await getConnection();

@@ -63,6 +63,7 @@ CREATE TABLE admin_users (
   email VARCHAR(255) UNIQUE NOT NULL,
   is_admin TINYINT(1) DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  
 );
 -- Blog posts table
 CREATE TABLE blog_posts (
@@ -92,6 +93,7 @@ CREATE TABLE users (
     state VARCHAR(255),
     avatar_url TEXT,
     website TEXT,
+    is_driver TINYINT(1) DEFAULT 0,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Optional: track when user was created
 );

@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, ShoppingBag, X, User } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
+import { useRoles } from '@/hooks/use-roles';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -15,6 +16,7 @@ const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, signOut, isAdmin } = useAuth();
+  const { isDriver } = useRoles();
   const navigate = useNavigate();
   
   const handleSignOut = async () => {
@@ -69,6 +71,11 @@ const Navbar: React.FC = () => {
                 Admin
               </Link>
             )}
+            {isDriver && (
+              <Link to="/driver" className="text-foreground hover:text-primary-foreground transition-colors font-medium">
+                Driver
+              </Link>
+            )}
           </div>
           
           {/* Shopping Bag & Profile Menu & Mobile Menu Button */}
@@ -100,6 +107,13 @@ const Navbar: React.FC = () => {
                       <DropdownMenuItem asChild>
                         <Link to="/admin" className="cursor-pointer w-full">
                           Admin Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {isDriver && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/driver" className="cursor-pointer w-full">
+                          Driver Dashboard
                         </Link>
                       </DropdownMenuItem>
                     )}
@@ -158,8 +172,13 @@ const Navbar: React.FC = () => {
                 Contact
               </Link>
               {isAdmin && (
-                <Link to="/admin" className="text-lg font-medium" onClick={() => setIsOpen(false)}>
+                <Link to="/admin" className="text-lg font-medium block py-2" onClick={() => setIsOpen(false)}>
                   Admin Dashboard
+                </Link>
+              )}
+              {isDriver && (
+                <Link to="/driver" className="text-lg font-medium block py-2" onClick={() => setIsOpen(false)}>
+                  Driver Dashboard
                 </Link>
               )}
               <Link to="/cart" className="text-lg font-medium flex items-center" onClick={() => setIsOpen(false)}>

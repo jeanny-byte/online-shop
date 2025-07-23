@@ -1,6 +1,8 @@
 interface User {
   id: string;
   email: string;
+  name: string;
+  is_driver?: boolean;
   app_metadata: {
     provider: string;
   };
@@ -24,9 +26,11 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isAdmin: boolean;
+  isDriver: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  checkDriverStatus: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,6 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDriver, setIsDriver] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -61,7 +66,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       const data = await response.json();
       setIsAdmin(!!data.is_admin);
-      // Optionally, fetch user info from token or backend if needed
       return !!data.is_admin;
     } catch {
       setIsAdmin(false);
@@ -70,11 +74,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // On mount, check for JWT and validate admin status
+  const checkDriverStatus = async () => {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) {
+      setIsDriver(false);
+      return false;
+    }
+    try {
+      const response = await fetch(`${API_URL}/api/auth/is-driver`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        setIsDriver(false);
+        return false;
+      }
+      const data = await response.json();
+      const driverStatus = !!data.is_driver;
+      setIsDriver(driverStatus);
+      
+      // Update user object with driver status
+      setUser(prev => prev ? { ...prev, is_driver: driverStatus } : null);
+      
+      return driverStatus;
+    } catch {
+      setIsDriver(false);
+      return false;
+    }
+  };
+
+  // On mount, check for JWT and validate roles
   React.useEffect(() => {
     (async () => {
       setIsLoading(true);
-      await checkAdminStatus();
+      await Promise.all([
+        checkAdminStatus(),
+        checkDriverStatus()
+      ]);
       setIsLoading(false);
     })();
     // eslint-disable-next-line
@@ -93,22 +128,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!response.ok) {
         setUser(null);
         setIsAdmin(false);
+        setIsDriver(false);
         localStorage.removeItem('jwt_token');
         return { error: result.error || 'Invalid credentials' };
       }
-      setUser({
+      
+      const userData = {
         id: result.user.id,
+        name: result.user.name || result.user.email.split('@')[0], // Use name if available, otherwise use first part of email
         email: result.user.email,
+        is_driver: result.user.is_driver || false,
         app_metadata: { provider: 'local' },
         aud: 'authenticated',
         created_at: new Date().toISOString(),
-      });
-      setIsAdmin(result.user.is_admin);
+      };
+      
+      setUser(userData);
+      setIsAdmin(!!result.user.is_admin);
+      setIsDriver(!!result.user.is_driver);
+      
       if (result.token) {
         localStorage.setItem('jwt_token', result.token);
       }
-      // Refresh admin status after login
-      await checkAdminStatus();
+      
+      // Refresh roles after login
+      await Promise.all([
+        checkAdminStatus(),
+        checkDriverStatus()
+      ]);
+      
       return { error: null };
     } catch (error: any) {
       setUser(null);
@@ -157,6 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setSession(null);
       setIsAdmin(false);
+      setIsDriver(false);
       toast({
         title: "Signed out",
         description: "You have been logged out successfully",
@@ -182,9 +231,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       session,
       isLoading,
       isAdmin,
+      isDriver,
       signIn,
       signUp,
       signOut,
+      checkDriverStatus,
     }}>
       {children}
     </AuthContext.Provider>

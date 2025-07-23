@@ -9,9 +9,9 @@ export async function signInHandler(req: Request, res: Response, next: NextFunct
   const { email, password } = req.body;
   const conn = await getConnection();
   try {
-    // Authenticate user from users table
+    // Authenticate user from users table with is_driver field
     const [rows] = await conn.query(
-      'SELECT id, email, password FROM users WHERE email = ?',
+      'SELECT id, email, password, is_driver, full_name FROM users WHERE email = ?',
       [email]
     );
     if (!Array.isArray(rows) || rows.length === 0) {
@@ -32,10 +32,27 @@ export async function signInHandler(req: Request, res: Response, next: NextFunct
     );
     const adminRowsArray = adminRows as { is_admin: boolean }[];
     const is_admin = Array.isArray(adminRowsArray) && adminRowsArray.length > 0 ? adminRowsArray[0].is_admin : false;
+    
+    // Get driver status from users table
+    const is_driver = !!user.is_driver;
 
-    // Issue JWT
-    const token = jwt.sign({ id: user.id, is_admin }, JWT_SECRET, { expiresIn: '1d' });
-    res.json({ user: { id: user.id, email: user.email, is_admin }, token });
+    // Issue JWT with both admin and driver roles
+    const token = jwt.sign({ 
+      id: user.id, 
+      is_admin, 
+      is_driver 
+    }, JWT_SECRET, { expiresIn: '1d' });
+    
+    res.json({ 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        name: user.full_name,
+        is_admin,
+        is_driver 
+      }, 
+      token 
+    });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   } finally {
@@ -85,6 +102,25 @@ export async function checkAdminHandler(req: Request, res: Response, next: NextF
     res.json({ is_admin: !!payload.is_admin }); return;
   } catch {
     res.status(401).json({ error: 'Invalid token' }); return;
+  }
+}
+
+export async function isDriverHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(400).json({ error: 'Missing or invalid authorization header' });
+    return;
+  }
+  
+  const token = authHeader.split(' ')[1];
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as any;
+    // Check if the token has a driver role
+    // Note: You'll need to include the driver role in the JWT token when the driver logs in
+    const is_driver = !!payload.is_driver;
+    res.json({ is_driver });
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid or expired token' });
   }
 }
 

@@ -4,7 +4,11 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme-secret-key';
 
 export interface AuthRequest extends ExpressRequest {
-  user?: { id: string; is_admin: boolean };
+  user?: { 
+    id: string; 
+    is_admin: boolean; 
+    is_driver: boolean 
+  };
 }
 
 export function verifyJWT(req: AuthRequest, res: Response, next: NextFunction): void {
@@ -15,8 +19,16 @@ export function verifyJWT(req: AuthRequest, res: Response, next: NextFunction): 
   }
   const token = authHeader.split(' ')[1];
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as { id: string; is_admin: boolean };
-    req.user = payload;
+    const payload = jwt.verify(token, JWT_SECRET) as { 
+      id: string; 
+      is_admin: boolean; 
+      is_driver: boolean 
+    };
+    req.user = {
+      id: payload.id,
+      is_admin: !!payload.is_admin,
+      is_driver: !!payload.is_driver
+    };
     next();
   } catch {
     res.status(401).json({ error: 'Invalid token' });
@@ -27,6 +39,22 @@ export function verifyJWT(req: AuthRequest, res: Response, next: NextFunction): 
 export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction): void {
   if (!req.user || !req.user.is_admin) {
     res.status(403).json({ error: 'Admin access required' });
+    return;
+  }
+  next();
+}
+
+export function requireDriver(req: AuthRequest, res: Response, next: NextFunction): void {
+  if (!req.user || !req.user.is_driver) {
+    res.status(403).json({ error: 'Driver access required' });
+    return;
+  }
+  next();
+}
+
+export function requireAdminOrDriver(req: AuthRequest, res: Response, next: NextFunction): void {
+  if (!req.user || (!req.user.is_admin && !req.user.is_driver)) {
+    res.status(403).json({ error: 'Admin or driver access required' });
     return;
   }
   next();

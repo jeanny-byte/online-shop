@@ -5,8 +5,8 @@ import { dashboardHandler } from './api/dashboard';
 import { createHubtelPaymentHandler } from './api/payments';
 import { DeleteProductsHandler, getAllProductsHandler, getProductHandler, submitProductHandler, updateStockBatchHandler } from './api/products';
 import { upload } from './upload';
-import { getOrdersHandler, updateOrderStatusHandler, getOrdersByUserEmailHandler } from './api/orders';
-import { signInHandler, signUpHandler, checkAdminHandler } from './api/auth';
+import { getOrdersHandler, updateOrderStatusHandler, getOrdersByUserEmailHandler, getDriverOrdersHandler } from './api/orders';
+import { signInHandler, signUpHandler, checkAdminHandler, isDriverHandler } from './api/auth';
 import { verifyJWT, requireAdmin } from './middleware/auth';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -25,9 +25,9 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // Utility to wrap async route handlers
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 
-function asyncHandler(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<void>
-): RequestHandler {
+type AsyncRequestHandler = (req: Request, res: Response, next: NextFunction) => Promise<any>;
+
+function asyncHandler(fn: AsyncRequestHandler): RequestHandler {
   return function (req, res, next) {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
@@ -54,9 +54,11 @@ app.delete('/api/products/:id', asyncHandler(DeleteProductsHandler));
 app.post('/api/auth/signin', asyncHandler(signInHandler));
 app.post('/api/auth/signup', asyncHandler(signUpHandler));
 app.get('/api/auth/check-admin', verifyJWT, asyncHandler(checkAdminHandler));
+app.get('/api/auth/is-driver', verifyJWT, asyncHandler(isDriverHandler));
 app.get('/api/order-tracking/:trackingCode', asyncHandler(trackOrderHandler));
 app.get('/api/orders', asyncHandler(getOrdersHandler));
 app.get('/api/orders/user/:email', asyncHandler(getOrdersByUserEmailHandler));
+app.get('/api/orders/driver', verifyJWT, asyncHandler(getDriverOrdersHandler));
 app.put('/api/orders/:orderId', asyncHandler(updateOrderStatusHandler));
 // Health check
 app.get('/api/health', (req, res) => { res.json({ status: 'ok' }); });
