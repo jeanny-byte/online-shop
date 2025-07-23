@@ -22,6 +22,26 @@ const TestimonialSection: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Carousel state
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const testimonialsPerPage = 3;
+
+  // Compute visible testimonials
+  const visibleTestimonials = testimonials.length > 0
+    ? Array.from({ length: Math.min(testimonialsPerPage, testimonials.length) }, (_, i) =>
+        testimonials[(currentIndex + i) % testimonials.length]
+      )
+    : [];
+
+  // Auto-advance effect
+  useEffect(() => {
+    if (testimonials.length <= testimonialsPerPage) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + testimonialsPerPage) % testimonials.length);
+    }, 3000); // 3 seconds
+    return () => clearInterval(interval);
+  }, [testimonials, testimonialsPerPage]);
+
   // Form state
   const [quote, setQuote] = useState('');
   const [rating, setRating] = useState(5);
@@ -151,51 +171,54 @@ const TestimonialSection: React.FC = () => {
         )}
 
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {loading ? (
-            <div className="col-span-full text-center">Loading testimonials...</div>
-          ) : error ? (
-            <div className="col-span-full text-center text-red-500">{error}</div>
-          ) : testimonials.length === 0 ? (
-            <div className="col-span-full text-center text-muted-foreground">No testimonials available yet.</div>
-          ) : (
-            testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-Nelysah-lightGray p-6 rounded-lg">
-                {/* Rating */}
-                <div className="flex mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={16}
-                      className={`${i < testimonial.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                    />
-                  ))}
-                </div>
-                {/* Quote */}
-                <blockquote className="text-foreground mb-4">"{testimonial.quote}"</blockquote>
-                {/* Customer */}
-                <div className="flex items-center">
-                  {testimonial.image ? (
-                    <img 
-                      src={testimonial.image}
-                      alt={testimonial.name}
-                      className="w-10 h-10 rounded-full object-cover mr-3"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-Nelysah-pink flex items-center justify-center mr-3">
-                      <span className="text-primary-foreground font-medium">
-                        {testimonial.name.charAt(0)}
-                      </span>
+        {/* Testimonial Carousel - 1 row, 3 columns, auto-slide */}
+        <div className="overflow-hidden">
+          <div className="flex transition-transform duration-700 ease-in-out" style={{ minWidth: '100%', gap: '2rem' }}>
+            {loading ? (
+              <div className="w-full text-center">Loading testimonials...</div>
+            ) : error ? (
+              <div className="w-full text-center text-red-500">{error}</div>
+            ) : testimonials.length === 0 ? (
+              <div className="w-full text-center text-muted-foreground">No testimonials available yet.</div>
+            ) : (
+              visibleTestimonials.map((testimonial, index) => (
+                <div key={index} className="bg-Nelysah-lightGray p-6 rounded-lg flex-1 min-w-0 max-w-sm mx-auto">
+                  {/* Rating */}
+                  <div className="flex mb-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={16}
+                        className={`${i < testimonial.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                      />
+                    ))}
+                  </div>
+                  {/* Quote */}
+                  <blockquote className="text-foreground mb-4">"{testimonial.quote}"</blockquote>
+                  {/* Customer */}
+                  <div className="flex items-center">
+                    {testimonial.image ? (
+                      <img 
+                        src={testimonial.image}
+                        alt={testimonial.name}
+                        className="w-10 h-10 rounded-full object-cover mr-3"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-Nelysah-pink flex items-center justify-center mr-3">
+                        <span className="text-primary-foreground font-medium">
+                          {testimonial.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium">{testimonial.name}</p>
+                      <p className="text-sm text-muted-foreground">{testimonial.location}</p>
                     </div>
-                  )}
-                  <div>
-                    <p className="font-medium">{testimonial.name}</p>
-                    <p className="text-sm text-muted-foreground">{testimonial.location}</p>
                   </div>
                 </div>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
     </section>
