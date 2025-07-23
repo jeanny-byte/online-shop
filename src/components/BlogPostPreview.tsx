@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +5,7 @@ import { BlogPost } from '@/lib/blogUtils';
 import { formatDistanceToNow } from 'date-fns';
 
 interface BlogPostPreviewProps {
-  post: BlogPost;
+  post: Readonly<BlogPost>;
   className?: string;
 }
 

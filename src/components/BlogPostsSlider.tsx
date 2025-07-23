@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { BlogPost, fetchBlogPosts } from '@/lib/blogUtils';
 import { Link } from 'react-router-dom';
@@ -12,7 +11,7 @@ const BlogPostsSlider: React.FC = () => {
   useEffect(() => {
     const loadPosts = async () => {
       try {
-        const fetchedPosts = await fetchBlogPosts(5);
+        const fetchedPosts: BlogPost[] = await fetchBlogPosts(5);
         setPosts(fetchedPosts);
       } catch (error) {
         console.error('Error loading blog posts for slider:', error);
@@ -47,7 +46,7 @@ const BlogPostsSlider: React.FC = () => {
   return (
     <Carousel className="w-full h-72 md:h-96 lg:h-[500px] rounded-lg overflow-hidden">
       <CarouselContent>
-        {posts.map((post) => (
+        {posts.map((post: BlogPost) => (
           <CarouselItem key={post.id}>
             <Link to={`/blog/${post.slug}`} className="group">
               <div className="relative w-full h-full rounded-lg overflow-hidden aspect-[4/5]">

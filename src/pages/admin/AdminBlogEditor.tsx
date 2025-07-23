@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -19,6 +18,8 @@ interface FormValues {
   title: string;
   excerpt: string;
   content: string;
+  image: string;
+  author_id?: string | null;
   published: boolean;
 }
 
@@ -38,6 +39,8 @@ const AdminBlogEditor: React.FC = () => {
       title: '',
       excerpt: '',
       content: '',
+      image: '',
+      author_id: undefined,
       published: true,
     }
   });
@@ -65,6 +68,8 @@ const AdminBlogEditor: React.FC = () => {
           title: post.title,
           excerpt: post.excerpt,
           content: post.content,
+          image: post.image,
+          author_id: post.author_id ?? undefined,
           published: post.published,
         });
         
@@ -142,44 +147,32 @@ const AdminBlogEditor: React.FC = () => {
           excerpt: data.excerpt,
           content: data.content,
           image: imageUrl,
+          author_id: user?.id,
           published: data.published,
-          updated_at: new Date().toISOString(),
         });
-        
-        if (error || !updatedPost) {
-          throw new Error('Failed to update blog post');
-        }
-        
+        if (error) throw error;
         toast({
           title: "Success",
           description: "Blog post updated successfully",
         });
+        navigate('/admin/blog');
       } else {
-        if (!user.id) {
-          throw new Error('User ID is required');
-        }
-        
-        const { data: newPost, error } = await createBlogPost({
+        const { data: createdPost, error } = await createBlogPost({
           title: data.title,
-          slug,
           excerpt: data.excerpt,
           content: data.content,
           image: imageUrl,
-          author_id: user.id,
+          author_id: user?.id,
+          slug,
           published: data.published,
         });
-        
-        if (error || !newPost) {
-          throw new Error('Failed to create blog post');
-        }
-        
+        if (error) throw error;
         toast({
           title: "Success",
           description: "Blog post created successfully",
         });
+        navigate('/admin/blog');
       }
-      
-      navigate('/admin/blog');
     } catch (error) {
       console.error('Error saving blog post:', error);
       toast({

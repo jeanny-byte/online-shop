@@ -18,3 +18,25 @@ const storage = multer.diskStorage({
 });
 
 export const upload = multer({ storage });
+
+import express from 'express';
+
+const router = express.Router();
+
+// POST /api/upload
+interface MulterRequest extends Request {
+  file: Express.Multer.File;
+}
+
+router.post('/', upload.single('image'), (req: express.Request, res: express.Response): void => {
+  const fileReq = req as unknown as MulterRequest;
+  if (!fileReq.file) {
+    res.status(400).json({ error: 'No file uploaded' });
+    return;
+  }
+  // Return the relative URL for the uploaded file
+  const fileUrl = `/uploads/${fileReq.file.filename}`;
+  res.json({ url: fileUrl });
+});
+
+export default router;

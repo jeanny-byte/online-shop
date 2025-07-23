@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from './components/AdminLayout';
@@ -33,7 +32,7 @@ const AdminBlogPosts: React.FC = () => {
   const loadPosts = async () => {
     setLoading(true);
     try {
-      const data = await fetchAllBlogPosts(true);
+      const data: BlogPost[] = await fetchAllBlogPosts(true);
       setPosts(data);
     } catch (error) {
       console.error('Error loading blog posts:', error);
@@ -67,7 +66,7 @@ const AdminBlogPosts: React.FC = () => {
           title: "Success",
           description: "Blog post deleted successfully",
         });
-        setPosts(posts.filter(p => p.id !== postToDelete.id));
+        setPosts(posts.filter((p: BlogPost) => p.id !== postToDelete.id));
       } else {
         throw error;
       }
@@ -122,7 +121,7 @@ const AdminBlogPosts: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {posts.map((post) => (
+                  {posts.map((post: BlogPost) => (
                     <TableRow key={post.id}>
                       <TableCell className="font-medium">{post.title}</TableCell>
                       <TableCell>
