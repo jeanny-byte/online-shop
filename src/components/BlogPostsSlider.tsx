@@ -50,21 +50,17 @@ const BlogPostsSlider: React.FC = () => {
           <CarouselItem key={post.id}>
             <Link to={`/blog/${post.slug}`} className="group">
               <div className="relative w-full h-full rounded-lg overflow-hidden aspect-[4/5]">
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
-                
                 {/* Image */}
-                <AspectRatio ratio={16 / 9} className="h-full">
+                <AspectRatio ratio={16 / 15} className="h-full">
                   <img 
                     src={post.image} 
                     alt={post.title}
                     className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                   />
                 </AspectRatio>
-                
-                {/* Content at bottom */}
-                <div className="absolute bottom-0 left-0 w-full p-6 z-20">
-                  <h3 className="text-white text-2xl font-serif mb-1">{post.title}</h3>
+                {/* Content at bottom - always above overlay */}
+                <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-black/70 backdrop-blur-sm rounded-b-lg">
+                  <h3 className="text-white text-2xl font-serif mb-1 w-full max-w-full break-words line-clamp-2">{post.title}</h3>
                   <p className="text-white/80 mb-3 text-sm max-w-xs line-clamp-2">{post.excerpt}</p>
                   <span className="inline-block text-white text-sm font-medium border-b border-white pb-1 transition-colors group-hover:border-lskin-pink">
                     Read More
