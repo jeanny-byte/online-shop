@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { generateSlug } from './utils';
+import { upload } from './upload';
 
 // Strict BlogPost type matching the DB schema
 interface BlogPost {
@@ -80,10 +81,12 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/blog-posts
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', upload.single('image'), async (req: Request, res: Response) => {
   const slug = generateSlug(req.body.title);
-  const { title, content, image, excerpt, author_id, published } = req.body;
-  if (!slug || !title || !content) {
+  const { title, content, excerpt, author_id, published } = req.body;
+  const image = (req.file as Express.Multer.File)?.filename ? `/uploads/${(req.file as Express.Multer.File).filename}` : req.body.image;
+
+  if (!slug || !title || !content || !image) {
     res.status(400).json({ error: "Missing required fields" });
     return;
   }
@@ -118,9 +121,11 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 // PUT /api/blog-posts/:id
-router.put('/:id', async (req: Request, res: Response) => {
-    const slug = generateSlug(req.body.title);
-  const { title, content, image, excerpt, author_id, published } = req.body;
+router.put('/:id', upload.single('image'), async (req: Request, res: Response) => {
+  const slug = generateSlug(req.body.title);
+  const { title, content, excerpt, author_id, published } = req.body;
+  const image = (req.file as Express.Multer.File)?.filename ? `/uploads/${(req.file as Express.Multer.File).filename}` : req.body.image;
+
   if (!slug || !title || !content) {
     res.status(400).json({ error: "Missing required fields" });
     return;
@@ -134,7 +139,7 @@ router.put('/:id', async (req: Request, res: Response) => {
         safe(title),
         safe(slug),
         safe(content),
-        safe(image),
+        image,
         safe(excerpt),
         safe(author_id),
         published === undefined ? 0 : (published ? 1 : 0),
@@ -173,5 +178,3 @@ router.delete('/:id', async (req: Request, res: Response) => {
 });
 
 export default router;
-
-

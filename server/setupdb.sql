@@ -10,7 +10,7 @@ CREATE TABLE products (
   image TEXT NULL,
   images LONGTEXT,
   category VARCHAR(100) NOT NULL,
-  brand VARCHAR(100) NOT NULL,
+  brands VARCHAR(100) NOT NULL,
   featured TINYINT(1) DEFAULT 0,
   benefits TEXT,
   ingredients TEXT,

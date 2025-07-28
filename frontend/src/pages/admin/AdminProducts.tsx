@@ -1,30 +1,37 @@
 import React, { useEffect, useState } from 'react';
+import { Product } from '@/data/products';
 
 // Use API URL from .env
 const API_URL = import.meta.env.VITE_API_URL;
 import { toast } from '@/hooks/use-toast';
 import AdminLayout from './components/AdminLayout';
 
+// Define a type for the form data, which is slightly different from the Product type
+type ProductFormData = Omit<Product, 'id' | 'image' | 'images'> & {
+  existingImages: string[];
+  newImages: File[];
+};
+
 const AdminProducts: React.FC = () => {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<any | null>(null);
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   
   // Form state
-  const [formData, setFormData] = useState<any>({
+  const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     description: '',
     price: 0,
     existingImages: [], // URLs of images already in DB
     newImages: [],      // Files newly added
     category: '',
-    brands: '',
     how_to_use: '',
     benefits: [],
     ingredients: [],
     stock_quantity: 0,
     featured: false,
+    best_seller: false,
   });
 
   // Utility to ensure array fields are always arrays
@@ -36,7 +43,7 @@ const AdminProducts: React.FC = () => {
 
   // Remove image handler
   const handleRemoveImage = (type: 'existing' | 'new', idx: number) => {
-    setFormData((prev: any) => {
+    setFormData((prev) => {
       if (type === 'existing') {
         const updated = [...(prev.existingImages || [])];
         updated.splice(idx, 1);
@@ -53,7 +60,7 @@ const AdminProducts: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    setFormData((prev: any) => ({
+    setFormData((prev) => ({
       ...prev,
       newImages: [...(prev.newImages || []), ...Array.from(files)],
     }));
@@ -91,17 +98,17 @@ const AdminProducts: React.FC = () => {
       existingImages: [],
       newImages: [],
       category: '',
-      brands: '',
       how_to_use: '',
       benefits: [],
       ingredients: [],
       stock_quantity: 0,
       featured: false,
+      best_seller: false,
     });
     setIsEditing(true);
   };
   
-  const handleEdit = (product: any) => {
+  const handleEdit = (product: Product) => {
     setCurrentProduct(product);
     setFormData({
       name: product.name,
@@ -110,12 +117,12 @@ const AdminProducts: React.FC = () => {
       existingImages: Array.isArray(product.images) ? product.images : [],
       newImages: [],
       category: product.category,
-      brands: product.brands || '',
       how_to_use: product.how_to_use,
       benefits: normalizeArrayField(product.benefits),
       ingredients: normalizeArrayField(product.ingredients),
       stock_quantity: product.stock_quantity,
-      featured: product.featured,
+      featured: product.featured || false,
+      best_seller: product.best_seller || false,
     });
     setIsEditing(true);
   };
@@ -148,22 +155,17 @@ const AdminProducts: React.FC = () => {
     const { name, value, type } = e.target;
     
     if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked;
-      setFormData({ ...formData, [name]: checked });
-    } else if (name === 'price') {
-      setFormData({ ...formData, [name]: parseFloat(value) || 0 });
-    } else if (name === 'stock_quantity') {
-      setFormData({ ...formData, [name]: parseInt(value) || 0 });
+      const { checked } = e.target as HTMLInputElement;
+      setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
-  
+
   const handleArrayChange = (name: 'benefits' | 'ingredients', value: string) => {
-    const array = value.split('\n').filter(item => item.trim() !== '');
-    setFormData({ ...formData, [name]: array });
+    setFormData((prev) => ({ ...prev, [name]: value.split('\n') }));
   };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -171,12 +173,12 @@ const AdminProducts: React.FC = () => {
       const form = new FormData();
       form.append('name', formData.name);
       form.append('description', formData.description);
-      form.append('price', formData.price);
+      form.append('price', String(formData.price));
       form.append('category', formData.category);
-      form.append('brands', formData.brands);
       form.append('how_to_use', formData.how_to_use);
-      form.append('stock_quantity', formData.stock_quantity);
+      form.append('stock_quantity', String(formData.stock_quantity));
       form.append('featured', formData.featured ? '1' : '0');
+      form.append('best_seller', formData.best_seller ? '1' : '0');
       form.append('benefits', Array.isArray(formData.benefits) ? formData.benefits.join('\n') : formData.benefits);
       form.append('ingredients', Array.isArray(formData.ingredients) ? formData.ingredients.join(', ') : formData.ingredients);
       // Send URLs of images to keep
@@ -291,19 +293,19 @@ const AdminProducts: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label htmlFor="brands" className="block text-sm font-medium mb-1">
-                      Brands
+                    <label htmlFor="how_to_use" className="block text-sm font-medium mb-1">
+                      How to Use*
                     </label>
-                    <input
-                      id="brands"
-                      name="brands"
-                      type="text"
-                      value={formData.brands}
+                    <textarea
+                      id="how_to_use"
+                      name="how_to_use"
+                      value={formData.how_to_use}
                       onChange={handleInputChange}
-                      className="w-full p-2 border border-border rounded-md"
-                      placeholder="e.g. Neutrogena, CeraVe"
+                      className="w-full p-2 border border-border rounded-md h-24"
+                      required
                     />
                   </div>
+                  
                   <div>
                     <label htmlFor="stock_quantity" className="block text-sm font-medium mb-1">
                       Stock Quantity*
@@ -337,8 +339,8 @@ const AdminProducts: React.FC = () => {
                       {formData.existingImages && formData.existingImages.map((img: string, idx: number) => (
                         <div key={`existing-${idx}`} style={{ position: 'relative' }}>
                           <img
-                            src={img}
-                            alt={`Preview ${idx + 1}`}
+                            src={`${API_URL}${img}`}
+                            alt={`Existing image ${idx + 1}`}
                             style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ccc' }}
                           />
                           <button
@@ -369,78 +371,46 @@ const AdminProducts: React.FC = () => {
   
                 </div>
                 
-                
-                
-                
-                
-                <div className="flex items-center">
-                  <input
-                    id="featured"
-                    name="featured"
-                    type="checkbox"
-                    checked={formData.featured}
-                    onChange={(e) => setFormData({...formData, featured: e.target.checked})}
-                    className="mr-2"
-                  />
-                  <label htmlFor="featured" className="text-sm font-medium">
-                    Featured Product
-                  </label>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium mb-1">
-                    Description*
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-border rounded-md h-24"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="how_to_use" className="block text-sm font-medium mb-1">
-                    How to Use*
-                  </label>
-                  <textarea
-                    id="how_to_use"
-                    name="how_to_use"
-                    value={formData.how_to_use}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-border rounded-md h-24"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="benefits" className="block text-sm font-medium mb-1">
-                    Benefits (one per line)
-                  </label>
-                  <textarea
-                    id="benefits"
-                    name="benefits"
-                    value={Array.isArray(formData.benefits) ? formData.benefits.join('\n') : ''}
-                    onChange={(e) => handleArrayChange('benefits', e.target.value)}
-                    className="w-full p-2 border border-border rounded-md h-24"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="ingredients" className="block text-sm font-medium mb-1">
-                    Ingredients (one per line)
-                  </label>
-                  <textarea
-                    id="ingredients"
-                    name="ingredients"
-                    value={Array.isArray(formData.ingredients) ? formData.ingredients.join('\n') : ''}
-                    onChange={(e) => handleArrayChange('ingredients', e.target.value)}
-                    className="w-full p-2 border border-border rounded-md h-24"
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="description" className="block text-sm font-medium mb-1">
+                      Description*
+                    </label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      className="w-full p-2 border border-border rounded-md h-24"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="benefits" className="block text-sm font-medium mb-1">
+                      Benefits (one per line)
+                    </label>
+                    <textarea
+                      id="benefits"
+                      name="benefits"
+                      value={Array.isArray(formData.benefits) ? formData.benefits.join('\n') : ''}
+                      onChange={(e) => handleArrayChange('benefits', e.target.value)}
+                      className="w-full p-2 border border-border rounded-md h-24"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="ingredients" className="block text-sm font-medium mb-1">
+                      Ingredients (one per line)
+                    </label>
+                    <textarea
+                      id="ingredients"
+                      name="ingredients"
+                      value={Array.isArray(formData.ingredients) ? formData.ingredients.join('\n') : ''}
+                      onChange={(e) => handleArrayChange('ingredients', e.target.value)}
+                      className="w-full p-2 border border-border rounded-md h-24"
+                    />
+                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-4 pt-4">
@@ -480,7 +450,7 @@ const AdminProducts: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {product.images && product.images.length > 0 ? (
                         <img
-                          src={product.images[0]}
+                          src={`${API_URL}${product.images[0]}`}
                           alt={product.name}
                           className="h-12 w-12 rounded-md object-cover"
                         />
@@ -534,8 +504,8 @@ const AdminProducts: React.FC = () => {
           </div>
         )}
       </div>
-      </AdminLayout>
-    );
-  }
-  
-  export default AdminProducts;
+    </AdminLayout>
+  );
+};
+
+export default AdminProducts;

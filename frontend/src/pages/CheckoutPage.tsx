@@ -17,7 +17,7 @@ type CheckoutFormData = {
   city: string; 
   state: string; 
   zipCode: string; 
-  paymentMethod: 'whatsapp' | 'hubtel';
+  paymentMethod: 'whatsapp' | 'mtn_momo';
   deliveryOption: 'personal_rider' | 'delivery_service';
 };
 
@@ -101,12 +101,46 @@ const paymentMethod = watch('paymentMethod');
       const tracking_code = Math.random().toString(36).substring(2, 8).toUpperCase();
       
       // Create order in database
-      console.warn('Creating order is not implemented');
-      const order = { id: 'fake_order_id' };
-      
+      let orderId = '';
+      let trackingCode = tracking_code;
+      try {
+        const orderResponse = await fetch(`${API_URL}/api/orders/whatsapp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_name: data.fullName,
+            customer_email: data.email,
+            customer_phone: data.phone,
+            shipping_address: shippingAddress,
+            order_total: cartTotal,
+            payment_method: data.paymentMethod,
+            tracking_code: tracking_code,
+            items: cart.map(item => ({
+              product_id: item.product.id,
+              quantity: item.quantity,
+              price_per_item: item.product.price
+            }))
+          })
+        });
+        if (!orderResponse.ok) {
+          throw new Error('Failed to create order');
+        }
+        const orderResult = await orderResponse.json();
+        orderId = orderResult.id;
+        trackingCode = orderResult.tracking_code || tracking_code;
+      } catch (err) {
+        toast({
+          title: 'Order creation failed',
+          description: err.message || 'Could not create order in store.',
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       // Add order items
       const orderItems = cart.map(item => ({
-        order_id: order.id,
+        order_id: orderId,
         product_id: item.product.id,
         quantity: item.quantity,
         price_per_item: item.product.price
@@ -201,10 +235,12 @@ const paymentMethod = watch('paymentMethod');
         }
       }
 
-      if (data.paymentMethod === 'hubtel') {
-        // Online payment via Hubtel
+      if (data.paymentMethod === 'mtn_momo') {
+        // Online payment via mtn_momo
+        // 1. Create the order first (already done above)
+        // 2. Use the created orderId/trackingCode in the payment request
         try {
-          const response = await fetch(`${API_URL}/api/payments/hubtel`, {
+          const response = await fetch(`${API_URL}/api/payments/mtn_momo`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -212,15 +248,15 @@ const paymentMethod = watch('paymentMethod');
               customerName: data.fullName,
               customerEmail: data.email,
               customerPhone: data.phone,
-              orderId: tracking_code,
+              orderId: trackingCode,
               description: `Order for ${data.fullName}`
             })
           });
           const result = await response.json();
-          if (response.ok && result.paymentUrl) {
+          if (response.ok && result.referenceId) {
             toast({
               title: "Redirecting to payment",
-              description: "You will be redirected to Hubtel to complete your payment.",
+              description: "You will be redirected to mtn_momo to complete your payment.",
             });
             // Update stock after initiating payment
             try {
@@ -490,17 +526,17 @@ const paymentMethod = watch('paymentMethod');
                     </label>
                   </div>
                 </div>
-                {/* Pay via Hubtel */}
+                {/* Pay via mtn_momo */}
                 <div className="space-y-4">
                   <div className="flex items-center p-4 border rounded-md cursor-pointer hover:bg-Nelysah-lightGray transition-colors">
                     <input
-                      id="hubtel"
+                      id="mtn_momo"
                       type="radio"
-                      value="hubtel"
+                      value="mtn_momo"
                       className="mr-2"
                       {...register('paymentMethod')}
                     />
-                    <label htmlFor="hubtel" className="flex items-center cursor-pointer w-full">
+                    <label htmlFor="mtn_momo" className="flex items-center cursor-pointer w-full">
                       <ShoppingBag className="h-5 w-5 mr-2" />
                       <div>
                         <span className="font-medium">Order Online</span>

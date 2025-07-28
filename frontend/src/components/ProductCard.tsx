@@ -1,38 +1,43 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { useCart } from '../context/CartContext';
+
+// Use API URL from .env
+const API_URL = import.meta.env.VITE_API_URL;
 
 export interface ProductProps {
   id: string;
   name: string;
   price: number;
   image: string;
+  images?: string[];
   category: string;
   featured?: boolean;
 }
 
-const ProductCard: React.FC<ProductProps> = ({ id, name, price, image, category, featured }) => {
+const ProductCard: React.FC<ProductProps> = ({ id, name, price, image, images, category, featured }) => {
   const { addToCart } = useCart();
   
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart({ id, name, price, image, category, featured } as any, 1);
+    addToCart({ id, name, price, image, images, category, featured } as any, 1);
     toast({
       title: "Added to cart",
       description: `${name} has been added to your cart.`,
     });
   };
   
+  const imageUrl = images && images.length > 0 ? images[0] : image;
+
   return (
     <div className={`group relative ${featured ? 'animate-fade-in' : ''}`}>
       {/* Product Image */}
       <div className="aspect-square w-full overflow-hidden rounded-md bg-lskin-lightGray mb-3">
         <Link to={`/product/${id}`}>
           <img
-            src={image}
+            src={imageUrl ? `${API_URL}${imageUrl}` : '/placeholder.jpg'}
             alt={name}
             className="h-full w-full object-cover object-center transition-all duration-300 group-hover:scale-105"
           />

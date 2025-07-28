@@ -18,7 +18,8 @@ export async function submitProductHandler(req: Request, res: Response, next: Ne
     const files = req.files as Express.Multer.File[];
     // Accept zero or more files, but at least one image must exist overall
     const newImageUrls = files && files.length > 0 ? files.map(file => `/uploads/${path.basename(file.path)}`) : [];
-    const allImages = [...existingImages, ...newImageUrls];
+    // Combine and deduplicate image URLs
+    const allImages = [...new Set([...existingImages, ...newImageUrls])];
     if (allImages.length === 0) {
       res.status(400).json({ error: "At least one image is required" });
       return;
@@ -28,7 +29,7 @@ export async function submitProductHandler(req: Request, res: Response, next: Ne
     if (req.body.id) {
       // Update existing product
       await conn.query(
-        'UPDATE products SET name=?, description=?, price=?, image=?, images=?, category=?, how_to_use=?, benefits=?, ingredients=?, stock_quantity=?, featured=? WHERE id=?',
+        'UPDATE products SET name=?, description=?, price=?, image=?, images=?, category=?, brands=?, how_to_use=?, benefits=?, ingredients=?, stock_quantity=?, featured=? WHERE id=?',
         [
           name,
           description,
@@ -36,6 +37,7 @@ export async function submitProductHandler(req: Request, res: Response, next: Ne
           image,
           JSON.stringify(allImages),
           category,
+          brands,
           how_to_use,
           benefits,
           ingredients,
@@ -48,7 +50,7 @@ export async function submitProductHandler(req: Request, res: Response, next: Ne
     } else {
       // Insert new product
       await conn.query(
-        'INSERT INTO products (id, name, description, price, image, images, category, how_to_use, benefits, ingredients, stock_quantity, featured) VALUES ( UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO products (id, name, description, price, image, images, category, brands, how_to_use, benefits, ingredients, stock_quantity, featured) VALUES ( UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           name,
           description,
@@ -83,7 +85,21 @@ export async function getProductHandler(req: Request, res: Response) {
   try {
     const [rows] = await conn.query('SELECT * FROM products WHERE id = ?', [id]); 
     if (Array.isArray(rows) && rows.length > 0) {
-      res.status(200).json(rows[0]);
+      const product = rows[0] as any;
+      // Ensure images are parsed correctly
+      if (product.images && typeof product.images === 'string') {
+        try {
+          product.images = JSON.parse(product.images);
+        } catch (e) {
+          product.images = []; // Fallback on parsing error
+        }
+      } else if (product.image) {
+        // Fallback for older data that only has a single `image`
+        product.images = [product.image];
+      } else {
+        product.images = [];
+      }
+      res.status(200).json(product);
     } else {
       res.status(404).json({ error: 'Product not found' });
     }

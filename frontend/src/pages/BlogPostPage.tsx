@@ -1,9 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchBlogPostBySlug, BlogPost } from '@/lib/blogUtils';
 import { formatDistanceToNow } from 'date-fns';
 import { Loader2 } from 'lucide-react';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const BlogPostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -59,7 +60,7 @@ const BlogPostPage: React.FC = () => {
           
           <div className="mb-8">
             <img 
-              src={post.image} 
+              src={post.image ? `${API_URL}${post.image}` : '/placeholder.jpg'} 
               alt={post.title} 
               className="w-full h-auto rounded-lg object-cover aspect-video"
             />

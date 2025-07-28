@@ -4,6 +4,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { BlogPost } from '@/lib/blogUtils';
 import { formatDistanceToNow } from 'date-fns';
 
+// Use API URL from .env
+const API_URL = import.meta.env.VITE_API_URL;
+
 interface BlogPostPreviewProps {
   post: Readonly<BlogPost>;
   className?: string;
@@ -16,7 +19,7 @@ const BlogPostPreview: React.FC<BlogPostPreviewProps> = ({ post, className }) =>
     <Card className={`overflow-hidden ${className}`}>
       <div className="aspect-w-16 aspect-h-9">
         <img 
-          src={post.image} 
+          src={`${API_URL}${post.image}`} 
           alt={post.title} 
           className="w-full h-48 object-cover"
         />

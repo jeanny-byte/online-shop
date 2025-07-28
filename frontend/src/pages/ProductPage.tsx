@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 
 // Use API URL from .env
@@ -15,6 +14,7 @@ export type Product = {
   description: string;
   price: number;
   image: string;
+  images?: string[]; // Add this to handle multiple images
   category: string;
   ingredients: string; // comma-separated
   how_to_use: string;
@@ -25,6 +25,7 @@ export type Product = {
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('description');
   const [quantity, setQuantity] = useState(1);
@@ -45,6 +46,12 @@ const ProductPage: React.FC = () => {
       if (!res.ok) throw new Error('Failed to fetch product');
       const prod = await res.json();
       setProduct(prod);
+      // Set the first image as the selected one
+      if (prod.images && prod.images.length > 0) {
+        setSelectedImage(prod.images[0]);
+      } else if (prod.image) {
+        setSelectedImage(prod.image);
+      }
     } catch (error) {
       console.error('Error fetching product:', error);
       setProduct(null);
@@ -106,14 +113,31 @@ const ProductPage: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-          {/* Product Image */}
+          {/* Product Image Gallery */}
           <div>
-            <div className="aspect-square rounded-md overflow-hidden bg-lskin-lightGray">
-              <img 
-                src={product.image} 
-                alt={product.name} 
-                className="w-full h-full object-cover object-center"
-              />
+            <div className="aspect-square w-full overflow-hidden rounded-md bg-lskin-lightGray mb-4">
+              {selectedImage && (
+                <img
+                  src={`${API_URL}${selectedImage}`}
+                  alt={product.name}
+                  className="h-full w-full object-cover object-center"
+                />
+              )}
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {product.images?.map((img, index) => (
+                <div 
+                  key={index} 
+                  className={`aspect-square rounded-md overflow-hidden cursor-pointer border-2 ${selectedImage === img ? 'border-lskin-pink' : 'border-transparent'}`}
+                  onClick={() => setSelectedImage(img)}
+                >
+                  <img 
+                    src={`${API_URL}${img}`}
+                    alt={`${product.name} thumbnail ${index + 1}`} 
+                    className="h-full w-full object-cover object-center"
+                  />
+                </div>
+              ))}
             </div>
           </div>
           
@@ -133,7 +157,13 @@ const ProductPage: React.FC = () => {
             <p className="text-2xl font-medium mb-6">Ghs{product.price}</p>
             
             {/* Description */}
-            <p className="mb-6 text-muted-foreground">{product.description}</p>
+            <p className="text-muted-foreground">{product.description}</p>
+            
+            {/* How to Use */}
+            <div>
+              <h3 className="font-medium mb-2">How to Use</h3>
+              <p className="text-muted-foreground">{product.how_to_use}</p>
+            </div>
             
             {/* Key Benefits */}
 {benefitsArray.length > 0 && (
@@ -149,6 +179,16 @@ const ProductPage: React.FC = () => {
     </ul>
   </div>
 )}
+            
+            {/* Key Ingredients */}
+            <div>
+              <h3 className="font-medium mb-2">Key Ingredients</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                {(product.ingredients ? product.ingredients.split(',').map(i => i.trim()) : []).map((ingredient, index) => (
+                  <li key={index}>{ingredient}</li>
+                ))}
+              </ul>
+            </div>
             
             {/* Quantity */}
             <div className="mb-6">

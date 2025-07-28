@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 
+// Use API URL from .env
+const API_URL = import.meta.env.VITE_API_URL;
+
 const BlogPostsSlider: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +56,7 @@ const BlogPostsSlider: React.FC = () => {
                 {/* Image */}
                 <AspectRatio ratio={16 / 15} className="h-full">
                   <img 
-                    src={post.image} 
+                    src={`${API_URL}${post.image}`} 
                     alt={post.title}
                     className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                   />

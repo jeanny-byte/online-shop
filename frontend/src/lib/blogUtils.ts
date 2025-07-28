@@ -37,12 +37,11 @@ export const fetchBlogPostBySlug = async (slug: string): Promise<BlogPost | null
   return await res.json();
 };
 
-export const createBlogPost = async (postData: Omit<BlogPost, 'id' | 'created_at' | 'updated_at'>): Promise<{ data: BlogPost | null; error: any }> => {
+export const createBlogPost = async (postData: FormData): Promise<{ data: BlogPost | null; error: any }> => {
   try {
     const res = await fetch('/api/blog-posts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(postData),
+      body: postData,
     });
     if (!res.ok) {
       const error = await res.json();
@@ -55,12 +54,11 @@ export const createBlogPost = async (postData: Omit<BlogPost, 'id' | 'created_at
   }
 };
 
-export const updateBlogPost = async (id: string, postData: Partial<Omit<BlogPost, 'id' | 'created_at' | 'updated_at'>>): Promise<{ data: BlogPost | null; error: any }> => {
+export const updateBlogPost = async (id: string, postData: FormData): Promise<{ data: BlogPost | null; error: any }> => {
   try {
     const res = await fetch(`/api/blog-posts/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(postData),
+      body: postData,
     });
     if (!res.ok) {
       const error = await res.json();
@@ -93,31 +91,4 @@ export const generateSlug = (title: string): string => {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim();
-};
-
-// Stub for image upload used in AdminBlogEditor
-export const uploadBlogImage = async (file: File): Promise<{ url: string | null; error: any }> => {
-  const formData = new FormData();
-  formData.append('image', file);
-
-  try {
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      let errorMsg = 'Failed to upload image';
-      try {
-        const error = await response.json();
-        errorMsg = error?.error || errorMsg;
-      } catch {}
-      return { url: null, error: errorMsg };
-    }
-
-    const data = await response.json();
-    return { url: data.url, error: null };
-  } catch (error) {
-    return { url: null, error };
-  }
 };

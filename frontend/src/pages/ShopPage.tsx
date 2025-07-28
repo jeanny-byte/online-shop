@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { fetchProducts } from '../data/products';
+import { fetchProducts, Product } from '../data/products';
 //import { products } from '../data/products';
 import { Filter, X } from 'lucide-react';
 
@@ -201,6 +200,7 @@ const ShopPage: React.FC = () => {
                     name={product.name}
                     price={product.price}
                     image={product.image}
+                    images={product.images}
                     category={product.category}
                   />
                 ))}

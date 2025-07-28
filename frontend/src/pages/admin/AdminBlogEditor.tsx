@@ -1,8 +1,11 @@
+// Use API URL from .env
+const API_URL = import.meta.env.VITE_API_URL;
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import AdminLayout from './components/AdminLayout';
-import { fetchBlogPostById, createBlogPost, updateBlogPost, uploadBlogImage, generateSlug } from '@/lib/blogUtils';
+import { fetchBlogPostById, createBlogPost, updateBlogPost } from '@/lib/blogUtils';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -31,8 +34,8 @@ const AdminBlogEditor: React.FC = () => {
   
   const [loading, setLoading] = useState(isEditMode);
   const [submitting, setSubmitting] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string>('');
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
   
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
@@ -73,7 +76,7 @@ const AdminBlogEditor: React.FC = () => {
           published: post.published,
         });
         
-        setImageUrl(post.image);
+        setImagePreview(post.image);
       } catch (error) {
         console.error('Error loading blog post:', error);
         toast({
@@ -91,30 +94,15 @@ const AdminBlogEditor: React.FC = () => {
     }
   }, [id, navigate, reset, isEditMode]);
   
-  const handleImageUpload = async (file: File) => {
-    setUploadingImage(true);
-    try {
-      const { url, error } = await uploadBlogImage(file);
-      
-      if (error || !url) {
-        throw new Error('Failed to upload image');
-      }
-      
-      setImageUrl(url);
-      return url;
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload image",
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setUploadingImage(false);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
     }
   };
-  
+
   const onSubmit = async (data: FormValues) => {
     if (!user) {
       toast({
@@ -125,7 +113,7 @@ const AdminBlogEditor: React.FC = () => {
       return;
     }
     
-    if (!imageUrl) {
+    if (!imagePreview) {
       toast({
         title: "Error",
         description: "Please upload a featured image",
@@ -135,56 +123,48 @@ const AdminBlogEditor: React.FC = () => {
     }
     
     setSubmitting(true);
+
+    const formData = new FormData();
+    formData.append('title', data.title);
+    formData.append('excerpt', data.excerpt);
+    formData.append('content', data.content);
+    formData.append('published', String(data.published));
+    if (data.author_id) {
+      formData.append('author_id', data.author_id);
+    }
+
+    if (imageFile) {
+      formData.append('image', imageFile);
+    } else {
+      formData.append('image', data.image); // Send existing image URL if not changed
+    }
     
     try {
-      const slug = isEditMode ? 
-        (await fetchBlogPostById(id!))?.slug || generateSlug(data.title) : 
-        generateSlug(data.title);
-      
-      if (isEditMode && id) {
-        const { data: updatedPost, error } = await updateBlogPost(id, {
-          title: data.title,
-          excerpt: data.excerpt,
-          content: data.content,
-          image: imageUrl,
-          author_id: user?.id,
-          published: data.published,
-        });
-        if (error) throw error;
-        toast({
-          title: "Success",
-          description: "Blog post updated successfully",
-        });
-        navigate('/admin/blog');
-      } else {
-        const { data: createdPost, error } = await createBlogPost({
-          title: data.title,
-          excerpt: data.excerpt,
-          content: data.content,
-          image: imageUrl,
-          author_id: user?.id,
-          slug,
-          published: data.published,
-        });
-        if (error) throw error;
-        toast({
-          title: "Success",
-          description: "Blog post created successfully",
-        });
-        navigate('/admin/blog');
+      const response = isEditMode
+        ? await updateBlogPost(id!, formData)
+        : await createBlogPost(formData);
+
+      if (response.error) {
+        throw new Error(response.error.error || 'An unknown error occurred');
       }
-    } catch (error) {
-      console.error('Error saving blog post:', error);
+
+      toast({
+        title: `Blog post ${isEditMode ? 'updated' : 'created'} successfully!`,
+      });
+      navigate('/admin/blog');
+
+    } catch (error: any) {
+      console.error('Failed to submit post:', error);
       toast({
         title: "Error",
-        description: isEditMode ? "Failed to update blog post" : "Failed to create blog post",
+        description: error.message || `Failed to ${isEditMode ? 'update' : 'create'} post`,
         variant: "destructive",
       });
     } finally {
       setSubmitting(false);
     }
   };
-  
+
   if (loading) {
     return (
       <AdminLayout title={isEditMode ? "Edit Blog Post" : "Create Blog Post"}>
@@ -226,14 +206,14 @@ const AdminBlogEditor: React.FC = () => {
             
             <div>
               <Label className="block mb-2">Featured Image</Label>
-              <div className="border border-dashed border-border rounded-md overflow-hidden">
-                {imageUrl ? (
+              <div className="border-2 border-dashed border-border rounded-md p-4 text-center">
+                {imagePreview ? (
                   <div className="relative group">
                     <AspectRatio ratio={16/9}>
                       <img 
-                        src={imageUrl} 
-                        alt="Featured" 
-                        className="w-full h-full object-cover"
+                        src={imagePreview} 
+                        alt="Featured"
+                        className="w-full h-full object-cover rounded-md"
                       />
                     </AspectRatio>
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -246,11 +226,7 @@ const AdminBlogEditor: React.FC = () => {
                           id="featured-image-upload" 
                           type="file" 
                           accept="image/*" 
-                          onChange={(e) => {
-                            if (e.target.files?.[0]) {
-                              handleImageUpload(e.target.files[0]);
-                            }
-                          }} 
+                          onChange={handleFileChange}
                           className="hidden" 
                         />
                       </label>
@@ -263,19 +239,14 @@ const AdminBlogEditor: React.FC = () => {
                   >
                     <ImageIcon className="h-12 w-12 text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">
-                      {uploadingImage ? "Uploading..." : "Upload featured image"}
+                      Upload featured image
                     </p>
                     <input 
                       id="featured-image-upload" 
                       type="file" 
                       accept="image/*" 
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          handleImageUpload(e.target.files[0]);
-                        }
-                      }} 
+                      onChange={handleFileChange}
                       className="hidden" 
-                      disabled={uploadingImage}
                     />
                   </label>
                 )}
@@ -289,7 +260,6 @@ const AdminBlogEditor: React.FC = () => {
           <RichTextEditor 
             value={watchContent}
             onChange={(value) => setValue('content', value, { shouldValidate: true })}
-            onImageUpload={handleImageUpload}
           />
           {errors.content && <p className="text-destructive text-sm mt-1">{errors.content.message}</p>}
         </div>
