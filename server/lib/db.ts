@@ -14,7 +14,7 @@ const dbConfig = {
 };
 console.log(dbConfig);
 
-const pool = mysql.createPool(dbConfig);
+export const pool = mysql.createPool(dbConfig);
 
 export const getConnection = async () => {
   try {

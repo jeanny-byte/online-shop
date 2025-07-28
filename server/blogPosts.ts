@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { generateSlug } from './utils';
 import { upload } from './upload';
+import { pool } from './lib/db';
 
 // Strict BlogPost type matching the DB schema
 interface BlogPost {
@@ -16,19 +17,6 @@ interface BlogPost {
   created_at: string;
   updated_at: string;
 }
-
-import mysql from 'mysql2/promise';
-
-// MySQL pool (reuse your existing credentials)
-const pool = mysql.createPool({
-  host: 'localhost',
-  user: 'root',
-  password: 'root',
-  database: 'nelyluxdb',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
 
 const router = express.Router();
 
