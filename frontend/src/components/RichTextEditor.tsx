@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Bold, Italic, Underline, AlignLeft, AlignCenter, 
@@ -16,58 +15,46 @@ interface RichTextEditorProps {
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onImageUpload }) => {
   const [activeTab, setActiveTab] = useState<string>('visual');
-  
-  const applyFormat = (format: string) => {
-    // Get the current selection
-    const selection = window.getSelection();
-    if (!selection || !selection.toString()) return;
-    
-    // Get the currently selected text
-    const selectedText = selection.toString();
-    
-    // Determine the format to apply
-    let formattedText = '';
-    switch (format) {
-      case 'bold':
-        formattedText = `<strong>${selectedText}</strong>`;
-        break;
-      case 'italic':
-        formattedText = `<em>${selectedText}</em>`;
-        break;
-      case 'underline':
-        formattedText = `<u>${selectedText}</u>`;
-        break;
-      case 'alignLeft':
-        formattedText = `<div style="text-align: left;">${selectedText}</div>`;
-        break;
-      case 'alignCenter':
-        formattedText = `<div style="text-align: center;">${selectedText}</div>`;
-        break;
-      case 'alignRight':
-        formattedText = `<div style="text-align: right;">${selectedText}</div>`;
-        break;
-      case 'unorderedList':
-        formattedText = `<ul>\n  <li>${selectedText.split('\n').join('</li>\n  <li>')}</li>\n</ul>`;
-        break;
-      case 'orderedList':
-        formattedText = `<ol>\n  <li>${selectedText.split('\n').join('</li>\n  <li>')}</li>\n</ol>`;
-        break;
-      case 'link':
-        const url = prompt('Enter URL:', 'https://');
-        if (url) {
-          formattedText = `<a href="${url}" target="_blank" rel="noopener noreferrer">${selectedText}</a>`;
-        } else {
-          return;
-        }
-        break;
-      default:
-        formattedText = selectedText;
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (activeTab === 'visual' && editorRef.current && editorRef.current.innerHTML !== value) {
+      editorRef.current.innerHTML = value;
     }
-    
-    // Replace the selected text with the formatted text in the editor
-    const before = value.substring(0, selection.anchorOffset);
-    const after = value.substring(selection.focusOffset);
-    onChange(before + formattedText + after);
+  }, [value, activeTab]);
+
+  const applyFormat = (format: string) => {
+    document.execCommand('styleWithCSS', false, undefined);
+    document.execCommand(format, false);
+
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
+  };
+
+  const handleLink = () => {
+    const url = prompt('Enter URL:', 'https://');
+    if (url) {
+      document.execCommand('createLink', false, url);
+      if (editorRef.current) {
+        onChange(editorRef.current.innerHTML);
+      }
+    }
+  };
+
+  const applyList = (format: 'insertUnorderedList' | 'insertOrderedList') => {
+    document.execCommand('styleWithCSS', false, undefined);
+    document.execCommand(format, false, undefined);
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
+  };
+
+  const applyAlignment = (alignment: 'justifyLeft' | 'justifyCenter' | 'justifyRight') => {
+    document.execCommand(alignment, false);
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,16 +64,19 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onImag
     try {
       const imageUrl = await onImageUpload(file);
       if (imageUrl) {
-        const imageTag = `<img src="${imageUrl}" alt="Blog image" class="my-4 rounded-lg max-w-full h-auto" />`;
-        onChange(value + '\n' + imageTag);
+        const imageTag = `<img src="${imageUrl}" alt="Blog image" style="my-4 rounded-lg max-w-full h-auto" />`;
+        document.execCommand('insertHTML', false, imageTag);
+        if (editorRef.current) {
+          onChange(editorRef.current.innerHTML);
+        }
       }
     } catch (error) {
       console.error('Error uploading image:', error);
     }
   };
   
-  const renderHTML = () => {
-    return { __html: value };
+  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
+    onChange(e.currentTarget.innerHTML);
   };
 
   return (
@@ -104,6 +94,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onImag
                 type="button" 
                 variant="ghost" 
                 size="sm" 
+                onMouseDown={(e) => e.preventDefault()} // Prevent editor losing focus
                 onClick={() => applyFormat('bold')}
               >
                 <Bold size={16} />
@@ -112,6 +103,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onImag
                 type="button" 
                 variant="ghost" 
                 size="sm" 
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => applyFormat('italic')}
               >
                 <Italic size={16} />
@@ -120,6 +112,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onImag
                 type="button" 
                 variant="ghost" 
                 size="sm" 
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => applyFormat('underline')}
               >
                 <Underline size={16} />
@@ -129,7 +122,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onImag
                 type="button" 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => applyFormat('alignLeft')}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyAlignment('justifyLeft')}
               >
                 <AlignLeft size={16} />
               </Button>
@@ -137,7 +131,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onImag
                 type="button" 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => applyFormat('alignCenter')}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyAlignment('justifyCenter')}
               >
                 <AlignCenter size={16} />
               </Button>
@@ -145,7 +140,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onImag
                 type="button" 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => applyFormat('alignRight')}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyAlignment('justifyRight')}
               >
                 <AlignRight size={16} />
               </Button>
@@ -154,7 +150,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onImag
                 type="button" 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => applyFormat('unorderedList')}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyList('insertUnorderedList')}
               >
                 <List size={16} />
               </Button>
@@ -162,7 +159,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onImag
                 type="button" 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => applyFormat('orderedList')}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyList('insertOrderedList')}
               >
                 <ListOrdered size={16} />
               </Button>
@@ -170,7 +168,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onImag
                 type="button" 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => applyFormat('link')}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleLink}
               >
                 <Link size={16} />
               </Button>
@@ -197,16 +196,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onImag
           )}
         </div>
         
-        <TabsContent value="visual" className="p-0 focus-visible:outline-none focus-visible:ring-0">
-          <div className="relative">
-            <div 
-              className="min-h-[300px] max-h-[500px] overflow-y-auto p-4 prose prose-sm max-w-none focus:outline-none"
-              contentEditable
-              dangerouslySetInnerHTML={renderHTML()}
-              onInput={(e) => onChange(e.currentTarget.innerHTML)}
-            />
-          </div>
-        </TabsContent>
+        <div style={{ display: activeTab === 'visual' ? 'block' : 'none' }}>
+          <div 
+            ref={editorRef}
+            className="min-h-[300px] max-h-[500px] overflow-y-auto p-4 prose prose-sm max-w-none focus:outline-none"
+            contentEditable
+            onInput={handleInput}
+          />
+        </div>
         
         <TabsContent value="html" className="p-0">
           <Textarea 

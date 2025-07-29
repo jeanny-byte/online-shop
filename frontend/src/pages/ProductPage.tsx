@@ -115,28 +115,26 @@ const ProductPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
           {/* Product Image Gallery */}
           <div>
-            <div className="aspect-square w-full overflow-hidden rounded-md bg-lskin-lightGray mb-4">
-              {selectedImage && (
-                <img
-                  src={`${API_URL}${selectedImage}`}
-                  alt={product.name}
-                  className="h-full w-full object-cover object-center"
-                />
-              )}
+            <div className="border border-border rounded-lg mb-4">
+              <img
+                src={selectedImage ? selectedImage : ''}
+                alt={product.name}
+                className="w-full h-auto object-cover rounded-lg"
+              />
             </div>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="flex space-x-2">
               {product.images?.map((img, index) => (
-                <div 
-                  key={index} 
-                  className={`aspect-square rounded-md overflow-hidden cursor-pointer border-2 ${selectedImage === img ? 'border-lskin-pink' : 'border-transparent'}`}
+                <button
+                  key={index}
+                  className={`w-20 h-20 border rounded-md overflow-hidden ${selectedImage === img ? 'border-foreground' : 'border-border'}`}
                   onClick={() => setSelectedImage(img)}
                 >
-                  <img 
-                    src={`${API_URL}${img}`}
-                    alt={`${product.name} thumbnail ${index + 1}`} 
-                    className="h-full w-full object-cover object-center"
+                  <img
+                    src={img}
+                    alt={`${product.name} thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
                   />
-                </div>
+                </button>
               ))}
             </div>
           </div>

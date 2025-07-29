@@ -19,7 +19,7 @@ const BlogPostPreview: React.FC<BlogPostPreviewProps> = ({ post, className }) =>
     <Card className={`overflow-hidden ${className}`}>
       <div className="aspect-w-16 aspect-h-9">
         <img 
-          src={`${API_URL}${post.image}`} 
+          src={post.image} 
           alt={post.title} 
           className="w-full h-48 object-cover"
         />

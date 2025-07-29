@@ -37,7 +37,7 @@ const ProductCard: React.FC<ProductProps> = ({ id, name, price, image, images, c
       <div className="aspect-square w-full overflow-hidden rounded-md bg-lskin-lightGray mb-3">
         <Link to={`/product/${id}`}>
           <img
-            src={imageUrl ? `${API_URL}${imageUrl}` : '/placeholder.jpg'}
+            src={imageUrl ? imageUrl : '/placeholder.jpg'}
             alt={name}
             className="h-full w-full object-cover object-center transition-all duration-300 group-hover:scale-105"
           />

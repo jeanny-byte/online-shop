@@ -339,7 +339,7 @@ const AdminProducts: React.FC = () => {
                       {formData.existingImages && formData.existingImages.map((img: string, idx: number) => (
                         <div key={`existing-${idx}`} style={{ position: 'relative' }}>
                           <img
-                            src={`${API_URL}${img}`}
+                            src={img}
                             alt={`Existing image ${idx + 1}`}
                             style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ccc' }}
                           />
@@ -450,7 +450,7 @@ const AdminProducts: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {product.images && product.images.length > 0 ? (
                         <img
-                          src={`${API_URL}${product.images[0]}`}
+                          src={product.images[0]} // Use full Cloudinary URL
                           alt={product.name}
                           className="h-12 w-12 rounded-md object-cover"
                         />

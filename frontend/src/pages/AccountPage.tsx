@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 
 // Use API URL from .env
@@ -213,10 +212,9 @@ const AccountPage = () => {
                   <div className="flex items-center gap-4">
                     {avatarUrl ? (
                       <img
-                        src={avatarUrl}
-                        alt="Avatar"
-                        className="rounded-full object-cover"
-                        style={{ width: 64, height: 64 }}
+                        src={avatarUrl} // Use the full Cloudinary URL directly
+                        alt="User avatar"
+                        className="w-16 h-16 rounded-full object-cover"
                       />
                     ) : (
                       <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">

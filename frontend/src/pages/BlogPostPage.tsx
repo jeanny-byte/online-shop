@@ -60,7 +60,7 @@ const BlogPostPage: React.FC = () => {
           
           <div className="mb-8">
             <img 
-              src={post.image ? `${API_URL}${post.image}` : '/placeholder.jpg'} 
+              src={post.image ? post.image : '/placeholder.jpg'} 
               alt={post.title} 
               className="w-full h-auto rounded-lg object-cover aspect-video"
             />

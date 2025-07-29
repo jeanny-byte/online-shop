@@ -56,7 +56,7 @@ const BlogPostsSlider: React.FC = () => {
                 {/* Image */}
                 <AspectRatio ratio={16 / 15} className="h-full">
                   <img 
-                    src={`${API_URL}${post.image}`} 
+                    src={post.image} 
                     alt={post.title}
                     className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                   />
