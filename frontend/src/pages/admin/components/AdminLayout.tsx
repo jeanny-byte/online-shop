@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Package, ShoppingBag, BookOpen, LogOut } from 'lucide-react';
+import { Home, Package, ShoppingBag, BookOpen, LogOut, User } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
 interface AdminLayoutProps {
@@ -23,6 +22,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
     { name: 'Products', path: '/admin/products', icon: Package },
     { name: 'Orders', path: '/admin/orders', icon: ShoppingBag },
     { name: 'Blog', path: '/admin/blog', icon: BookOpen },
+    { name: 'Users', path: '/admin/users', icon: User },
   ];
   
   // Safety check - shouldn't happen due to ProtectedRoute, but just in case
@@ -36,7 +36,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       <div className="container-custom max-w-7xl">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar - Desktop */}
-          <aside className="hidden lg:block w-64 flex-shrink-0">
+          <aside className="hidden lg:block w-64 flex-shrink-0 sticky top-16 self-start">
             <div className="bg-lskin-lightGray rounded-md p-4">
               <h1 className="font-serif font-medium text-2xl mb-6 px-2">Admin Panel</h1>
               
