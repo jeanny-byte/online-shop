@@ -10,6 +10,7 @@ import AdminLayout from './components/AdminLayout';
 type ProductFormData = Omit<Product, 'id' | 'image' | 'images'> & {
   existingImages: string[];
   newImages: File[];
+  brands: string;
 };
 
 const AdminProducts: React.FC = () => {
@@ -22,6 +23,7 @@ const AdminProducts: React.FC = () => {
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     description: '',
+    brands: '',
     price: 0,
     existingImages: [], // URLs of images already in DB
     newImages: [],      // Files newly added
@@ -94,6 +96,7 @@ const AdminProducts: React.FC = () => {
     setFormData({
       name: '',
       description: '',
+      brands: '',
       price: 0,
       existingImages: [],
       newImages: [],
@@ -113,6 +116,7 @@ const AdminProducts: React.FC = () => {
     setFormData({
       name: product.name,
       description: product.description,
+      brands: product.brands,
       price: product.price,
       existingImages: Array.isArray(product.images) ? product.images : [],
       newImages: [],
@@ -173,6 +177,7 @@ const AdminProducts: React.FC = () => {
       const form = new FormData();
       form.append('name', formData.name);
       form.append('description', formData.description);
+      form.append('brands', formData.brands);
       form.append('price', String(formData.price));
       form.append('category', formData.category);
       form.append('how_to_use', formData.how_to_use);
@@ -302,6 +307,21 @@ const AdminProducts: React.FC = () => {
                       value={formData.how_to_use}
                       onChange={handleInputChange}
                       className="w-full p-2 border border-border rounded-md h-24"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="brands" className="block text-sm font-medium mb-1">
+                      Brands*
+                    </label>
+                    <input
+                      id="brands"
+                      name="brands"
+                      type="text"
+                      value={formData.brands}
+                      onChange={handleInputChange}
+                      className="w-full p-2 border border-border rounded-md"
                       required
                     />
                   </div>

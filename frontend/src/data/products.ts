@@ -12,6 +12,7 @@ export interface Product {
   stock_quantity: number;
   featured?: boolean;
   best_seller?: boolean;
+  brands: string;
 }
 
 export const defaultProducts: Product[] = [
@@ -39,7 +40,8 @@ export const defaultProducts: Product[] = [
     how_to_use: 'Apply 2-3 drops to clean, dry skin morning and evening. Follow with moisturizer.',
     featured: true,
     best_seller: true,
-    stock_quantity: 100
+    stock_quantity: 100,
+    brands: 'Korean'
   },
   {
     id: '2',
@@ -64,7 +66,8 @@ export const defaultProducts: Product[] = [
     ],
     how_to_use: 'Apply to clean face and neck every morning, after serums and before sunscreen.',
     featured: true,
-    stock_quantity: 80
+    stock_quantity: 80,
+    brands: 'Korean'
   },
   {
     id: '3',
@@ -89,7 +92,8 @@ export const defaultProducts: Product[] = [
     ],
     how_to_use: 'Massage onto damp skin, rinse thoroughly with warm water. Use morning and evening.',
     featured: true,
-    stock_quantity: 120
+    stock_quantity: 120,
+    brands: 'Korean'
   },
   {
     id: '4',
@@ -115,7 +119,8 @@ export const defaultProducts: Product[] = [
     how_to_use: 'Apply a generous layer to clean skin 2-3 times per week. Leave on overnight and rinse in the morning.',
     featured: true,
     best_seller: true,
-    stock_quantity: 60
+    stock_quantity: 60,
+    brands: 'Korean'
   },
   {
     id: '5',
@@ -139,7 +144,8 @@ export const defaultProducts: Product[] = [
       'Hyaluronic Acid'
     ],
     how_to_use: 'Apply to clean face and neck morning and evening. Perfect for use after sun exposure or skin treatments.',
-    stock_quantity: 90
+    stock_quantity: 90,
+    brands: 'Korean'
   },
   {
     id: '6',
@@ -164,7 +170,8 @@ export const defaultProducts: Product[] = [
     ],
     how_to_use: 'Apply to clean skin with a cotton pad, avoiding the eye area. Use 2-3 times per week, gradually increasing frequency as tolerated.',
     best_seller: true,
-    stock_quantity: 110
+    stock_quantity: 110,
+    brands: 'Korean'
   },
   {
     id: '7',
@@ -189,7 +196,8 @@ export const defaultProducts: Product[] = [
     ],
     how_to_use: 'Apply a small amount using ring finger. Gently pat around orbital bone morning and evening.',
     best_seller: true,
-    stock_quantity: 75
+    stock_quantity: 75,
+    brands: 'Korean'
   },
   {
     id: '8',
@@ -214,7 +222,8 @@ export const defaultProducts: Product[] = [
     ],
     how_to_use: 'Apply generously to face and neck as the final step in your morning skincare routine. Reapply every 2 hours when exposed to sun.',
     best_seller: true,
-    stock_quantity: 150
+    stock_quantity: 150,
+    brands: 'Korean'
   }
 ];
 
