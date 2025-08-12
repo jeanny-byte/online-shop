@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "https://nelysah-server.onrender.com";
 
 interface OrderItem {
   product_id: string;

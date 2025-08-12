@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 
 // Use API URL from .env
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "https://nelysah-server.onrender.com";
 import { Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 

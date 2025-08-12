@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { format } from 'date-fns';
 import { RefreshCw, Search, Truck, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
+const API_URL = "https://nelysah-server.onrender.com";
+
 interface Order {
   id: string;
   order_status: string;
@@ -58,7 +60,7 @@ const DriverDashboard: React.FC = () => {
         throw new Error('No authentication token found');
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/driver`, {
+      const response = await fetch(`${API_URL}/api/orders/driver`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -103,7 +105,7 @@ const DriverDashboard: React.FC = () => {
         throw new Error('No authentication token found');
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}`, {
+      const response = await fetch(`${API_URL}/api/orders/${orderId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

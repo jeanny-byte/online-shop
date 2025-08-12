@@ -5,7 +5,7 @@ import { BlogPost } from '@/lib/blogUtils';
 import { formatDistanceToNow } from 'date-fns';
 
 // Use API URL from .env
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "https://nelysah-server.onrender.com";
 
 interface BlogPostPreviewProps {
   post: Readonly<BlogPost>;

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 // Use API URL from .env
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "https://nelysah-server.onrender.com";
 
 import AdminLayout from './components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

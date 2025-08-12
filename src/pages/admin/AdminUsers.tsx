@@ -19,7 +19,7 @@ interface User {
 }
 
 // Assume the API is running on localhost:5000
-const API_BASE_URL = process.env.VITE_API_URL;
+const API_BASE_URL = "https://nelysah-server.onrender.com";
 
 // A placeholder for your auth token retrieval logic
 const getAuthToken = () => {
