@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border: 1px solid #dddddd;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .header {
+      background-color: #fd7bd2;
+      color: #ffffff;
+      padding: 20px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .content {
+      padding: 30px;
+      color: #333333;
+    }
+    .content h2 {
+      color: #fd7bd2;
+    }
+    .order-summary table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .order-summary th, .order-summary td {
+      border: 1px solid #dddddd;
+      padding: 12px;
+      text-align: left;
+    }
+    .order-summary th {
+      background-color: #f7f7f7;
+    }
+    .totals {
+      margin-top: 20px;
+      text-align: right;
+    }
+    .totals p {
+      margin: 5px 0;
+      font-size: 16px;
+    }
+    .tracking-code {
+      text-align: center;
+      margin-top: 30px;
+      padding: 15px;
+      background-color: #e9f3fe;
+      border: 1px dashed #fd7bd2;
+      border-radius: 4px;
+    }
+    .tracking-code p {
+      margin: 0;
+      font-size: 16px;
+    }
+    .tracking-code strong {
+      font-size: 18px;
+      color: #fd7bd2;
+    }
+    .footer {
+      background-color: #f4f4f4;
+      color: #888888;
+      padding: 20px;
+      text-align: center;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Thank You for Your Order!</h1>
+    </div>
+    <div class="content">
+      <h2>Your Order Summary (ID: {{trackingCode}})</h2>
+      <p>Hi {{customerName}}, thank you for shopping with us. We're getting your order ready and will notify you once it has been shipped.</p>
+      
+      <div class="order-summary">
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Quantity</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{items}}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="totals">
+        <p>Subtotal: <strong>Ghs{{cartTotal}}</strong></p>
+        <p>Delivery Fee: <strong>Ghs{{deliveryFee}}</strong></p>
+        <p>Total: <strong style="font-size: 20px; color: #fd7bd2;">Ghs{{totalWithDelivery}}</strong></p>
+      </div>
+
+      <div class="tracking-code">
+        <p>Your tracking code is: <strong>{{trackingCode}}</strong></p>
+      </div>
+    </div>
+    <div class="footer">
+      <p>&copy; 2025 Nelysah Royal Care. All rights reserved.</p>
+      <p>If you have any questions, reply to this email or contact us at <a href="mailto:support@lskin.com">support@lskin.com</a>.</p>
+    </div>
+  </div>
+</body>
+</html>
