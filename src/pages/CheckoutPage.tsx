@@ -7,7 +7,7 @@ import { useCart } from '../context/CartContext';
 import { formatOrderForWhatsApp, sendOrderToWhatsApp } from '../lib/orderUtils';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = process.env.VITE_API_URL;
 
 type CheckoutFormData = { 
   fullName: string; 

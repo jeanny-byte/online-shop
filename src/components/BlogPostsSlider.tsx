@@ -5,7 +5,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 // Use API URL from .env
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = process.env.VITE_API_URL;
 
 const BlogPostsSlider: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
