@@ -18,10 +18,13 @@ const AboutPage: React.FC = () => {
           <div>
             <h2 className="text-2xl md:text-3xl font-serif mb-4">It Started With a Problem</h2>
             <p className="text-muted-foreground mb-4">
-            At Nelysah Royal Care, we believe skincare should be as unique and beautiful as you are. We offer a carefully selected range of skincare essentials—from hydrating sheet masks to glow-boosting serums and lip care treatments—designed to nourish, protect, and enhance your skin.
+              Nelysah was born from necessity. Our founder, Lisa Chen, struggled with sensitive skin issues her entire life. Every product she tried either irritated her skin or simply didn't work as promised.
             </p>
             <p className="text-muted-foreground mb-4">
-            Our products are priced affordably so everyone can enjoy self-care without compromise. Whether you're refreshing your routine or trying something new, we’re here to make skincare simple, effective, and enjoyable.
+              Frustrated with the industry's one-size-fits-all approach, Lisa began creating her own formulations in 2015. What started as a personal solution quickly gained attention when friends and family noticed the remarkable improvements in her skin.
+            </p>
+            <p className="text-muted-foreground">
+              With a background in biochemistry and a passion for natural ingredients, Lisa spent three years perfecting her formulas before officially launching Nelysah in 2018.
             </p>
           </div>
           <div className="rounded-lg overflow-hidden">

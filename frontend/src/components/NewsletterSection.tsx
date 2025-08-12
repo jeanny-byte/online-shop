@@ -1,30 +1,14 @@
+
 import React, { useState } from 'react';
-import axios from 'axios';
 
 const NewsletterSection: React.FC = () => {
   const [email, setEmail] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const token = localStorage.getItem('token'); // Assuming a token is needed
-      await axios.post('/api/email/send-newsletter', {
-        to: email,
-        newsletterContent: `
-          <h1>Welcome to the Nelysah Newsletter!</h1>
-          <p>Thank you for subscribing. You'll now receive exclusive offers, skincare tips, and early access to new product launches.</p>
-        `
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      alert(`Thank you for subscribing with: ${email}`);
-      setEmail('');
-    } catch (error) {
-      console.error('Error subscribing to newsletter:', error);
-      alert('There was an error subscribing. Please try again later.');
-    }
+    // In a real implementation, we'd handle the newsletter subscription
+    alert(`Thank you for subscribing with: ${email}`);
+    setEmail('');
   };
 
   return (

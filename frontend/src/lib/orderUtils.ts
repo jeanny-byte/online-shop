@@ -1,7 +1,7 @@
+
 import { Product } from "@/data/products";
 import { ShoppingBag, CreditCard } from "lucide-react";
-import dotenv from "dotenv";
-dotenv.config();
+
 // Define the Product type using the Database types
 
 export interface CartItem {
@@ -45,7 +45,7 @@ export const formatOrderForWhatsApp = (order: OrderDetails): string => {
     `🏠 *Address*: ${order.shipping_address} \n\n` +
     `📦 *Order Items*:\n${orderItems}\n\n` +
     `💸 *Total*: Ghs${order.order_total.toFixed(2)} \n` +
-    `*Payment Method*: ${order.payment_method === 'Momo' ? '💻 Momo (Online) ' : '📱 WhatsApp (Pay on Delivery) '}\n` +
+    `*Payment Method*: ${order.payment_method === 'Hubtel' ? '💻 Hubtel (Online) ' : '📱 WhatsApp (Pay on Delivery) '}\n` +
     `✨ *Tracking Code*: ${order.tracking_code} `
   );
 };
@@ -53,7 +53,7 @@ export const formatOrderForWhatsApp = (order: OrderDetails): string => {
 /**
  * Send order details to WhatsApp
  */
-export const sendOrderToWhatsApp = (message: string, phoneNumber: string = process.env.VITE_ADMIN_WHATSAPP_NUMBER): void => {
+export const sendOrderToWhatsApp = (message: string, phoneNumber: string = '1234567890'): void => {
   const encodedMessage = encodeURIComponent(message);
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 

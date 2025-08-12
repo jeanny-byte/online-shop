@@ -7,7 +7,6 @@ import { useCart } from '../context/CartContext';
 import { formatOrderForWhatsApp, sendOrderToWhatsApp } from '../lib/orderUtils';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
-import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL;
 
 type CheckoutFormData = { 
@@ -29,7 +28,7 @@ const CheckoutPage: React.FC = () => {
     const cityLower = city.trim().toLowerCase();
     const regionLower = region.trim().toLowerCase();
     if (regionLower === 'greater accra' && cityLower !== 'accra') return 45;
-    if (regionLower === 'greater accra' && (cityLower === 'tema' || cityLower === 'nsawam')) return 55;
+    if (regionLower === 'greater accra' && cityLower === 'tema' || cityLower === 'nsawam') return 55;
     if (regionLower !== 'greater accra' ) return 45; 
     return 0;
   }
@@ -46,7 +45,7 @@ const CheckoutPage: React.FC = () => {
   });
   
   const { user } = useAuth();
-  const paymentMethod = watch('paymentMethod');
+const paymentMethod = watch('paymentMethod');
   const city = watch('city') || '';
   const region = watch('state') || '';
   const deliveryOption = watch('deliveryOption') || '';
@@ -91,146 +90,229 @@ const CheckoutPage: React.FC = () => {
       });
       return;
     }
-
+    
     setIsSubmitting(true);
-
+    
     try {
+      // Format shipping address
       const shippingAddress = `${data.address}, ${data.city}, ${data.state} ${data.zipCode}`;
-      const trackingCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      // Generate a random tracking code
+      const tracking_code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      // Create order in database
+      let orderId = '';
+      let trackingCode = tracking_code;
+      try {
+        const orderResponse = await fetch(`${API_URL}/api/orders/whatsapp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_name: data.fullName,
+            customer_email: data.email,
+            customer_phone: data.phone,
+            shipping_address: shippingAddress,
+            order_total: cartTotal,
+            payment_method: data.paymentMethod,
+            tracking_code: tracking_code,
+            items: cart.map(item => ({
+              product_id: item.product.id,
+              quantity: item.quantity,
+              price_per_item: item.product.price
+            }))
+          })
+        });
+        if (!orderResponse.ok) {
+          throw new Error('Failed to create order');
+        }
+        const orderResult = await orderResponse.json();
+        orderId = orderResult.id;
+        trackingCode = orderResult.tracking_code || tracking_code;
+      } catch (err) {
+        toast({
+          title: 'Order creation failed',
+          description: err.message || 'Could not create order in store.',
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+        return;
+      }
 
-      // Step 1: Create the order in the database
-      const orderResponse = await fetch(`${API_URL}/api/orders/whatsapp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      // Add order items
+      const orderItems = cart.map(item => ({
+        order_id: orderId,
+        product_id: item.product.id,
+        quantity: item.quantity,
+        price_per_item: item.product.price
+      }));
+      
+      // Handle payment method
+      if (data.paymentMethod === 'whatsapp') {
+        // Format order details for WhatsApp
+        const orderDetails = {
+          id: 'fake_order_id', // You can ignore this field for frontend
           customer_name: data.fullName,
           customer_email: data.email,
           customer_phone: data.phone,
           shipping_address: shippingAddress,
-          order_total: totalWithDelivery, // Use total with delivery
-          payment_method: data.paymentMethod,
-          tracking_code: trackingCode,
-          items: cart.map(item => ({
-            product_id: item.product.id,
-            quantity: item.quantity,
-            price_per_item: item.product.price
-          }))
-        })
-      });
-
-      if (!orderResponse.ok) {
-        const errorData = await orderResponse.json();
-        throw new Error(errorData.error || 'Could not create order in store.');
-      }
-
-      const orderResult = await orderResponse.json();
-      const orderId = orderResult.orderId;
-      
-
-      // Step 2: Send confirmation email (non-blocking)
-      try {
-        const token = localStorage.getItem('token');
-
-        // Fetch the email template
-        const templateResponse = await fetch('/templates/order-confirmation.html');
-        if (!templateResponse.ok) {
-          throw new Error('Could not fetch email template.');
-        }
-        let emailHtml = await templateResponse.text();
-
-        // Generate HTML for cart items
-        const itemsHtml = cart.map(item => `
-          <tr>
-            <td>${item.product.name}</td>
-            <td>${item.quantity}</td>
-            <td>Ghs${(item.product.price * item.quantity).toFixed(2)}</td>
-          </tr>
-        `).join('');
-
-        // Replace placeholders with actual data
-        emailHtml = emailHtml
-          .replace('{{customerName}}', data.fullName)
-          .replace(new RegExp('{{trackingCode}}', 'g'), trackingCode)
-          .replace('{{items}}', itemsHtml)
-          .replace('{{cartTotal}}', cartTotal.toFixed(2))
-          .replace('{{deliveryFee}}', deliveryFee.toFixed(2))
-          .replace('{{totalWithDelivery}}', totalWithDelivery.toFixed(2));
-
-        axios.post('/api/email/send-confirmation', {
-          to: data.email,
-          orderDetails: emailHtml
-        }, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      } catch (emailError) {
-        console.error('Failed to send confirmation email:', emailError);
-      }
-
-      // Step 3: Handle payment method
-      if (data.paymentMethod === 'whatsapp') {
-        const orderDetails = {
-          id: trackingCode, // Use tracking code as the order ID
-          customer_name: data.fullName,
-          customer_email: data.email, // Add customer email
-          customer_phone: data.phone,
-          shipping_address: shippingAddress,
-          order_total: totalWithDelivery,
-          payment_method: 'WhatsApp',
-          tracking_code: trackingCode,
+          order_total: cartTotal,
+          payment_method: 'whatsapp',
+          tracking_code,
           items: cart
         };
-        const whatsappMessage = formatOrderForWhatsApp(orderDetails);
-        const adminWhatsappNumber = import.meta.env.VITE_ADMIN_WHATSAPP_NUMBER;
-        sendOrderToWhatsApp(whatsappMessage, adminWhatsappNumber);
-        toast({ title: "Order placed successfully", description: "Redirecting to WhatsApp..." });
 
-      } else if (data.paymentMethod === 'mtn_momo') {
-        const response = await fetch(`${API_URL}/api/payments/mtn_momo`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: totalWithDelivery,
-            customerName: data.fullName,
-            customerEmail: data.email,
-            customerPhone: data.phone,
-            orderId: trackingCode, // Use tracking code as unique ID
-            description: `Order for ${data.fullName}`
-          })
-        });
+        // 1. Store order in database
+        try {
+          const response = await fetch(`${API_URL}/api/orders/whatsapp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              customer_name: orderDetails.customer_name,
+              customer_email: orderDetails.customer_email,
+              customer_phone: orderDetails.customer_phone,
+              shipping_address: orderDetails.shipping_address,
+              order_total: orderDetails.order_total,
+              payment_method: orderDetails.payment_method,
+              tracking_code: orderDetails.tracking_code,
+              items: cart.map(item => ({
+                product_id: item.product.id,
+                quantity: item.quantity,
+                price_per_item: item.product.price
+              }))
+            })
+          });
 
-        const result = await response.json();
-        if (response.ok && result.paymentUrl) {
-          toast({ title: "Redirecting to payment", description: "Please complete your payment." });
-          window.location.href = result.paymentUrl;
-          // Don't clear cart yet, wait for webhook confirmation
-          return; // Exit to prevent navigating away
-        } else {
-          throw new Error(result.error || 'Failed to initiate payment');
+          if (!response.ok) {
+            throw new Error('Failed to store order. Please try again.');
+          }
+
+          toast({
+            title: "Order placed successfully",
+            description: "You will be redirected to WhatsApp to complete your order.",
+          });
+          setTimeout(() => {
+            
+          }, 2000);
+
+          // 2. Prepare WhatsApp message and redirect
+          const whatsappMessage = formatOrderForWhatsApp(orderDetails);
+          const adminWhatsappNumber = '233557246424'; // Ghana format, change to your number
+          sendOrderToWhatsApp(whatsappMessage, adminWhatsappNumber);
+
+          // Update stock after order is placed
+          try {
+            const stockResponse = await fetch('/api/products/update-stock', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(cart.map(item => ({
+                productId: item.product.id,
+                quantity: item.quantity
+              })))
+            });
+            if (!stockResponse.ok) {
+              throw new Error('Failed to update product stock');
+            }
+          } catch (stockErr) {
+            toast({
+              title: 'Order placed, but stock update failed',
+              description: 'Please contact support if you have issues.',
+              variant: 'destructive',
+            });
+            setIsSubmitting(false);
+            return;
+          }
+          clearCart();
+          navigate(`/track-order?code=${tracking_code}`);
+          return;
+        } catch (err: any) {
+          toast({
+            title: "Order failed",
+            description: err.message || "Could not create order in store.",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
         }
       }
 
-      // Step 4: Update stock
-      await fetch('/api/products/update-stock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cart.map(item => ({ productId: item.product.id, quantity: item.quantity })))
-      });
-
-      // Step 5: Finalize
+      if (data.paymentMethod === 'mtn_momo') {
+        // Online payment via mtn_momo
+        // 1. Create the order first (already done above)
+        // 2. Use the created orderId/trackingCode in the payment request
+        try {
+          const response = await fetch(`${API_URL}/api/payments/mtn_momo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: cartTotal,
+              customerName: data.fullName,
+              customerEmail: data.email,
+              customerPhone: data.phone,
+              orderId: trackingCode,
+              description: `Order for ${data.fullName}`
+            })
+          });
+          const result = await response.json();
+          if (response.ok && result.referenceId) {
+            toast({
+              title: "Redirecting to payment",
+              description: "You will be redirected to mtn_momo to complete your payment.",
+            });
+            // Update stock after initiating payment
+            try {
+              const stockResponse = await fetch('/api/products/update-stock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cart.map(item => ({
+                  productId: item.product.id,
+                  quantity: item.quantity
+                })))
+              });
+              if (!stockResponse.ok) {
+                throw new Error('Failed to update product stock');
+              }
+            } catch (stockErr) {
+              toast({
+                title: 'Order placed, but stock update failed',
+                description: 'Please contact support if you have issues.',
+                variant: 'destructive',
+              });
+              setIsSubmitting(false);
+              return;
+            }
+            clearCart();
+            window.location.href = result.paymentUrl;
+            return;
+          } else {
+            throw new Error(result.error || 'Failed to initiate payment');
+          }
+        } catch (err: any) {
+          toast({
+            title: "Payment failed",
+            description: err.message || 'Could not connect to payment gateway.',
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      
+      // Clear the cart and navigate to success page
       clearCart();
-      navigate(`/track-order?code=${trackingCode}`);
-
+      navigate(`/track-order?code=${tracking_code}`);
+      
     } catch (error: any) {
       console.error('Checkout error:', error);
       toast({
         title: "Checkout failed",
-        description: error.message || "There was an error processing your order. Please try again.",
+        description: `There was an error processing your order. Please try again. ${error.message}`,
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+  
   if (cart.length === 0) {
     return (
       <div className="min-h-screen pt-24">
@@ -477,30 +559,39 @@ const CheckoutPage: React.FC = () => {
           </div>
           
           {/* Order Summary */}
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h2 className="text-xl font-serif mb-4">Order Summary</h2>
-            <div className="space-y-4">
-              {cart.map(item => (
-                <div key={item.product.id} className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{item.product.name}</p>
-                    <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+          <div>
+            <div className="bg-Nelysah-lightGray p-6 rounded-md">
+              <h2 className="font-serif text-xl mb-4">Order Summary</h2>
+              
+              <div className="mb-4">
+                {cart.map((item) => (
+                  <div key={item.product.id} className="flex justify-between py-2 border-b border-border last:border-b-0">
+                    <div>
+                      <span>{item.quantity}x </span>
+                      <span className="font-medium">{item.product.name}</span>
+                    </div>
+                    <span>Ghs{(item.product.price * item.quantity).toFixed(2)}</span>
                   </div>
-                  <p>Ghs{(item.product.price * item.quantity).toFixed(2)}</p>
-                </div>
-              ))}
-              <div className="border-t pt-4 space-y-2">
+                ))}
+              </div>
+              
+              <div className="space-y-3 mb-4">
                 <div className="flex justify-between">
-                  <p>Subtotal</p>
-                  <p>Ghs{cartTotal.toFixed(2)}</p>
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span>Ghs{cartTotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <p>Delivery Fee</p>
-                  <p>Ghs{deliveryFee.toFixed(2)}</p>
-                </div>
-                <div className="flex justify-between font-bold text-lg">
-                  <p>Total</p>
-                  <p>Ghs{totalWithDelivery.toFixed(2)}</p>
+                {deliveryOption === 'delivery_service' && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Delivery</span>
+                    <span>Ghs{deliveryFee.toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="border-t border-border pt-4">
+                <div className="flex justify-between font-medium">
+                  <span>Total</span>
+                  <span>Ghs{totalWithDelivery.toFixed(2)}</span>
                 </div>
               </div>
             </div>

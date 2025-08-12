@@ -12,19 +12,19 @@ interface CategoryProps {
 const categories: CategoryProps[] = [
   {
     name: 'Cleansers',
-    image: 'https://res.cloudinary.com/dy8crgoev/image/upload/v1753782909/nelysah_uploads/1753782908569-r1.jpg.jpg',
+    image: 'https://images.unsplash.com/photo-1608248543803-ba4f8c70e758?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     link: '/shop?category=cleansers',
     description: 'Gentle, effective cleansers for all skin types'
   },
   {
     name: 'Serums',
-    image: 'https://res.cloudinary.com/dy8crgoev/image/upload/v1753783234/nelysah_uploads/1753783233815-cc5.jpg.jpg',
+    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1587&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     link: '/shop?category=serums',
     description: 'Targeted treatments for specific skin concerns'
   },
   {
     name: 'Moisturizers',
-    image: 'https://res.cloudinary.com/dy8crgoev/image/upload/v1753783234/nelysah_uploads/1753783233818-cc1.jpg.jpg',
+    image: 'https://images.unsplash.com/photo-1570194065650-d99fb4a8ace5?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     link: '/shop?category=moisturizers',
     description: 'Hydrating formulas for day and night'
   }

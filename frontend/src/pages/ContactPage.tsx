@@ -1,6 +1,6 @@
+
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
-import axios from 'axios';
 
 const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -20,39 +20,24 @@ const ContactPage: React.FC = () => {
     }));
   };
   
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post('/api/email/send-notification', {
-        to: 'admin@nelysah.com', // Or any other recipient
-        notificationContent: `
-          <h1>New Contact Form Submission</h1>
-          <p><strong>Name:</strong> ${formData.name}</p>
-          <p><strong>Email:</strong> ${formData.email}</p>
-          <p><strong>Subject:</strong> ${formData.subject}</p>
-          <p><strong>Message:</strong></p>
-          <p>${formData.message}</p>
-        `
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setFormSubmitted(true);
-      setFormData({
-        name: '',
-        email: '',
-        subject: '',
-        message: ''
-      });
-      setTimeout(() => {
-        setFormSubmitted(false);
-      }, 5000);
-    } catch (error) {
-      console.error('Error submitting contact form:', error);
-      // Handle error (e.g., show an error message to the user)
-    }
+    // In a real implementation, we would submit the form data to a server
+    console.log('Form submitted:', formData);
+    setFormSubmitted(true);
+    
+    // Reset form after submission
+    setFormData({
+      name: '',
+      email: '',
+      subject: '',
+      message: ''
+    });
+    
+    // Reset submission state after 5 seconds
+    setTimeout(() => {
+      setFormSubmitted(false);
+    }, 5000);
   };
 
   return (
@@ -105,7 +90,7 @@ const ContactPage: React.FC = () => {
                 <div>
                   <h3 className="font-medium mb-1">Call Us</h3>
                   <p className="text-muted-foreground">
-                    <a href="tel:+233 55 923 2921" className="hover:underline">+233 55 923 2921 / +233 54 394 7191</a><br />
+                    <a href="tel:+233 55 923 2921" className="hover:underline">+233 55 923 2921</a><br />
                     Monday - Saturday, 9am - 10pm GMT
                   </p>
                 </div>
@@ -229,7 +214,7 @@ const ContactPage: React.FC = () => {
               <div className="text-center">
                 <MapPin size={32} className="mx-auto mb-2" />
                 <p className="font-medium">Map would be displayed here</p>
-                <p className="text-muted-foreground">Nelysah Beauty, Tema, Accra-Ghana</p>
+                <p className="text-muted-foreground">123 Beauty Boulevard, Skincare City, SC 12345</p>
               </div>
             </div>
           </div>
