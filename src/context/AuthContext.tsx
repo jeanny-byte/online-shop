@@ -68,8 +68,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
       const data = await response.json();
-      setIsAdmin(!!data.is_admin);
-      return !!data.is_admin;
+      setIsAdmin(!!data.isAdmin);
+      return !!data.isAdmin;
     } catch {
       setIsAdmin(false);
       setUser(null);
@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
       const data = await response.json();
-      const driverStatus = !!data.is_driver;
+      const driverStatus = !!data.isDriver;
       setIsDriver(driverStatus);
       
       // Update user object with driver status
