@@ -5,6 +5,7 @@ use App\Http\Controllers\BlogPostController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\StoreSettingController;
 use App\Http\Controllers\TestimonialController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::post('/auth/signup', [AuthController::class, 'register']);
 Route::post('/auth/signin', [AuthController::class, 'login']);
+
+Route::get('/settings', [StoreSettingController::class, 'index']);
 
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
@@ -64,6 +67,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/blog-posts/{id}', [BlogPostController::class, 'destroy']);
         
         Route::get('/orders', [OrderController::class, 'index']);
+
+        Route::post('/settings', [StoreSettingController::class, 'update']);
     });
 
     Route::put('/orders/{orderId}', [OrderController::class, 'updateStatus'])->middleware('can:staff');

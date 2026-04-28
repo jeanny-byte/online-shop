@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { LoadingProvider } from "./context/LoadingContext";
+import { SettingsProvider } from "./context/SettingsContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
@@ -34,6 +35,7 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminBlogPosts from "./pages/admin/AdminBlogPosts";
 import AdminBlogEditor from "./pages/admin/AdminBlogEditor";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminSettings from "./pages/admin/AdminSettings";
 import DriverDashboard from "./pages/DriverDashboard";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -53,8 +55,9 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <CartProvider>
-            <LoadingProvider>
+          <SettingsProvider>
+            <CartProvider>
+              <LoadingProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -125,6 +128,11 @@ const App = () => {
                     <AdminUsers />
                   </ProtectedRoute>
                 } />
+                <Route path="/admin/settings" element={
+                  <ProtectedRoute adminOnly>
+                    <AdminSettings />
+                  </ProtectedRoute>
+                } />
                 
                 {/* 404 route */}
                 <Route path="*" element={<NotFound />} />
@@ -133,7 +141,8 @@ const App = () => {
             </TooltipProvider>
             </LoadingProvider>
           </CartProvider>
-        </AuthProvider>
+        </SettingsProvider>
+      </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Menu, ShoppingBag, X, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRoles } from '@/hooks/use-roles';
+import { useSettings } from '@/context/SettingsContext';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -17,6 +18,7 @@ const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, signOut, isAdmin } = useAuth();
   const { isDriver } = useRoles();
+  const { settings } = useSettings();
   const navigate = useNavigate();
   
   const handleSignOut = async () => {
@@ -63,7 +65,11 @@ const Navbar: React.FC = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="text-2xl font-serif font-semibold">
-            Nelysah
+            {settings?.logo_url ? (
+              <img src={settings.logo_url} alt={settings.store_name} className="h-10 w-auto object-contain" />
+            ) : (
+              settings?.store_name || 'Nelysah'
+            )}
           </Link>
           
           {/* Desktop Navigation */}
@@ -179,7 +185,7 @@ const Navbar: React.FC = () => {
           <div className="container-custom py-5">
             <div className="flex justify-between items-center">
               <Link to="/" className="text-2xl font-serif font-semibold" onClick={() => setIsOpen(false)}>
-                Nelysah Royal Care
+                {settings?.store_name || 'Nelysah Royal Care'}
               </Link>
               <button onClick={() => setIsOpen(false)}>
                 <X size={24} />

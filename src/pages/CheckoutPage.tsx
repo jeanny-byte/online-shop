@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
 import { useCart } from '../context/CartContext';
 import { useLoading } from '../context/LoadingContext';
+import { useSettings } from '../context/SettingsContext';
 import { formatOrderForWhatsApp, sendOrderToWhatsApp } from '../lib/orderUtils';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
@@ -83,6 +84,8 @@ const CheckoutPage: React.FC = () => {
     fetchProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, setValue]);
+
+  const { settings: storeSettings } = useSettings();
 
   const onSubmit = async (data: CheckoutFormData) => {
     if (cart.length === 0) {
@@ -167,7 +170,10 @@ const CheckoutPage: React.FC = () => {
         };
         clearCart();
         toast({ title: 'Order placed!', description: 'Redirecting to WhatsApp to confirm your order.' });
-        sendOrderToWhatsApp(formatOrderForWhatsApp(orderDetails), '233557246424');
+        
+        // Use dynamic WhatsApp number from settings, fallback to original if not set
+        const whatsappNumber = storeSettings?.whatsapp_number?.replace(/\D/g, '') || '233557246424';
+        sendOrderToWhatsApp(formatOrderForWhatsApp(orderDetails), whatsappNumber);
         navigate(`/track-order?code=${trackingCode}`);
         return;
       }

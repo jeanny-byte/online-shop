@@ -1,17 +1,19 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useSettings } from '@/context/SettingsContext';
 
 const Footer: React.FC = () => {
+  const { settings } = useSettings();
   return (
     <footer className="bg-background pt-16 pb-8">
       <div className="container-custom">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-xl font-serif font-medium mb-4">Nelysah Royal Care</h3>
+            <h3 className="text-xl font-serif font-medium mb-4">{settings?.store_name || 'Nelysah Royal Care'}</h3>
             <p className="text-muted-foreground mb-4">
-              Luxurious beauty and skincare, curated by Nelysah Royal Care for your royal self-care ritual.
+              Luxurious beauty and skincare, curated by {settings?.store_name || 'Nelysah Royal Care'} for your royal self-care ritual.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
@@ -99,7 +101,7 @@ const Footer: React.FC = () => {
         
         <div className="border-t border-border pt-8">
           <p className="text-muted-foreground text-center text-sm">
-            &copy; {new Date().getFullYear()} Nelysah. All rights reserved.
+            &copy; {new Date().getFullYear()} {settings?.store_name || 'Nelysah'}. All rights reserved.
           </p>
         </div>
       </div>

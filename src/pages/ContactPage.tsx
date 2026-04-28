@@ -1,8 +1,10 @@
 
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { useSettings } from '@/context/SettingsContext';
 
 const ContactPage: React.FC = () => {
+  const { settings } = useSettings();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -63,9 +65,8 @@ const ContactPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-medium mb-1">Our Location</h3>
-                  <p className="text-muted-foreground">
-                    Tema Community 25<br />
-                    Accra-Ghana
+                  <p className="text-muted-foreground whitespace-pre-line">
+                    {settings?.store_address || 'Tema Community 25\nAccra-Ghana'}
                   </p>
                 </div>
               </div>
@@ -77,8 +78,9 @@ const ContactPage: React.FC = () => {
                 <div>
                   <h3 className="font-medium mb-1">Email Us</h3>
                   <p className="text-muted-foreground">
-                    <a href="mailto:hello@Nelysah.com" className="hover:underline">hello@Nelysah.com</a><br />
-                    <a href="mailto:support@Nelysah.com" className="hover:underline">support@Nelysah.com</a>
+                    <a href={`mailto:${settings?.store_email || 'hello@Nelysah.com'}`} className="hover:underline">
+                      {settings?.store_email || 'hello@Nelysah.com'}
+                    </a>
                   </p>
                 </div>
               </div>
@@ -90,7 +92,9 @@ const ContactPage: React.FC = () => {
                 <div>
                   <h3 className="font-medium mb-1">Call Us</h3>
                   <p className="text-muted-foreground">
-                    <a href="tel:+233 55 923 2921" className="hover:underline">+233 55 923 2921</a><br />
+                    <a href={`tel:${settings?.store_phone || '+233 55 923 2921'}`} className="hover:underline">
+                      {settings?.store_phone || '+233 55 923 2921'}
+                    </a><br />
                     Monday - Saturday, 9am - 10pm GMT
                   </p>
                 </div>
@@ -208,15 +212,16 @@ const ContactPage: React.FC = () => {
         
         {/* Map */}
         <div className="mt-16">
-          <div className="rounded-lg overflow-hidden h-80 bg-lskin-lightGray">
-            {/* In a real implementation, we would embed a Google Map here */}
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="text-center">
-                <MapPin size={32} className="mx-auto mb-2" />
-                <p className="font-medium">Map would be displayed here</p>
-                <p className="text-muted-foreground">123 Beauty Boulevard, Skincare City, SC 12345</p>
-              </div>
-            </div>
+          <div className="rounded-lg overflow-hidden h-96 bg-muted shadow-md border">
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d15879.612379841463!2d-0.0001779481740710842!3d5.7270964535514155!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sgh!4v1777420023746!5m2!1sen!2sgh" 
+              width="100%" 
+              height="100%" 
+              style={{ border: 0 }} 
+              allowFullScreen={true} 
+              loading="lazy" 
+              referrerPolicy="no-referrer-when-downgrade"
+            ></iframe>
           </div>
         </div>
       </div>
