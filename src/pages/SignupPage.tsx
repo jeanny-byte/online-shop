@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '../context/AuthContext';
+import { useLoading } from '../context/LoadingContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
@@ -18,13 +19,16 @@ interface SignupFormData {
 const SignupPage: React.FC = () => {
   const { signUp } = useAuth();
   const navigate = useNavigate();
+  const { startLoading, stopLoading } = useLoading();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { register, handleSubmit, formState: { errors }, watch } = useForm<SignupFormData>();
   const password = watch('password');
   
   const onSubmit = async (data: SignupFormData) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
+    startLoading('Creating your account...');
     
     try {
 
@@ -47,6 +51,7 @@ const SignupPage: React.FC = () => {
       });
     } finally {
       setIsSubmitting(false);
+      stopLoading();
     }
   };
   
