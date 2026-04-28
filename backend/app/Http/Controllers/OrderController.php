@@ -144,8 +144,12 @@ class OrderController extends Controller
     {
         $order = Order::with('items.product')
             ->where('tracking_code', $trackingCode)
-            ->firstOrFail();
+            ->first();
 
-        return response()->json($order);
+        if (!$order) {
+            return response()->json(['error' => 'Order not found'], 404);
+        }
+
+        return response()->json(['order' => $order]);
     }
 }

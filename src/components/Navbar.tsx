@@ -54,7 +54,7 @@ const Navbar: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    console.log("Navbar: Auth status updated:", { isSignedIn: !!user, isAdmin });
+    // Auth status change side-effect placeholder
   }, [user, isAdmin]);
 
   return (
@@ -79,6 +79,9 @@ const Navbar: React.FC = () => {
             </Link>
             <Link to="/contact" className="text-foreground hover:text-primary-foreground transition-colors">
               Contact
+            </Link>
+            <Link to="/track-order" className="text-foreground hover:text-primary-foreground transition-colors">
+              Track Order
             </Link>
             {isAdmin && (
               <Link to="/admin" className="text-foreground hover:text-primary-foreground transition-colors font-medium">
@@ -115,6 +118,16 @@ const Navbar: React.FC = () => {
                     <DropdownMenuItem asChild>
                       <Link to="/account" className="cursor-pointer w-full">
                         Account
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/track-order" className="cursor-pointer w-full">
+                        Track Order
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/user-orders" className="cursor-pointer w-full">
+                        My Orders
                       </Link>
                     </DropdownMenuItem>
                     {isAdmin && (
@@ -184,6 +197,9 @@ const Navbar: React.FC = () => {
               </Link>
               <Link to="/contact" className="text-lg font-medium" onClick={() => setIsOpen(false)}>
                 Contact
+              </Link>
+              <Link to="/track-order" className="text-lg font-medium" onClick={() => setIsOpen(false)}>
+                Track Order
               </Link>
               {isAdmin && (
                 <Link to="/admin" className="text-lg font-medium block py-2" onClick={() => setIsOpen(false)}>
