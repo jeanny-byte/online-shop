@@ -17,7 +17,8 @@ Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
 
 Route::get('/blog-posts', [BlogPostController::class, 'index']);
-Route::get('/blog-posts/{slug}', [BlogPostController::class, 'show']);
+Route::get('/blog-posts/slug/{slug}', [BlogPostController::class, 'showBySlug']);
+Route::get('/blog-posts/{id}', [BlogPostController::class, 'showById']);
 
 Route::get('/testimonials', [TestimonialController::class, 'index']);
 
@@ -57,6 +58,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/products/{id}', [ProductController::class, 'update']);
         Route::delete('/products/{id}', [ProductController::class, 'destroy']);
         Route::post('/products/update-stock', [ProductController::class, 'updateStockBatch']);
+        
+        Route::post('/blog-posts', [BlogPostController::class, 'store']);
+        Route::put('/blog-posts/{id}', [BlogPostController::class, 'update']);
+        Route::delete('/blog-posts/{id}', [BlogPostController::class, 'destroy']);
         
         Route::get('/orders', [OrderController::class, 'index']);
         Route::put('/orders/{orderId}', [OrderController::class, 'updateStatus']);

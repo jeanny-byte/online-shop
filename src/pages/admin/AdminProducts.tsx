@@ -136,8 +136,12 @@ const AdminProducts: React.FC = () => {
       return;
     }
     try {
+      const token = localStorage.getItem('jwt_token');
       const res = await fetch(`${API_URL}/api/products/${id}`, {
         method: 'DELETE',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
       });
       if (!res.ok) throw new Error('Failed to delete product');
       toast({
@@ -195,11 +199,21 @@ const AdminProducts: React.FC = () => {
         }
       }
       // If editing, include the product id for update
+      let url = `${API_URL}/api/products`;
+      let method = 'POST';
+
       if (currentProduct && currentProduct.id) {
-        form.append('id', currentProduct.id);
+        url = `${API_URL}/api/products/${currentProduct.id}`;
+        form.append('_method', 'PUT'); // Laravel requirement for multipart PUT requests
       }
-      const res = await fetch(`${API_URL}/api/products`, {
-        method: currentProduct && currentProduct.id ? 'PUT' : 'POST',
+      
+      const token = localStorage.getItem('jwt_token');
+
+      const res = await fetch(url, {
+        method: method,
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: form,
       });
       if (!res.ok) throw new Error(currentProduct ? 'Failed to update product' : 'Failed to add product');
