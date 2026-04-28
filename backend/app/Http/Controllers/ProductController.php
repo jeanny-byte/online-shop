@@ -29,7 +29,22 @@ class ProductController extends Controller
             'how_to_use' => 'required|string',
             'stock_quantity' => 'integer',
             'featured' => 'boolean',
+            'benefits' => 'nullable|string',
+            'ingredients' => 'nullable|string',
+            'images' => 'nullable|array',
+            'images.*' => 'image',
         ]);
+
+        $imageUrls = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $path = $file->store('product-images', 'public');
+                $imageUrls[] = url('storage/' . $path);
+            }
+        }
+
+        $validated['images'] = $imageUrls;
+        $validated['image'] = count($imageUrls) > 0 ? $imageUrls[0] : null;
 
         $product = Product::create($validated);
 
@@ -49,7 +64,31 @@ class ProductController extends Controller
             'how_to_use' => 'string',
             'stock_quantity' => 'integer',
             'featured' => 'boolean',
+            'benefits' => 'nullable|string',
+            'ingredients' => 'nullable|string',
+            'images' => 'nullable|array',
+            'images.*' => 'image',
+            'existingImages' => 'nullable|string',
         ]);
+
+        $imageUrls = [];
+        
+        if ($request->has('existingImages')) {
+            $existing = json_decode($request->input('existingImages'), true);
+            if (is_array($existing)) {
+                $imageUrls = $existing;
+            }
+        }
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $path = $file->store('product-images', 'public');
+                $imageUrls[] = url('storage/' . $path);
+            }
+        }
+
+        $validated['images'] = $imageUrls;
+        $validated['image'] = count($imageUrls) > 0 ? $imageUrls[0] : null;
 
         $product->update($validated);
 

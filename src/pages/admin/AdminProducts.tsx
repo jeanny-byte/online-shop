@@ -195,7 +195,7 @@ const AdminProducts: React.FC = () => {
       // Send new files
       if (formData.newImages && formData.newImages.length > 0) {
         for (let img of formData.newImages) {
-          form.append('images', img);
+          form.append('images[]', img);
         }
       }
       // If editing, include the product id for update
