@@ -33,6 +33,7 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminBlogPosts from "./pages/admin/AdminBlogPosts";
 import AdminBlogEditor from "./pages/admin/AdminBlogEditor";
+import AdminUsers from "./pages/admin/AdminUsers";
 import DriverDashboard from "./pages/DriverDashboard";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -117,6 +118,11 @@ const App = () => {
                 <Route path="/admin/blog/edit/:id" element={
                   <ProtectedRoute>
                     <AdminBlogEditor />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/users" element={
+                  <ProtectedRoute adminOnly>
+                    <AdminUsers />
                   </ProtectedRoute>
                 } />
                 

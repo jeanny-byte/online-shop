@@ -10,7 +10,7 @@ class UserController extends Controller
 {
     public function index()
     {
-        return response()->json(User::select('id', 'name', 'email', 'role', 'is_admin', 'is_driver')->get());
+        return response()->json(User::select('id', 'name', 'email', 'role', 'is_admin', 'is_driver', 'created_at')->orderBy('created_at', 'desc')->get());
     }
 
     public function show($id)

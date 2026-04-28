@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Package, ShoppingBag, BookOpen, LogOut } from 'lucide-react';
+import { Home, Package, ShoppingBag, BookOpen, LogOut, Users } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
 interface AdminLayoutProps {
@@ -23,6 +23,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
     { name: 'Products', path: '/admin/products', icon: Package },
     { name: 'Orders', path: '/admin/orders', icon: ShoppingBag },
     { name: 'Blog', path: '/admin/blog', icon: BookOpen },
+    { name: 'Users', path: '/admin/users', icon: Users },
   ];
   
   // Safety check - shouldn't happen due to ProtectedRoute, but just in case
