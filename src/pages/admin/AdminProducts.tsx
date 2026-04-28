@@ -212,11 +212,16 @@ const AdminProducts: React.FC = () => {
       const res = await fetch(url, {
         method: method,
         headers: {
+          'Accept': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         body: form,
       });
-      if (!res.ok) throw new Error(currentProduct ? 'Failed to update product' : 'Failed to add product');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error('Validation errors:', errData);
+        throw new Error(currentProduct ? 'Failed to update product' : 'Failed to add product');
+      }
       toast({
         title: "Success",
         description: currentProduct ? "Product updated successfully" : "Product added successfully",
