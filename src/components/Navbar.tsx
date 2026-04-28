@@ -24,6 +24,20 @@ const Navbar: React.FC = () => {
     setIsOpen(false); // Close mobile menu if open
   };
   
+  const getInitials = () => {
+    if (user?.name) {
+      const parts = user.name.split(' ');
+      if (parts.length >= 2) {
+        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+      }
+      return user.name.substring(0, 2).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return 'U';
+  };
+  
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 50) {
@@ -87,8 +101,8 @@ const Navbar: React.FC = () => {
             {/* Profile Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-foreground hover:bg-gray-200 transition-colors">
-                  <User size={18} />
+                <button className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-foreground hover:bg-gray-200 transition-colors font-medium text-sm">
+                  {user ? getInitials() : <User size={18} />}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-white">

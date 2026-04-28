@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 
 interface SignupFormData {
+  name: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -27,7 +28,7 @@ const SignupPage: React.FC = () => {
     
     try {
 
-      const { error } = await signUp(data.email, data.password);
+      const { error } = await signUp(data.email, data.password, data.name);
       
       if (error) throw error;
       
@@ -57,6 +58,21 @@ const SignupPage: React.FC = () => {
           
           <div className="bg-white p-6 border border-border rounded-md">
             <form onSubmit={handleSubmit(onSubmit)}>
+              <div className="mb-4">
+                <label htmlFor="name" className="block text-sm font-medium mb-1">
+                  Full Name
+                </label>
+                <Input
+                  id="name"
+                  type="text"
+                  className={errors.name ? 'border-red-500' : ''}
+                  {...register('name', { 
+                    required: 'Name is required',
+                  })}
+                />
+                {errors.name && <span className="text-sm text-red-500">{errors.name.message}</span>}
+              </div>
+
               <div className="mb-4">
                 <label htmlFor="email" className="block text-sm font-medium mb-1">
                   Email

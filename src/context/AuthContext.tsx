@@ -28,7 +28,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isDriver: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   checkDriverStatus: () => Promise<boolean>;
 }
@@ -57,7 +57,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     try {
       const response = await fetch(`${API_URL}/api/auth/check-admin`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        },
       });
       if (!response.ok) {
         setIsAdmin(false);
@@ -82,7 +85,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     try {
       const response = await fetch(`${API_URL}/api/auth/is-driver`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        },
       });
       if (!response.ok) {
         setIsDriver(false);
@@ -121,7 +127,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       const response = await fetch(`${API_URL}/api/auth/signin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ email, password }),
       });
       const result = await response.json();
@@ -147,7 +156,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdmin(!!result.user.is_admin);
       setIsDriver(!!result.user.is_driver);
       
-      if (result.token) {
+      if (result.access_token) {
+        localStorage.setItem('jwt_token', result.access_token);
+      } else if (result.token) {
         localStorage.setItem('jwt_token', result.token);
       }
       
@@ -168,13 +179,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, name: string) => {
     try {
       setIsLoading(true);
       const response = await fetch(`${API_URL}/api/auth/signup`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ email, password, name }),
       });
       const result = await response.json();
       if (!response.ok) {
