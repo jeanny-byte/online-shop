@@ -42,16 +42,18 @@ const AdminDashboard: React.FC = () => {
     const token = localStorage.getItem('jwt_token');
     const res = await fetch(`${API_URL}/api/dashboard`, {
       headers: {
+        'Accept': 'application/json',
         Authorization: token ? `Bearer ${token}` : '',
       },
     });
     if (!res.ok) throw new Error('Failed to fetch dashboard data');
     const data = await res.json();
+    const summary = data.summary || data; // support both wrapped and flat responses
     setStats({
-      totalOrders: data.totalOrders || 0,
-      totalProducts: data.totalProducts || 0,
-      pendingOrders: data.pendingOrders || 0,
-      totalRevenue: data.totalRevenue || 0,
+      totalOrders: summary.totalOrders || 0,
+      totalProducts: summary.totalProducts || 0,
+      pendingOrders: summary.pendingOrders || 0,
+      totalRevenue: summary.totalRevenue || 0,
     });
     setRecentOrders(data.recentOrders || []);
   } catch (error) {
