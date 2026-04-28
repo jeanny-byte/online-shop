@@ -64,8 +64,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/blog-posts/{id}', [BlogPostController::class, 'destroy']);
         
         Route::get('/orders', [OrderController::class, 'index']);
-        Route::put('/orders/{orderId}', [OrderController::class, 'updateStatus']);
     });
+
+    Route::put('/orders/{orderId}', [OrderController::class, 'updateStatus'])->middleware('can:staff');
 });
 
 Route::get('/health', function () {
