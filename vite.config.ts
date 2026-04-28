@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     proxy: {
-      '/api': 'https://nelysah-server.onrender.com',
+      '/api': 'http://localhost:8000',
     },
   },
   plugins: [

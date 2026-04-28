@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Product } from '@/data/products';
 
 // Use API URL from .env
-const API_URL = process.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 import { toast } from '@/hooks/use-toast';
 import AdminLayout from './components/AdminLayout';
 
