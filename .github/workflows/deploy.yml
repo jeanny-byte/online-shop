@@ -1,0 +1,58 @@
+name: Deploy to Namecheap
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # --- Build React Frontend ---
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: npm install
+
+      - name: Build Frontend
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      # --- Prepare Laravel Backend ---
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, mysql, bcmath, gd
+          tools: composer:v2
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: composer install --no-dev --optimize-autoloader
+
+      # --- Deploy via FTP ---
+      - name: Deploy to Server
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: './'
+          server-dir: ${{ secrets.FTP_REMOTE_PATH }}
+          state-name: '.ftp-deploy-sync-state.json'
+          dangerous-delete-remote-files: false
+
+      # --- Post-Deployment (Optional) ---
+      # You might need to run migrations or clear cache. 
+      # Since shared hosting usually doesn't allow SSH commands easily in workflows,
+      # you can use a deployment hook or manually run them once.
