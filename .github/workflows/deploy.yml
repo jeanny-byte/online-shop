@@ -1,0 +1,58 @@
+name: Deploy to Namecheap
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # --- Build React Frontend ---
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: npm install
+
+      - name: Build Frontend
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      # --- Prepare Laravel Backend ---
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, mysql, bcmath, gd
+          tools: composer:v2
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: composer install --no-dev --optimize-autoloader
+
+      # --- Deploy via SFTP ---
+      - name: Deploy to Server
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          username: ${{ secrets.SFTP_USERNAME }}
+          server: ${{ secrets.SFTP_SERVER }}
+          ssh_private_key: ${{ secrets.SFTP_SSH_KEY }}
+          local_path: './*' # Deploy everything (React root and backend folder)
+          remote_path: ${{ secrets.SFTP_REMOTE_PATH }} # e.g., /home/username/public_html
+          delete_remote_files: false
+          args: '-o ConnectTimeout=5'
+
+      # --- Post-Deployment (Optional) ---
+      # You might need to run migrations or clear cache. 
+      # Since shared hosting usually doesn't allow SSH commands easily in workflows,
+      # you can use a deployment hook or manually run them once.
