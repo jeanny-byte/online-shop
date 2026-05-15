@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
 import { useCart } from '../context/CartContext';
+import { useLoading } from '../context/LoadingContext';
+import { useSettings } from '../context/SettingsContext';
 import { formatOrderForWhatsApp, sendOrderToWhatsApp } from '../lib/orderUtils';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
-const API_URL = process.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 
 type CheckoutFormData = { 
   fullName: string; 
@@ -35,6 +37,9 @@ const CheckoutPage: React.FC = () => {
 
   const { cart, cartTotal, clearCart } = useCart();
   const navigate = useNavigate();
+  const { startLoading, stopLoading } = useLoading();
+  // Guard ref: prevents double submission even on fast double-clicks
+  const isSubmittingRef = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<CheckoutFormData>({
@@ -45,7 +50,7 @@ const CheckoutPage: React.FC = () => {
   });
   
   const { user } = useAuth();
-const paymentMethod = watch('paymentMethod');
+  const paymentMethod = watch('paymentMethod');
   const city = watch('city') || '';
   const region = watch('state') || '';
   const deliveryOption = watch('deliveryOption') || '';
@@ -77,9 +82,10 @@ const paymentMethod = watch('paymentMethod');
       }
     };
     fetchProfile();
-    // Only run when user changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, setValue]);
+
+  const { settings: storeSettings } = useSettings();
 
   const onSubmit = async (data: CheckoutFormData) => {
     if (cart.length === 0) {
@@ -90,226 +96,128 @@ const paymentMethod = watch('paymentMethod');
       });
       return;
     }
-    
-    setIsSubmitting(true);
-    
-    try {
-      // Format shipping address
-      const shippingAddress = `${data.address}, ${data.city}, ${data.state} ${data.zipCode}`;
-      
-      // Generate a random tracking code
-      const tracking_code = Math.random().toString(36).substring(2, 8).toUpperCase();
-      
-      // Create order in database
-      let orderId = '';
-      let trackingCode = tracking_code;
-      try {
-        const orderResponse = await fetch(`${API_URL}/api/orders/whatsapp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            customer_name: data.fullName,
-            customer_email: data.email,
-            customer_phone: data.phone,
-            shipping_address: shippingAddress,
-            order_total: cartTotal,
-            payment_method: data.paymentMethod,
-            tracking_code: tracking_code,
-            items: cart.map(item => ({
-              product_id: item.product.id,
-              quantity: item.quantity,
-              price_per_item: item.product.price
-            }))
-          })
-        });
-        if (!orderResponse.ok) {
-          throw new Error('Failed to create order');
-        }
-        const orderResult = await orderResponse.json();
-        orderId = orderResult.id;
-        trackingCode = orderResult.tracking_code || tracking_code;
-      } catch (err) {
-        toast({
-          title: 'Order creation failed',
-          description: err.message || 'Could not create order in store.',
-          variant: 'destructive',
-        });
-        setIsSubmitting(false);
-        return;
-      }
 
-      // Add order items
-      const orderItems = cart.map(item => ({
-        order_id: orderId,
-        product_id: item.product.id,
-        quantity: item.quantity,
-        price_per_item: item.product.price
-      }));
-      
-      // Handle payment method
-      if (data.paymentMethod === 'whatsapp') {
-        // Format order details for WhatsApp
-        const orderDetails = {
-          id: 'fake_order_id', // You can ignore this field for frontend
+    // Double-click / double-submission guard
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+    startLoading('Placing your order...');
+
+    try {
+      const shippingAddress = `${data.address}, ${data.city}, ${data.state} ${data.zipCode}`;
+      const tracking_code = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+      // ── Step 1: Create order in the database (ONCE) ──
+      startLoading('Creating your order...');
+      const orderResponse = await fetch(`${API_URL}/api/orders/whatsapp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
           customer_name: data.fullName,
           customer_email: data.email,
           customer_phone: data.phone,
           shipping_address: shippingAddress,
-          order_total: cartTotal,
-          payment_method: 'whatsapp',
+          order_total: totalWithDelivery,
+          payment_method: data.paymentMethod,
           tracking_code,
-          items: cart
+          items: cart.map(item => ({
+            product_id: item.product.id,
+            quantity: item.quantity,
+            price_per_item: item.product.price,
+          })),
+        }),
+      });
+
+      if (!orderResponse.ok) {
+        const errData = await orderResponse.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to create order');
+      }
+
+      const orderResult = await orderResponse.json();
+      const trackingCode = orderResult.tracking_code || tracking_code;
+
+      // ── Step 2: Update stock ──
+      startLoading('Updating inventory...');
+      try {
+        await fetch(`${API_URL}/api/products/update-stock`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            items: cart.map(item => ({
+              id: item.product.id,
+              quantity: item.quantity,
+            })),
+          }),
+        });
+      } catch {
+        // Non-fatal: order is already placed, log and continue
+        console.warn('Stock update failed, continuing');
+      }
+
+      // ── Step 3: Payment-method-specific action ──
+      if (data.paymentMethod === 'whatsapp') {
+        startLoading('Preparing WhatsApp message...');
+        const orderDetails = {
+          id: orderResult.id,
+          customer_name: data.fullName,
+          customer_email: data.email,
+          customer_phone: data.phone,
+          shipping_address: shippingAddress,
+          order_total: totalWithDelivery,
+          payment_method: 'whatsapp',
+          tracking_code: trackingCode,
+          items: cart,
         };
-
-        // 1. Store order in database
-        try {
-          const response = await fetch(`${API_URL}/api/orders/whatsapp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              customer_name: orderDetails.customer_name,
-              customer_email: orderDetails.customer_email,
-              customer_phone: orderDetails.customer_phone,
-              shipping_address: orderDetails.shipping_address,
-              order_total: orderDetails.order_total,
-              payment_method: orderDetails.payment_method,
-              tracking_code: orderDetails.tracking_code,
-              items: cart.map(item => ({
-                product_id: item.product.id,
-                quantity: item.quantity,
-                price_per_item: item.product.price
-              }))
-            })
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to store order. Please try again.');
-          }
-
-          toast({
-            title: "Order placed successfully",
-            description: "You will be redirected to WhatsApp to complete your order.",
-          });
-          setTimeout(() => {
-            
-          }, 2000);
-
-          // 2. Prepare WhatsApp message and redirect
-          const whatsappMessage = formatOrderForWhatsApp(orderDetails);
-          const adminWhatsappNumber = '233557246424'; // Ghana format, change to your number
-          sendOrderToWhatsApp(whatsappMessage, adminWhatsappNumber);
-
-          // Update stock after order is placed
-          try {
-            const stockResponse = await fetch('/api/products/update-stock', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(cart.map(item => ({
-                productId: item.product.id,
-                quantity: item.quantity
-              })))
-            });
-            if (!stockResponse.ok) {
-              throw new Error('Failed to update product stock');
-            }
-          } catch (stockErr) {
-            toast({
-              title: 'Order placed, but stock update failed',
-              description: 'Please contact support if you have issues.',
-              variant: 'destructive',
-            });
-            setIsSubmitting(false);
-            return;
-          }
-          clearCart();
-          navigate(`/track-order?code=${tracking_code}`);
-          return;
-        } catch (err: any) {
-          toast({
-            title: "Order failed",
-            description: err.message || "Could not create order in store.",
-            variant: "destructive",
-          });
-          setIsSubmitting(false);
-          return;
-        }
+        clearCart();
+        toast({ title: 'Order placed!', description: 'Redirecting to WhatsApp to confirm your order.' });
+        
+        // Use dynamic WhatsApp number from settings, fallback to original if not set
+        const whatsappNumber = storeSettings?.whatsapp_number?.replace(/\D/g, '') || '233557246424';
+        sendOrderToWhatsApp(formatOrderForWhatsApp(orderDetails), whatsappNumber);
+        navigate(`/track-order?code=${trackingCode}`);
+        return;
       }
 
       if (data.paymentMethod === 'mtn_momo') {
-        // Online payment via mtn_momo
-        // 1. Create the order first (already done above)
-        // 2. Use the created orderId/trackingCode in the payment request
-        try {
-          const response = await fetch(`${API_URL}/api/payments/mtn_momo`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              amount: cartTotal,
-              customerName: data.fullName,
-              customerEmail: data.email,
-              customerPhone: data.phone,
-              orderId: trackingCode,
-              description: `Order for ${data.fullName}`
-            })
-          });
-          const result = await response.json();
-          if (response.ok && result.referenceId) {
-            toast({
-              title: "Redirecting to payment",
-              description: "You will be redirected to mtn_momo to complete your payment.",
-            });
-            // Update stock after initiating payment
-            try {
-              const stockResponse = await fetch('/api/products/update-stock', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(cart.map(item => ({
-                  productId: item.product.id,
-                  quantity: item.quantity
-                })))
-              });
-              if (!stockResponse.ok) {
-                throw new Error('Failed to update product stock');
-              }
-            } catch (stockErr) {
-              toast({
-                title: 'Order placed, but stock update failed',
-                description: 'Please contact support if you have issues.',
-                variant: 'destructive',
-              });
-              setIsSubmitting(false);
-              return;
-            }
-            clearCart();
-            window.location.href = result.paymentUrl;
-            return;
-          } else {
-            throw new Error(result.error || 'Failed to initiate payment');
-          }
-        } catch (err: any) {
-          toast({
-            title: "Payment failed",
-            description: err.message || 'Could not connect to payment gateway.',
-            variant: "destructive",
-          });
-          setIsSubmitting(false);
+        startLoading('Connecting to payment gateway...');
+        const response = await fetch(`${API_URL}/api/payments/mtn_momo`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            amount: totalWithDelivery,
+            customerName: data.fullName,
+            customerEmail: data.email,
+            customerPhone: data.phone,
+            orderId: trackingCode,
+            description: `Order for ${data.fullName}`,
+          }),
+        });
+        const result = await response.json();
+        if (response.ok && result.referenceId) {
+          clearCart();
+          toast({ title: 'Redirecting to payment…' });
+          window.location.href = result.paymentUrl;
           return;
+        } else {
+          throw new Error(result.error || 'Failed to initiate payment');
         }
       }
-      
-      // Clear the cart and navigate to success page
+
+      // Fallback
       clearCart();
-      navigate(`/track-order?code=${tracking_code}`);
-      
+      navigate(`/track-order?code=${trackingCode}`);
+
     } catch (error: any) {
       console.error('Checkout error:', error);
       toast({
-        title: "Checkout failed",
-        description: `There was an error processing your order. Please try again. ${error.message}`,
-        variant: "destructive",
+        title: 'Checkout failed',
+        description: error.message || 'There was an error processing your order. Please try again.',
+        variant: 'destructive',
       });
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
+      stopLoading();
     }
   };
   

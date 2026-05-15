@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '../context/AuthContext';
+import { useLoading } from '../context/LoadingContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -16,12 +17,15 @@ const LoginPage: React.FC = () => {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { startLoading, stopLoading } = useLoading();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
   
   const onSubmit = async (data: LoginFormData) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
+    startLoading('Signing in...');
     try {
       const { error } = await signIn(data.email, data.password);
       if (error) throw error;
@@ -37,7 +41,9 @@ const LoginPage: React.FC = () => {
         description: error.message || "Invalid email or password",
         variant: "destructive",
       });
+    } finally {
       setIsSubmitting(false);
+      stopLoading();
     }
   };
   

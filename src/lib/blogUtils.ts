@@ -39,8 +39,12 @@ export const fetchBlogPostBySlug = async (slug: string): Promise<BlogPost | null
 
 export const createBlogPost = async (postData: FormData): Promise<{ data: BlogPost | null; error: any }> => {
   try {
+    const token = localStorage.getItem('jwt_token');
     const res = await fetch('/api/blog-posts', {
       method: 'POST',
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
       body: postData,
     });
     if (!res.ok) {
@@ -56,8 +60,13 @@ export const createBlogPost = async (postData: FormData): Promise<{ data: BlogPo
 
 export const updateBlogPost = async (id: string, postData: FormData): Promise<{ data: BlogPost | null; error: any }> => {
   try {
+    const token = localStorage.getItem('jwt_token');
+    postData.append('_method', 'PUT'); // Laravel requires this for multipart/form-data PUT requests
     const res = await fetch(`/api/blog-posts/${id}`, {
-      method: 'PUT',
+      method: 'POST',
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
       body: postData,
     });
     if (!res.ok) {
@@ -73,7 +82,13 @@ export const updateBlogPost = async (id: string, postData: FormData): Promise<{ 
 
 export const deleteBlogPost = async (id: string): Promise<{ success: boolean; error: any }> => {
   try {
-    const res = await fetch(`/api/blog-posts/${id}`, { method: 'DELETE' });
+    const token = localStorage.getItem('jwt_token');
+    const res = await fetch(`/api/blog-posts/${id}`, { 
+      method: 'DELETE',
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      }
+    });
     if (!res.ok) {
       const error = await res.json();
       return { success: false, error };

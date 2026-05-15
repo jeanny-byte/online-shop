@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Menu, ShoppingBag, X, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRoles } from '@/hooks/use-roles';
+import { useSettings } from '@/context/SettingsContext';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -17,11 +18,26 @@ const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, signOut, isAdmin } = useAuth();
   const { isDriver } = useRoles();
+  const { settings } = useSettings();
   const navigate = useNavigate();
   
   const handleSignOut = async () => {
     await signOut();
     setIsOpen(false); // Close mobile menu if open
+  };
+  
+  const getInitials = () => {
+    if (user?.name) {
+      const parts = user.name.split(' ');
+      if (parts.length >= 2) {
+        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+      }
+      return user.name.substring(0, 2).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return 'U';
   };
   
   useEffect(() => {
@@ -40,7 +56,7 @@ const Navbar: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    console.log("Navbar: Auth status updated:", { isSignedIn: !!user, isAdmin });
+    // Auth status change side-effect placeholder
   }, [user, isAdmin]);
 
   return (
@@ -49,7 +65,11 @@ const Navbar: React.FC = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="text-2xl font-serif font-semibold">
-            Nelysah
+            {settings?.logo_url ? (
+              <img src={settings.logo_url} alt={settings.store_name} className="h-10 w-auto object-contain" />
+            ) : (
+              settings?.store_name || 'Nelysah'
+            )}
           </Link>
           
           {/* Desktop Navigation */}
@@ -65,6 +85,9 @@ const Navbar: React.FC = () => {
             </Link>
             <Link to="/contact" className="text-foreground hover:text-primary-foreground transition-colors">
               Contact
+            </Link>
+            <Link to="/track-order" className="text-foreground hover:text-primary-foreground transition-colors">
+              Track Order
             </Link>
             {isAdmin && (
               <Link to="/admin" className="text-foreground hover:text-primary-foreground transition-colors font-medium">
@@ -87,8 +110,8 @@ const Navbar: React.FC = () => {
             {/* Profile Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-foreground hover:bg-gray-200 transition-colors">
-                  <User size={18} />
+                <button className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-foreground hover:bg-gray-200 transition-colors font-medium text-sm">
+                  {user ? getInitials() : <User size={18} />}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-white">
@@ -101,6 +124,16 @@ const Navbar: React.FC = () => {
                     <DropdownMenuItem asChild>
                       <Link to="/account" className="cursor-pointer w-full">
                         Account
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/track-order" className="cursor-pointer w-full">
+                        Track Order
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/user-orders" className="cursor-pointer w-full">
+                        My Orders
                       </Link>
                     </DropdownMenuItem>
                     {isAdmin && (
@@ -152,7 +185,7 @@ const Navbar: React.FC = () => {
           <div className="container-custom py-5">
             <div className="flex justify-between items-center">
               <Link to="/" className="text-2xl font-serif font-semibold" onClick={() => setIsOpen(false)}>
-                Nelysah Royal Care
+                {settings?.store_name || 'Nelysah Royal Care'}
               </Link>
               <button onClick={() => setIsOpen(false)}>
                 <X size={24} />
@@ -170,6 +203,9 @@ const Navbar: React.FC = () => {
               </Link>
               <Link to="/contact" className="text-lg font-medium" onClick={() => setIsOpen(false)}>
                 Contact
+              </Link>
+              <Link to="/track-order" className="text-lg font-medium" onClick={() => setIsOpen(false)}>
+                Track Order
               </Link>
               {isAdmin && (
                 <Link to="/admin" className="text-lg font-medium block py-2" onClick={() => setIsOpen(false)}>

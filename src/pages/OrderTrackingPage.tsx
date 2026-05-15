@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 
 // Use API URL from .env
-const API_URL = process.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
@@ -34,48 +34,35 @@ const OrderTrackingPage: React.FC = () => {
       setProgressWidth('0%');
       return;
     }
+    const status = orderDetails.order_status.toLowerCase();
     let width = '0%';
-    switch (orderDetails.order_status) {
-      case 'pending':
-        width = '0%'; break;
-      case 'processing':
-        width = '33%'; break;
-      case 'shipped':
-        width = '66%'; break;
+    switch (status) {
+      case 'pending':     width = '0%';   break;
+      case 'processing':  width = '33%';  break;
+      case 'shipped':     width = '66%';  break;
       case 'delivered':
-      case 'cancelled':
-        width = '100%'; break;
-      default:
-        width = '0%';
+      case 'cancelled':   width = '100%'; break;
+      default:            width = '0%';
     }
     setProgressWidth('0%');
-    // Use requestAnimationFrame to ensure the DOM updates before animating
     const raf = requestAnimationFrame(() => setProgressWidth(width));
     return () => cancelAnimationFrame(raf);
   }, [orderDetails]);
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<TrackingFormData>();
   
-  // Extract tracking code from URL if present
-  React.useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const code = params.get('code');
-    if (code) {
-      setValue('trackingCode', code);
-      onSubmit({ trackingCode: code });
-    }
-  }, [location.search]);
-  
-  const onSubmit = async (data: TrackingFormData) => {
-    if (!data.trackingCode) return;
-    
+  const fetchOrder = async (code: string) => {
+    if (!code) return;
     setIsLoading(true);
-    
     try {
-      // Fetch order tracking info from backend API
-      const response = await fetch(`${API_URL}/api/order-tracking/${data.trackingCode}`);
+      const response = await fetch(`${API_URL}/api/order-tracking/${code}`);
       if (!response.ok) {
         setOrderDetails(null);
+        toast({
+          title: 'Order not found',
+          description: 'No order found with that tracking code. Please double-check and try again.',
+          variant: 'destructive',
+        });
         return;
       }
       const responseData = await response.json();
@@ -83,18 +70,37 @@ const OrderTrackingPage: React.FC = () => {
         setOrderDetails(responseData.order);
       } else {
         setOrderDetails(null);
+        toast({
+          title: 'Order not found',
+          description: 'No order matched that tracking code.',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Error fetching order:', error);
       setOrderDetails(null);
       toast({
-        title: "Order not found",
-        description: "Please check your tracking code and try again.",
-        variant: "destructive",
+        title: 'Connection error',
+        description: 'Could not reach the server. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Extract tracking code from URL if present
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const code = params.get('code');
+    if (code) {
+      setValue('trackingCode', code);
+      fetchOrder(code);
+    }
+  }, [location.search]);
+  
+  const onSubmit = async (data: TrackingFormData) => {
+    fetchOrder(data.trackingCode);
   };
   
   const getStatusColor = (status: string) => {
@@ -168,8 +174,8 @@ const OrderTrackingPage: React.FC = () => {
                       Placed on {new Date(orderDetails.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(orderDetails.order_status)}`}>
-                    {orderDetails.order_status.charAt(0).toUpperCase() + orderDetails.order_status.slice(1)}
+                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(orderDetails.order_status.toLowerCase())}`}>
+                    {orderDetails.order_status.charAt(0).toUpperCase() + orderDetails.order_status.slice(1).toLowerCase()}
                   </div>
                 </div>
                 
@@ -187,7 +193,7 @@ const OrderTrackingPage: React.FC = () => {
                       <div className="absolute top-4 left-4 right-4 h-1 bg-gray-200">
                         <div
                           className={`h-1 transition-all duration-700 ease-in-out ${
-                            orderDetails.order_status === 'cancelled' ? 'bg-red-500' : 'bg-green-500'
+                            orderDetails.order_status.toLowerCase() === 'cancelled' ? 'bg-red-500' : 'bg-green-500'
                           }`}
                           style={{ width: progressWidth }}
                         ></div>
@@ -197,26 +203,18 @@ const OrderTrackingPage: React.FC = () => {
                     {/* Status Steps */}
                     <div className="flex justify-between">
                       {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => {
-                        const isCompleted = getStatusStepCompleted(orderDetails.order_status, status);
-                        const isActive = orderDetails.order_status === status;
+                        const orderStatusLower = orderDetails.order_status.toLowerCase();
+                        const isCompleted = getStatusStepCompleted(orderStatusLower, status);
+                        const isActive = orderStatusLower === status;
 
                         let colorClass = '';
                         if (isActive) {
                           switch (status) {
-                            case 'processing':
-                              colorClass = 'bg-blue-500 text-white';
-                              break;
-                            case 'shipped':
-                              colorClass = 'bg-purple-500 text-white';
-                              break;
-                            case 'delivered':
-                              colorClass = 'bg-green-500 text-white';
-                              break;
-                            case 'cancelled':
-                              colorClass = 'bg-red-500 text-white';
-                              break;
-                            default:
-                              colorClass = 'bg-yellow-500 text-white';
+                            case 'processing':  colorClass = 'bg-blue-500 text-white';   break;
+                            case 'shipped':     colorClass = 'bg-purple-500 text-white'; break;
+                            case 'delivered':   colorClass = 'bg-green-500 text-white';  break;
+                            case 'cancelled':   colorClass = 'bg-red-500 text-white';    break;
+                            default:            colorClass = 'bg-yellow-500 text-white';
                           }
                         } else if (isCompleted) {
                           colorClass = 'bg-green-500 text-white';

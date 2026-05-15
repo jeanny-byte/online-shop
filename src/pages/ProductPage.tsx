@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 // Use API URL from .env
-const API_URL = process.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Check, Heart, Share, ShoppingBag } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';

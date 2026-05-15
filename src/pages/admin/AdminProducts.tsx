@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Product } from '@/data/products';
 
 // Use API URL from .env
-const API_URL = process.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 import { toast } from '@/hooks/use-toast';
 import AdminLayout from './components/AdminLayout';
 
@@ -136,8 +136,12 @@ const AdminProducts: React.FC = () => {
       return;
     }
     try {
+      const token = localStorage.getItem('jwt_token');
       const res = await fetch(`${API_URL}/api/products/${id}`, {
         method: 'DELETE',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
       });
       if (!res.ok) throw new Error('Failed to delete product');
       toast({
@@ -191,18 +195,33 @@ const AdminProducts: React.FC = () => {
       // Send new files
       if (formData.newImages && formData.newImages.length > 0) {
         for (let img of formData.newImages) {
-          form.append('images', img);
+          form.append('images[]', img);
         }
       }
       // If editing, include the product id for update
+      let url = `${API_URL}/api/products`;
+      let method = 'POST';
+
       if (currentProduct && currentProduct.id) {
-        form.append('id', currentProduct.id);
+        url = `${API_URL}/api/products/${currentProduct.id}`;
+        form.append('_method', 'PUT'); // Laravel requirement for multipart PUT requests
       }
-      const res = await fetch(`${API_URL}/api/products`, {
-        method: currentProduct && currentProduct.id ? 'PUT' : 'POST',
+      
+      const token = localStorage.getItem('jwt_token');
+
+      const res = await fetch(url, {
+        method: method,
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: form,
       });
-      if (!res.ok) throw new Error(currentProduct ? 'Failed to update product' : 'Failed to add product');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error('Validation errors:', errData);
+        throw new Error(currentProduct ? 'Failed to update product' : 'Failed to add product');
+      }
       toast({
         title: "Success",
         description: currentProduct ? "Product updated successfully" : "Product added successfully",

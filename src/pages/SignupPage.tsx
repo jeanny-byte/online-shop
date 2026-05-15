@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '../context/AuthContext';
+import { useLoading } from '../context/LoadingContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 
 interface SignupFormData {
+  name: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -17,17 +19,20 @@ interface SignupFormData {
 const SignupPage: React.FC = () => {
   const { signUp } = useAuth();
   const navigate = useNavigate();
+  const { startLoading, stopLoading } = useLoading();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { register, handleSubmit, formState: { errors }, watch } = useForm<SignupFormData>();
   const password = watch('password');
   
   const onSubmit = async (data: SignupFormData) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
+    startLoading('Creating your account...');
     
     try {
 
-      const { error } = await signUp(data.email, data.password);
+      const { error } = await signUp(data.email, data.password, data.name);
       
       if (error) throw error;
       
@@ -46,6 +51,7 @@ const SignupPage: React.FC = () => {
       });
     } finally {
       setIsSubmitting(false);
+      stopLoading();
     }
   };
   
@@ -57,6 +63,21 @@ const SignupPage: React.FC = () => {
           
           <div className="bg-white p-6 border border-border rounded-md">
             <form onSubmit={handleSubmit(onSubmit)}>
+              <div className="mb-4">
+                <label htmlFor="name" className="block text-sm font-medium mb-1">
+                  Full Name
+                </label>
+                <Input
+                  id="name"
+                  type="text"
+                  className={errors.name ? 'border-red-500' : ''}
+                  {...register('name', { 
+                    required: 'Name is required',
+                  })}
+                />
+                {errors.name && <span className="text-sm text-red-500">{errors.name.message}</span>}
+              </div>
+
               <div className="mb-4">
                 <label htmlFor="email" className="block text-sm font-medium mb-1">
                   Email

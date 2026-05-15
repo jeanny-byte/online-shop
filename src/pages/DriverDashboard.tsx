@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { RefreshCw, Search, Truck, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-const API_URL = process.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 interface Order {
   id: string;
   order_status: string;
@@ -32,8 +32,8 @@ interface Order {
 }
 
 const statusMap = {
-  // 'Pending': { label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
-  // 'Processing': { label: 'Processing', color: 'bg-blue-100 text-blue-800' },
+  'Pending': { label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
+  'Processing': { label: 'Processing', color: 'bg-blue-100 text-blue-800' },
   'Shipped': { label: 'Shipped', color: 'bg-indigo-100 text-indigo-800' },
   'Delivered': { label: 'Delivered', color: 'bg-green-100 text-green-800' },
   'Cancelled': { label: 'Cancelled', color: 'bg-red-100 text-red-800' },
@@ -48,7 +48,7 @@ const DriverDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('Shipped');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
 
   const fetchDriverOrders = async () => {
@@ -113,7 +113,8 @@ const DriverDashboard: React.FC = () => {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to update order status');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || 'Failed to update order status');
       }
       
       // Refresh the orders list to get the latest data
@@ -290,7 +291,7 @@ const DriverDashboard: React.FC = () => {
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="shipped">None</SelectItem>
+                      <SelectItem value="all">All Statuses</SelectItem>
                       {Object.entries(statusMap).map(([value, { label }]) => (
                         <SelectItem key={value} value={value}>
                           {label}

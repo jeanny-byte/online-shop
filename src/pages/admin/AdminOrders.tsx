@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 // Use API URL from .env
-const API_URL = process.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 import { toast } from '@/hooks/use-toast';
 import AdminLayout from './components/AdminLayout';
 
@@ -54,7 +54,13 @@ const [endDate, setEndDate] = useState<string>('');
       if (filter && filter !== 'all') {
         url += `?status=${encodeURIComponent(filter)}`;
       }
-      const res = await fetch(url.startsWith('/api') ? `${API_URL}${url}` : url);
+      
+      const token = localStorage.getItem('jwt_token');
+      const res = await fetch(url.startsWith('/api') ? `${API_URL}${url}` : url, {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
       if (!res.ok) throw new Error('Failed to fetch orders');
       const data = await res.json();
       setOrders(data || []);
@@ -81,9 +87,13 @@ const [endDate, setEndDate] = useState<string>('');
   };
   const mappedStatus = statusMap[newStatus.toLowerCase()] || newStatus;
   try {
+    const token = localStorage.getItem('jwt_token');
     const res = await fetch(`${API_URL}/api/orders/${orderId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
       body: JSON.stringify({ status: mappedStatus })
     });
     if (!res.ok) throw new Error('Failed to update order status');

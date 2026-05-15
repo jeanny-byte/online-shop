@@ -4,7 +4,7 @@ import { toast } from '@/hooks/use-toast';
 import { useCart } from '../context/CartContext';
 
 // Use API URL from .env
-const API_URL = process.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 
 export interface ProductProps {
   id: string;
