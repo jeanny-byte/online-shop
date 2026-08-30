@@ -42,4 +42,16 @@ return [
         'api_secret' => env('MTN_MOMO_API_SECRET'),
     ],
 
+    'paystack' => [
+        'secret_key' => env('PAYSTACK_SECRET_KEY', ''),
+        'public_key' => env('PAYSTACK_PUBLIC_KEY', ''),
+        'payment_url' => env('PAYSTACK_PAYMENT_URL', 'https://api.paystack.co'),
+    ],
+
+    'expresspay' => [
+        'merchant_id' => env('EXPRESSPAY_MERCHANT_ID', ''),
+        'api_key' => env('EXPRESSPAY_API_KEY', ''),
+        'base_url' => env('EXPRESSPAY_BASE_URL', 'https://sandbox.expresspaygh.com/api'),
+    ],
+
 ];

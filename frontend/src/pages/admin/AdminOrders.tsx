@@ -1,63 +1,87 @@
 import React, { useEffect, useState } from 'react';
-
-// Use API URL from .env
-const API_URL = import.meta.env.VITE_API_URL;
 import { toast } from '@/hooks/use-toast';
 import AdminLayout from './components/AdminLayout';
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
+interface Driver {
+  id: number;
+  name: string;
+  email: string;
+}
+
 const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [search, setSearch] = useState<string>('');
-const [startDate, setStartDate] = useState<string>('');
-const [endDate, setEndDate] = useState<string>('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
   // Export orders to CSV
   const handleExportCSV = () => {
     if (!orders.length) return;
-    // Get all keys from the first order for headers
-    const headers = Object.keys(orders[0]);
+    const headers = ['Tracking Code', 'Customer', 'Phone', 'Email', 'Address', 'Total', 'Payment Status', 'Order Status', 'Driver', 'Created At'];
     const csvRows = [headers.join(",")];
+    
     for (const order of orders) {
-      const row = headers.map(key => {
-        let val = order[key];
-        if (val === null || val === undefined) return '';
-        // Escape quotes
-        val = String(val).replace(/"/g, '""');
-        // Wrap fields with commas or newlines in quotes
-        if (val.search(/([",\n])/g) >= 0) {
-          val = `"${val}"`;
-        }
-        return val;
-      });
+      const row = [
+        `"${order.tracking_code || ''}"`,
+        `"${(order.customer_name || '').replace(/"/g, '""')}"`,
+        `"${order.customer_phone || ''}"`,
+        `"${order.customer_email || ''}"`,
+        `"${(order.shipping_address || '').replace(/"/g, '""')}"`,
+        `"${order.order_total || 0}"`,
+        `"${order.payment_status || 'unpaid'}"`,
+        `"${order.order_status || 'Pending'}"`,
+        `"${(order.driver?.name || 'Unassigned').replace(/"/g, '""')}"`,
+        `"${order.created_at || ''}"`,
+      ];
       csvRows.push(row.join(","));
     }
     const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `orders_${filter}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
+    a.download = `orders_${filter}_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
 
   useEffect(() => {
     fetchOrders();
+    fetchDrivers();
   }, [filter]);
   
+  const fetchDrivers = async () => {
+    try {
+      const token = localStorage.getItem('jwt_token');
+      const res = await fetch(`${API_URL}/api/users`, {
+        headers: token ? { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } : { 'Accept': 'application/json' }
+      });
+      if (res.ok) {
+        const users = await res.json();
+        setDrivers(users.filter((u: any) => u.role === 'driver' || u.is_driver));
+      }
+    } catch {
+      // Non-fatal
+    }
+  };
+
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      let url = `/api/orders`;
+      let url = `${API_URL}/api/orders`;
       if (filter && filter !== 'all') {
         url += `?status=${encodeURIComponent(filter)}`;
       }
       
       const token = localStorage.getItem('jwt_token');
-      const res = await fetch(url.startsWith('/api') ? `${API_URL}${url}` : url, {
+      const res = await fetch(url, {
         headers: {
+          'Accept': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
       });
@@ -76,57 +100,88 @@ const [endDate, setEndDate] = useState<string>('');
     }
   };
   
-  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
-  // Map the status to the correct casing
-  const statusMap: Record<string, string> = {
-    pending: 'Pending',
-    processing: 'Processing',
-    shipped: 'Shipped',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled',
-  };
-  const mappedStatus = statusMap[newStatus.toLowerCase()] || newStatus;
-  try {
-    const token = localStorage.getItem('jwt_token');
-    const res = await fetch(`${API_URL}/api/orders/${orderId}`, {
-      method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify({ status: mappedStatus })
-    });
-    if (!res.ok) throw new Error('Failed to update order status');
-    const data = await res.json();
-    toast({
-      title: "Success",
-      description: "Order status updated successfully",
-    });
-    if (data.stockRestored) {
-      toast({
-        title: "Stock Restored",
-        description: "Product stock has been restored for this cancelled order.",
-        variant: "default",
+  const handleUpdateStatus = async (orderId: string | number, newStatus: string) => {
+    const statusMap: Record<string, string> = {
+      pending: 'Pending',
+      processing: 'Processing',
+      shipped: 'Shipped',
+      delivered: 'Delivered',
+      cancelled: 'Cancelled',
+    };
+    const mappedStatus = statusMap[newStatus.toLowerCase()] || newStatus;
+    try {
+      const token = localStorage.getItem('jwt_token');
+      const res = await fetch(`${API_URL}/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ status: mappedStatus })
       });
-    }
-    if (data.stockDecremented) {
+      if (!res.ok) throw new Error('Failed to update order status');
+      const data = await res.json();
+      
       toast({
-        title: "Stock Decremented",
-        description: "Product stock has been re-allocated to this order (status changed from Cancelled).",
-        variant: "default",
+        title: "Order Updated",
+        description: `Order status set to ${mappedStatus}`,
       });
-    }
-    // Update the status in the local state
-      setOrders(orders.map(order => 
+
+      if (data.stockRestored) {
+        toast({
+          title: "Stock Restored",
+          description: "Inventory was returned to available stock.",
+        });
+      }
+      if (data.stockDecremented) {
+        toast({
+          title: "Stock Decremented",
+          description: "Inventory was deducted for this re-activated order.",
+        });
+      }
+
+      setOrders(prev => prev.map(order => 
         order.id === orderId
-          ? { ...order, order_status: newStatus, updated_at: new Date().toISOString() }
+          ? { ...order, order_status: mappedStatus, updated_at: new Date().toISOString() }
           : order
       ));
-    } catch (error) {
-      console.error('Error updating order status:', error);
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update order status",
+        description: error.message || "Failed to update order status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAssignDriver = async (orderId: string | number, driverId: string) => {
+    try {
+      const token = localStorage.getItem('jwt_token');
+      const res = await fetch(`${API_URL}/api/orders/${orderId}/assign-driver`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ driver_id: driverId ? Number(driverId) : null }),
+      });
+      if (!res.ok) throw new Error('Failed to assign driver');
+      const data = await res.json();
+      
+      toast({
+        title: "Driver Assigned",
+        description: "Delivery assignment updated successfully.",
+      });
+
+      setOrders(prev => prev.map(order => 
+        order.id === orderId ? { ...order, driver_id: driverId ? Number(driverId) : null, driver: data.order?.driver } : order
+      ));
+    } catch (error: any) {
+      toast({
+        title: "Assignment Error",
+        description: error.message || "Failed to assign driver",
         variant: "destructive",
       });
     }
@@ -151,16 +206,16 @@ const [endDate, setEndDate] = useState<string>('');
   
   return (
     <AdminLayout title="Orders">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <label htmlFor="filter" className="mr-2 text-sm">
-            Filter by status:
+      <div className="mb-6 flex flex-wrap justify-between items-center gap-4">
+        <div className="flex items-center gap-2">
+          <label htmlFor="filter" className="text-sm font-medium">
+            Status:
           </label>
           <select
             id="filter"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="p-2 border border-border rounded-md"
+            className="p-2 border border-border rounded-md text-sm"
           >
             <option value="all">All Orders</option>
             <option value="pending">Pending</option>
@@ -171,114 +226,117 @@ const [endDate, setEndDate] = useState<string>('');
           </select>
         </div>
         
-        <button
-          onClick={() => fetchOrders()}
-          className="btn btn-outline py-2 px-4"
-        >
-          Refresh
-        </button>
-        <button
-          onClick={handleExportCSV}
-          className="btn btn-outline py-2 px-4 ml-2"
-        >
-          Export CSV
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => fetchOrders()}
+            className="btn btn-outline py-2 px-4 text-sm"
+          >
+            Refresh
+          </button>
+          <button
+            onClick={handleExportCSV}
+            className="btn btn-outline py-2 px-4 text-sm"
+          >
+            Export CSV
+          </button>
+        </div>
       </div>
       
-      <div className="mb-4 flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+      <div className="mb-4 flex flex-col md:flex-row md:items-center gap-3">
         <input
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search: Name, Tracking Code, Phone, Email"
-          className="p-2 border border-border rounded-md w-full max-w-md"
+          placeholder="Search by customer, code, phone, email..."
+          className="p-2 border border-border rounded-md w-full max-w-md text-sm"
         />
-        <div className="flex gap-2 items-center">
-          <label className="text-sm">From:</label>
+        <div className="flex gap-2 items-center text-sm">
+          <span>From:</span>
           <input
             type="date"
             value={startDate}
             onChange={e => setStartDate(e.target.value)}
-            className="p-2 border border-border rounded-md"
+            className="p-2 border border-border rounded-md text-sm"
           />
-          <label className="text-sm">To:</label>
+          <span>To:</span>
           <input
             type="date"
             value={endDate}
             onChange={e => setEndDate(e.target.value)}
-            className="p-2 border border-border rounded-md"
+            className="p-2 border border-border rounded-md text-sm"
           />
         </div>
       </div>
-      <div className="bg-white border border-border rounded-md overflow-hidden">
+
+      <div className="bg-card border border-border rounded-md overflow-hidden shadow-sm">
         {isLoading ? (
           <div className="p-8 text-center">
-            <p>Loading orders...</p>
+            <p className="text-muted-foreground">Loading orders...</p>
           </div>
         ) : orders.length > 0 ? (
-          <div className="overflow-x-auto" style={{ maxWidth: '100vw' }}>
-            <table className="w-full min-w-[900px]" style={{ minWidth: 900 }}>
-              <thead className="bg-muted/50">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-muted/50 text-xs font-semibold text-muted-foreground uppercase border-b border-border">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Order ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
+                  <th className="px-4 py-3">Order ID</th>
+                  <th className="px-4 py-3">Customer</th>
+                  <th className="px-4 py-3">Items</th>
+                  <th className="px-4 py-3">Total</th>
+                  <th className="px-4 py-3">Payment</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Assigned Driver</th>
+                  <th className="px-4 py-3">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-border text-sm">
                 {orders
                   .filter(order => {
-                    // Search filter
                     if (search.trim()) {
                       const fields = [order.customer_name, order.tracking_code, order.customer_phone, order.customer_email];
-                      try {
-                        const regex = new RegExp(search, 'i');
-                        if (!fields.some(f => typeof f === 'string' && regex.test(f))) return false;
-                      } catch {
-                        // Invalid regex: fallback to case-insensitive substring
-                        if (!fields.some(f => typeof f === 'string' && f.toLowerCase().includes(search.toLowerCase()))) return false;
-                      }
+                      const q = search.toLowerCase();
+                      if (!fields.some(f => typeof f === 'string' && f.toLowerCase().includes(q))) return false;
                     }
-                    // Date range filter
-                    if (startDate) {
-                      if (!order.created_at || new Date(order.created_at) < new Date(startDate)) return false;
-                    }
+                    if (startDate && new Date(order.created_at) < new Date(startDate)) return false;
                     if (endDate) {
-                      // Set endDate to the end of the day
                       const end = new Date(endDate);
-                      end.setHours(23,59,59,999);
-                      if (!order.created_at || new Date(order.created_at) > end) return false;
+                      end.setHours(23, 59, 59, 999);
+                      if (new Date(order.created_at) > end) return false;
                     }
                     return true;
                   })
                   .map((order) => (
-                  <tr key={order.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <tr key={order.id} className="hover:bg-muted/20">
+                    <td className="px-4 py-3 font-mono font-medium">
                       #{order.tracking_code}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div>{order.customer_name}</div>
-                      <div className="text-muted-foreground text-xs">{order.customer_email}</div>
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{order.customer_name}</div>
+                      <div className="text-xs text-muted-foreground">{order.customer_phone}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {new Date(order.created_at).toLocaleDateString()}
+                    <td className="px-4 py-3 text-xs">
+                      {order.items && order.items.length > 0 ? (
+                        <div className="space-y-0.5">
+                          {order.items.map((it: any, i: number) => (
+                            <div key={i}>{it.quantity}x {it.product?.name || `Item #${it.product_id}`}</div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      Ghs{order.order_total}
+                    <td className="px-4 py-3 font-semibold">
+                      Ghs {Number(order.order_total).toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(order.order_status)}`}>
-                        {order.order_status.charAt(0).toUpperCase() + order.order_status.slice(1)}
+                    <td className="px-4 py-3">
+                      <span className={`text-xs px-2 py-0.5 rounded font-medium ${order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                        {order.payment_status ? order.payment_status.toUpperCase() : 'UNPAID'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-4 py-3">
                       <select
-                        value={order.order_status}
+                        value={order.order_status?.toLowerCase()}
                         onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                        className="p-1 border border-border rounded-md text-sm"
+                        className="p-1 border border-border rounded text-xs bg-background font-medium"
                       >
                         <option value="pending">Pending</option>
                         <option value="processing">Processing</option>
@@ -287,14 +345,29 @@ const [endDate, setEndDate] = useState<string>('');
                         <option value="cancelled">Cancelled</option>
                       </select>
                     </td>
+                    <td className="px-4 py-3">
+                      <select
+                        value={order.driver_id || ''}
+                        onChange={(e) => handleAssignDriver(order.id, e.target.value)}
+                        className="p-1 border border-border rounded text-xs bg-background"
+                      >
+                        <option value="">-- Unassigned --</option>
+                        {drivers.map(d => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <div className="p-8 text-center">
-            <p className="text-muted-foreground">No orders found.</p>
+          <div className="p-8 text-center text-muted-foreground">
+            No orders found.
           </div>
         )}
       </div>

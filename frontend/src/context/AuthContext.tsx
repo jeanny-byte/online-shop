@@ -1,25 +1,32 @@
-interface User {
-  id: string;
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { toast } from '@/hooks/use-toast';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+const API_URL = import.meta.env.VITE_API_URL || '';
+
+export interface User {
+  id: string | number;
   email: string;
   name: string;
+  display_name?: string;
+  phone?: string;
+  shipping_address?: string;
+  city?: string;
+  state?: string;
+  avatar_url?: string;
   is_driver?: boolean;
-  app_metadata: {
+  is_admin?: boolean;
+  role?: string;
+  app_metadata?: {
     provider: string;
   };
-  aud: string;
-  created_at: string;
+  aud?: string;
+  created_at?: string;
 }
 
 interface Session {
   user: User | null;
 }
-
-import React, { createContext, useContext, useEffect, useState } from 'react';
-
-// Use API URL from .env
-const API_URL = import.meta.env.VITE_API_URL;
-import { toast } from '@/hooks/use-toast';
-import { useNavigate, useLocation } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -31,6 +38,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   checkDriverStatus: () => Promise<boolean>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,43 +49,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isDriver, setIsDriver] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
 
   /**
-   * Checks JWT token in localStorage and validates admin status with backend.
-   * Updates user and isAdmin state accordingly.
+   * Fetches current authenticated user data from backend via /api/auth/me
    */
-  const checkAdminStatus = async () => {
+  const refreshUser = async () => {
     const token = localStorage.getItem('jwt_token');
     if (!token) {
-      setIsAdmin(false);
       setUser(null);
-      return false;
+      setSession(null);
+      setIsAdmin(false);
+      setIsDriver(false);
+      return;
     }
+
     try {
-      const response = await fetch(`${API_URL}/api/auth/check-admin`, {
-        headers: { 
+      const response = await fetch(`${API_URL}/api/auth/me`, {
+        headers: {
           'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
+          'Accept': 'application/json',
         },
       });
+
       if (!response.ok) {
-        setIsAdmin(false);
+        // Token invalid or expired
+        localStorage.removeItem('jwt_token');
         setUser(null);
-        return false;
+        setSession(null);
+        setIsAdmin(false);
+        setIsDriver(false);
+        return;
       }
-      const data = await response.json();
-      setIsAdmin(!!data.isAdmin);
-      return !!data.isAdmin;
-    } catch {
-      setIsAdmin(false);
+
+      const userData: User = await response.json();
+      const admin = !!(userData.is_admin || userData.role === 'admin');
+      const driver = !!(userData.is_driver || userData.role === 'driver');
+
+      setUser(userData);
+      setSession({ user: userData });
+      setIsAdmin(admin);
+      setIsDriver(driver);
+    } catch (error) {
+      console.error('Error hydrating user session:', error);
       setUser(null);
-      return false;
+      setSession(null);
+      setIsAdmin(false);
+      setIsDriver(false);
     }
   };
 
-  const checkDriverStatus = async () => {
+  const checkDriverStatus = async (): Promise<boolean> => {
     const token = localStorage.getItem('jwt_token');
     if (!token) {
       setIsDriver(false);
@@ -85,9 +106,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     try {
       const response = await fetch(`${API_URL}/api/auth/is-driver`, {
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
+          'Accept': 'application/json',
         },
       });
       if (!response.ok) {
@@ -97,10 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await response.json();
       const driverStatus = !!data.isDriver;
       setIsDriver(driverStatus);
-      
-      // Update user object with driver status
-      setUser(prev => prev ? { ...prev, is_driver: driverStatus } : null);
-      
+      setUser(prev => (prev ? { ...prev, is_driver: driverStatus } : null));
       return driverStatus;
     } catch {
       setIsDriver(false);
@@ -108,28 +126,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // On mount, check for JWT and validate roles
-  React.useEffect(() => {
+  // On mount, hydrate user session from token
+  useEffect(() => {
     (async () => {
       setIsLoading(true);
-      await Promise.all([
-        checkAdminStatus(),
-        checkDriverStatus()
-      ]);
+      await refreshUser();
       setIsLoading(false);
     })();
-    // eslint-disable-next-line
   }, []);
-
 
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
       const response = await fetch(`${API_URL}/api/auth/signin`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
         },
         body: JSON.stringify({ email, password }),
       });
@@ -139,41 +152,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAdmin(false);
         setIsDriver(false);
         localStorage.removeItem('jwt_token');
-        return { error: result.error || 'Invalid credentials' };
+        return { error: result.message || result.error || 'Invalid credentials' };
       }
-      
-      const userData = {
-        id: result.user.id,
-        name: result.user.name || result.user.email.split('@')[0], // Use name if available, otherwise use first part of email
-        email: result.user.email,
-        is_driver: result.user.is_driver || false,
-        app_metadata: { provider: 'local' },
-        aud: 'authenticated',
-        created_at: new Date().toISOString(),
-      };
-      
+
+      const token = result.access_token || result.token;
+      if (token) {
+        localStorage.setItem('jwt_token', token);
+      }
+
+      const userData: User = result.user;
+      const admin = !!(userData.is_admin || userData.role === 'admin');
+      const driver = !!(userData.is_driver || userData.role === 'driver');
+
       setUser(userData);
-      setIsAdmin(!!result.user.is_admin);
-      setIsDriver(!!result.user.is_driver);
-      
-      if (result.access_token) {
-        localStorage.setItem('jwt_token', result.access_token);
-      } else if (result.token) {
-        localStorage.setItem('jwt_token', result.token);
-      }
-      
-      // Refresh roles after login
-      await Promise.all([
-        checkAdminStatus(),
-        checkDriverStatus()
-      ]);
-      
+      setSession({ user: userData });
+      setIsAdmin(admin);
+      setIsDriver(driver);
+
       return { error: null };
     } catch (error: any) {
       setUser(null);
       setIsAdmin(false);
+      setIsDriver(false);
       localStorage.removeItem('jwt_token');
-      return { error };
+      return { error: error.message || 'Login failed' };
     } finally {
       setIsLoading(false);
     }
@@ -184,73 +186,90 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       const response = await fetch(`${API_URL}/api/auth/signup`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
         },
         body: JSON.stringify({ email, password, name }),
       });
       const result = await response.json();
       if (!response.ok) {
-        return { error: result.error || 'Failed to create account' };
+        return { error: result.message || result.error || 'Failed to create account' };
       }
+
+      const token = result.access_token || result.token;
+      if (token) {
+        localStorage.setItem('jwt_token', token);
+        const userData: User = result.user;
+        setUser(userData);
+        setSession({ user: userData });
+        setIsAdmin(!!(userData.is_admin || userData.role === 'admin'));
+        setIsDriver(!!(userData.is_driver || userData.role === 'driver'));
+      }
+
       toast({
-        title: "Account created",
-        description: "Account created successfully",
+        title: 'Account created',
+        description: 'Your account has been created successfully.',
       });
-      // Optionally, auto-login after signup by calling signIn
-      // await signIn(email, password);
-      // Or redirect user to login page
+
       return { error: null };
     } catch (error: any) {
-      console.error("Unexpected error during sign up:", error);
-      return { error };
+      console.error('Unexpected error during sign up:', error);
+      return { error: error.message || 'Sign up failed' };
     } finally {
       setIsLoading(false);
     }
   };
 
-
-
   const signOut = async () => {
     try {
       setIsLoading(true);
+      const token = localStorage.getItem('jwt_token');
+      if (token) {
+        await fetch(`${API_URL}/api/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+          },
+        }).catch(() => {});
+      }
       localStorage.removeItem('jwt_token');
       setUser(null);
       setSession(null);
       setIsAdmin(false);
       setIsDriver(false);
       toast({
-        title: "Signed out",
-        description: "You have been logged out successfully",
+        title: 'Signed out',
+        description: 'You have been logged out successfully',
       });
-      // Optionally, redirect to login or home page
-      // navigate('/login');
     } catch (error) {
-      console.error("Unexpected error signing out:", error);
+      console.error('Unexpected error signing out:', error);
       toast({
-        title: "Error",
-        description: "Failed to sign out",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to sign out',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-
   return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      isLoading,
-      isAdmin,
-      isDriver,
-      signIn,
-      signUp,
-      signOut,
-      checkDriverStatus,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        isLoading,
+        isAdmin,
+        isDriver,
+        signIn,
+        signUp,
+        signOut,
+        checkDriverStatus,
+        refreshUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

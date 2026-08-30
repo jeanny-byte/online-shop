@@ -1,38 +1,58 @@
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 export interface BlogPost {
-  id: string; // char(36)
+  id: string | number;
   title: string;
   slug: string;
   content: string;
   image: string;
   excerpt: string;
-  author_id?: string | null;
+  author_id?: string | number | null;
+  author?: {
+    id: number;
+    name: string;
+  };
   published: boolean;
-  created_at: string; // ISO datetime
-  updated_at: string; // ISO datetime
+  created_at: string;
+  updated_at: string;
 }
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('jwt_token');
+  return {
+    'Accept': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+  };
+};
+
 export const fetchBlogPosts = async (limit?: number): Promise<BlogPost[]> => {
-  const url = limit ? `/api/blog-posts?limit=${limit}` : '/api/blog-posts';
-  const res = await fetch(url);
+  const url = limit ? `${API_URL}/api/blog-posts?limit=${limit}` : `${API_URL}/api/blog-posts`;
+  const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
   if (!res.ok) throw new Error('Failed to fetch blog posts');
   return await res.json();
 };
 
 export const fetchAllBlogPosts = async (includeUnpublished = false): Promise<BlogPost[]> => {
-  const url = `/api/blog-posts?admin=1${includeUnpublished ? '&all=1' : ''}`;
-  const res = await fetch(url);
+  const url = `${API_URL}/api/blog-posts?admin=1${includeUnpublished ? '&all=1' : ''}`;
+  const res = await fetch(url, {
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error('Failed to fetch all blog posts');
   return await res.json();
 };
 
-export const fetchBlogPostById = async (id: string): Promise<BlogPost | null> => {
-  const res = await fetch(`/api/blog-posts/${id}`);
+export const fetchBlogPostById = async (id: string | number): Promise<BlogPost | null> => {
+  const res = await fetch(`${API_URL}/api/blog-posts/${id}`, {
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) return null;
   return await res.json();
 };
 
 export const fetchBlogPostBySlug = async (slug: string): Promise<BlogPost | null> => {
-  const res = await fetch(`/api/blog-posts/slug/${slug}`);
+  const res = await fetch(`${API_URL}/api/blog-posts/slug/${slug}`, {
+    headers: { 'Accept': 'application/json' },
+  });
   if (!res.ok) return null;
   return await res.json();
 };
@@ -40,15 +60,16 @@ export const fetchBlogPostBySlug = async (slug: string): Promise<BlogPost | null
 export const createBlogPost = async (postData: FormData): Promise<{ data: BlogPost | null; error: any }> => {
   try {
     const token = localStorage.getItem('jwt_token');
-    const res = await fetch('/api/blog-posts', {
+    const res = await fetch(`${API_URL}/api/blog-posts`, {
       method: 'POST',
       headers: {
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        'Accept': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
       body: postData,
     });
     if (!res.ok) {
-      const error = await res.json();
+      const error = await res.json().catch(() => ({ message: 'Failed to create post' }));
       return { data: null, error };
     }
     const data = await res.json();
@@ -58,19 +79,20 @@ export const createBlogPost = async (postData: FormData): Promise<{ data: BlogPo
   }
 };
 
-export const updateBlogPost = async (id: string, postData: FormData): Promise<{ data: BlogPost | null; error: any }> => {
+export const updateBlogPost = async (id: string | number, postData: FormData): Promise<{ data: BlogPost | null; error: any }> => {
   try {
     const token = localStorage.getItem('jwt_token');
     postData.append('_method', 'PUT'); // Laravel requires this for multipart/form-data PUT requests
-    const res = await fetch(`/api/blog-posts/${id}`, {
+    const res = await fetch(`${API_URL}/api/blog-posts/${id}`, {
       method: 'POST',
       headers: {
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        'Accept': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
       body: postData,
     });
     if (!res.ok) {
-      const error = await res.json();
+      const error = await res.json().catch(() => ({ message: 'Failed to update post' }));
       return { data: null, error };
     }
     const data = await res.json();
@@ -80,17 +102,18 @@ export const updateBlogPost = async (id: string, postData: FormData): Promise<{ 
   }
 };
 
-export const deleteBlogPost = async (id: string): Promise<{ success: boolean; error: any }> => {
+export const deleteBlogPost = async (id: string | number): Promise<{ success: boolean; error: any }> => {
   try {
     const token = localStorage.getItem('jwt_token');
-    const res = await fetch(`/api/blog-posts/${id}`, { 
+    const res = await fetch(`${API_URL}/api/blog-posts/${id}`, { 
       method: 'DELETE',
       headers: {
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        'Accept': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       }
     });
     if (!res.ok) {
-      const error = await res.json();
+      const error = await res.json().catch(() => ({ message: 'Failed to delete post' }));
       return { success: false, error };
     }
     return { success: true, error: null };

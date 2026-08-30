@@ -227,12 +227,14 @@ export const defaultProducts: Product[] = [
   }
 ];
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 /**
  * Fetch products from the backend database. If none are found or request fails, return defaultProducts.
  */
 export async function fetchProducts(): Promise<Product[]> {
   try {
-    const response = await fetch('/api/products');
+    const response = await fetch(`${API_URL}/api/products`);
     if (!response.ok) throw new Error('Network response was not ok');
     const data = await response.json();
     // The backend now returns products with snake_case keys. We need to convert them to camelCase to match our frontend model.
