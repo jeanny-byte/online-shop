@@ -57,18 +57,15 @@ const LoginPage: React.FC = () => {
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="mb-4">
                 <label htmlFor="email" className="block text-sm font-medium mb-1">
-                  Email
+                  Email or Username
                 </label>
                 <Input
                   id="email"
-                  type="email"
+                  type="text"
+                  placeholder="admin or your@email.com"
                   className={errors.email ? 'border-red-500' : ''}
                   {...register('email', { 
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address'
-                    }
+                    required: 'Email or username is required'
                   })}
                 />
                 {errors.email && <span className="text-sm text-red-500">{errors.email.message}</span>}
