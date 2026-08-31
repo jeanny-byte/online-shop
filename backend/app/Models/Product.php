@@ -16,11 +16,7 @@ class Product extends Model
         'image',
         'images',
         'category',
-        'brands',
         'featured',
-        'benefits',
-        'ingredients',
-        'how_to_use',
         'stock_quantity',
     ];
 

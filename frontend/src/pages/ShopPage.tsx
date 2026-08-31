@@ -36,7 +36,9 @@ const ShopPage: React.FC = () => {
 
     // Apply category filter
     if (selectedCategory) {
-      result = result.filter(product => product.category === selectedCategory);
+      result = result.filter(product => 
+        product.category && product.category.toLowerCase() === selectedCategory.toLowerCase()
+      );
     }
 
     // Apply sorting

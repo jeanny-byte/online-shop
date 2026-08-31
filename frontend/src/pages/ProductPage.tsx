@@ -1,25 +1,21 @@
 import React, { useEffect, useState } from 'react';
-
-// Use API URL from .env
-const API_URL = import.meta.env.VITE_API_URL;
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Check, Heart, Share, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Heart, Share2, ShoppingBag, Truck, ShieldCheck, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useCart } from '../context/CartContext';
 
-// Define the Product type to match the MySQL 'products' table
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 export type Product = {
-  id: string;
+  id: string | number;
   name: string;
   description: string;
   price: number;
   image: string;
-  images?: string[]; // Add this to handle multiple images
+  images?: string[];
   category: string;
-  ingredients: string; // comma-separated
-  how_to_use: string;
-  benefits?: string; // Optional, for MySQL rows that may have this field
-  // Add other fields as needed
+  stock_quantity?: number;
+  featured?: boolean;
 };
 
 const ProductPage: React.FC = () => {
@@ -27,7 +23,6 @@ const ProductPage: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState('description');
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
   
@@ -35,7 +30,6 @@ const ProductPage: React.FC = () => {
     if (id) {
       fetchProduct(id);
     }
-    // Reset scroll position when product changes
     window.scrollTo(0, 0);
   }, [id]);
   
@@ -46,8 +40,7 @@ const ProductPage: React.FC = () => {
       if (!res.ok) throw new Error('Failed to fetch product');
       const prod = await res.json();
       setProduct(prod);
-      // Set the first image as the selected one
-      if (prod.images && prod.images.length > 0) {
+      if (prod.images && Array.isArray(prod.images) && prod.images.length > 0) {
         setSelectedImage(prod.images[0]);
       } else if (prod.image) {
         setSelectedImage(prod.image);
@@ -62,7 +55,7 @@ const ProductPage: React.FC = () => {
 
   const handleAddToCart = () => {
     if (product) {
-      addToCart(product, quantity);
+      addToCart(product as any, quantity);
       toast({
         title: "Added to cart",
         description: `${product.name} (x${quantity}) has been added to your cart.`,
@@ -73,7 +66,7 @@ const ProductPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen pt-24 flex items-center justify-center">
-        <p>Loading product...</p>
+        <p className="text-muted-foreground">Loading product details...</p>
       </div>
     );
   }
@@ -82,7 +75,7 @@ const ProductPage: React.FC = () => {
     return (
       <div className="min-h-screen pt-24 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-medium mb-4">Product not found</h1>
+          <h1 className="text-2xl font-serif font-medium mb-4">Product Not Found</h1>
           <Link to="/shop" className="btn btn-primary py-2 px-6">
             Return to Shop
           </Link>
@@ -91,186 +84,162 @@ const ProductPage: React.FC = () => {
     );
   }
 
-  // Ensure benefits is always an array for rendering
-  const benefitsArray = Array.isArray(product?.benefits)
-    ? (product?.benefits as string[])
-    : (typeof product?.benefits === 'string' && product.benefits.length > 0)
-      ? product.benefits.split('\n').map((b: string) => b.trim()).filter((b: string) => b)
-      : [];
+  const imageList = product.images && product.images.length > 0
+    ? product.images
+    : (product.image ? [product.image] : []);
+
+  const inStock = product.stock_quantity === undefined || product.stock_quantity > 0;
 
   return (
-    <div className="min-h-screen pt-24">
+    <div className="min-h-screen pt-24 pb-16">
       <div className="container-custom py-8">
         {/* Breadcrumb */}
         <div className="mb-6">
           <div className="flex items-center text-sm">
-            <Link to="/" className="text-muted-foreground hover:text-primary-foreground transition-colors">Home</Link>
-            <span className="mx-2">/</span>
-            <Link to="/shop" className="text-muted-foreground hover:text-primary-foreground transition-colors">Shop</Link>
-            <span className="mx-2">/</span>
-            <span className="text-foreground">{product.name}</span>
+            <Link to="/" className="text-muted-foreground hover:text-primary transition-colors">Home</Link>
+            <span className="mx-2 text-muted-foreground">/</span>
+            <Link to="/shop" className="text-muted-foreground hover:text-primary transition-colors">Shop</Link>
+            <span className="mx-2 text-muted-foreground">/</span>
+            <Link to={`/shop?category=${encodeURIComponent(product.category)}`} className="text-muted-foreground hover:text-primary transition-colors capitalize">
+              {product.category}
+            </Link>
+            <span className="mx-2 text-muted-foreground">/</span>
+            <span className="text-foreground font-medium truncate max-w-[200px]">{product.name}</span>
           </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
           {/* Product Image Gallery */}
           <div>
-            <div className="border border-border rounded-lg mb-4">
+            <div className="border border-border rounded-xl mb-4 overflow-hidden bg-secondary/10 aspect-square flex items-center justify-center">
               <img
-                src={selectedImage ? selectedImage : ''}
+                src={selectedImage || product.image || '/placeholder.svg'}
                 alt={product.name}
-                className="w-full h-auto object-cover rounded-lg"
+                className="w-full h-full object-cover rounded-xl"
               />
             </div>
-            <div className="flex space-x-2">
-              {product.images?.map((img, index) => (
-                <button
-                  key={index}
-                  className={`w-20 h-20 border rounded-md overflow-hidden ${selectedImage === img ? 'border-foreground' : 'border-border'}`}
-                  onClick={() => setSelectedImage(img)}
-                >
-                  <img
-                    src={img}
-                    alt={`${product.name} thumbnail ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
+            {imageList.length > 1 && (
+              <div className="flex space-x-3 overflow-x-auto pb-2">
+                {imageList.map((img, index) => (
+                  <button
+                    key={index}
+                    className={`w-20 h-20 border-2 rounded-lg overflow-hidden flex-shrink-0 transition-all ${selectedImage === img ? 'border-primary shadow-sm' : 'border-border opacity-70 hover:opacity-100'}`}
+                    onClick={() => setSelectedImage(img)}
+                  >
+                    <img
+                      src={img}
+                      alt={`${product.name} thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           
           {/* Product Details */}
           <div>
             {/* Back to shop - Mobile only */}
-            <Link to="/shop" className="inline-flex items-center text-sm font-medium mb-4 md:hidden">
+            <Link to="/shop" className="inline-flex items-center text-sm font-medium mb-4 md:hidden text-muted-foreground hover:text-primary">
               <ArrowLeft size={16} className="mr-1" />
               Back to Shop
             </Link>
             
-            {/* Category */}
-            <p className="text-sm capitalize text-muted-foreground">{product.category}</p>
+            {/* Category Tag */}
+            <div className="mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
+                {product.category}
+              </span>
+            </div>
             
             {/* Name & Price */}
-            <h1 className="text-3xl md:text-4xl font-serif font-medium mt-1 mb-4">{product.name}</h1>
-            <p className="text-2xl font-medium mb-6">Ghs{product.price}</p>
+            <h1 className="text-3xl md:text-4xl font-serif font-medium mt-2 mb-3 text-foreground">{product.name}</h1>
+            <div className="flex items-center gap-3 mb-6">
+              <p className="text-2xl md:text-3xl font-semibold text-primary">Ghs {Number(product.price).toFixed(2)}</p>
+              {inStock ? (
+                <span className="text-xs font-medium px-2 py-0.5 rounded bg-green-100 text-green-800">In Stock</span>
+              ) : (
+                <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-100 text-red-800">Out of Stock</span>
+              )}
+            </div>
             
             {/* Description */}
-            <p className="text-muted-foreground">{product.description}</p>
-            
-            {/* How to Use */}
-            <div>
-              <h3 className="font-medium mb-2">How to Use</h3>
-              <p className="text-muted-foreground">{product.how_to_use}</p>
+            <div className="prose prose-sm text-muted-foreground mb-8">
+              <p className="whitespace-pre-line leading-relaxed">{product.description}</p>
             </div>
             
-            {/* Key Benefits */}
-{benefitsArray.length > 0 && (
-  <div className="mb-8">
-    <h3 className="font-medium mb-2">Key Benefits:</h3>
-    <ul className="space-y-1">
-      {benefitsArray.map((benefit, index) => (
-        <li key={index} className="flex items-start">
-          <Check size={16} className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-          <span>{benefit}</span>
-        </li>
-      ))}
-    </ul>
-  </div>
-)}
-            
-            {/* Key Ingredients */}
-            <div>
-              <h3 className="font-medium mb-2">Key Ingredients</h3>
-              <ul className="list-disc pl-5 space-y-1">
-                {(product.ingredients ? product.ingredients.split(',').map(i => i.trim()) : []).map((ingredient, index) => (
-                  <li key={index}>{ingredient}</li>
-                ))}
-              </ul>
-            </div>
-            
-            {/* Quantity */}
-            <div className="mb-6">
-              <label htmlFor="quantity" className="font-medium block mb-2">
-                Quantity
-              </label>
-              <div className="flex items-center">
-                <button 
-                  className="w-10 h-10 border border-border rounded-l-md flex items-center justify-center"
-                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                >
-                  -
-                </button>
-                <input 
-                  type="number" 
-                  id="quantity" 
-                  className="h-10 w-16 border-y border-border text-center"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                />
-                <button 
-                  className="w-10 h-10 border border-border rounded-r-md flex items-center justify-center"
-                  onClick={() => setQuantity(q => q + 1)}
-                >
-                  +
-                </button>
+            {/* Quantity Selector */}
+            {inStock && (
+              <div className="mb-6">
+                <label htmlFor="quantity" className="font-medium text-sm block mb-2">
+                  Quantity
+                </label>
+                <div className="flex items-center w-36">
+                  <button 
+                    className="w-10 h-10 border border-border rounded-l-md flex items-center justify-center hover:bg-secondary transition-colors"
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                  >
+                    -
+                  </button>
+                  <input 
+                    type="number" 
+                    id="quantity" 
+                    className="h-10 w-16 border-y border-border text-center font-medium bg-background"
+                    min="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  />
+                  <button 
+                    className="w-10 h-10 border border-border rounded-r-md flex items-center justify-center hover:bg-secondary transition-colors"
+                    onClick={() => setQuantity(q => q + 1)}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
             
-            {/* Add to Cart */}
+            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 mb-8">
               <button 
-                className="flex-1 btn btn-primary py-3"
+                className="flex-1 btn btn-primary py-3.5 flex items-center justify-center text-base"
                 onClick={handleAddToCart}
+                disabled={!inStock}
               >
                 <ShoppingBag size={18} className="mr-2" />
-                Add to Cart
+                {inStock ? 'Add to Cart' : 'Out of Stock'}
               </button>
-              <button className="sm:w-12 h-12 border border-border rounded-md flex items-center justify-center">
-                <Heart size={20} />
+              <button 
+                className="w-12 h-12 border border-border rounded-md flex items-center justify-center hover:bg-secondary transition-colors"
+                title="Save to wishlist"
+              >
+                <Heart size={20} className="text-muted-foreground" />
               </button>
-              <button className="sm:w-12 h-12 border border-border rounded-md flex items-center justify-center">
-                <Share size={20} />
+              <button 
+                className="w-12 h-12 border border-border rounded-md flex items-center justify-center hover:bg-secondary transition-colors"
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast({ title: "Link copied!", description: "Product link copied to clipboard." });
+                }}
+                title="Share product"
+              >
+                <Share2 size={20} className="text-muted-foreground" />
               </button>
             </div>
             
-            {/* Product Details Tabs */}
-            <div className="border-t border-border pt-6">
-              <div className="flex space-x-6 border-b border-border">
-                <button 
-                  className={`pb-3 text-sm font-medium ${selectedTab === 'description' ? 'border-b-2 border-foreground' : 'text-muted-foreground'}`}
-                  onClick={() => setSelectedTab('description')}
-                >
-                  Description
-                </button>
-                <button 
-                  className={`pb-3 text-sm font-medium ${selectedTab === 'ingredients' ? 'border-b-2 border-foreground' : 'text-muted-foreground'}`}
-                  onClick={() => setSelectedTab('ingredients')}
-                >
-                  Ingredients
-                </button>
-                <button 
-                  className={`pb-3 text-sm font-medium ${selectedTab === 'howToUse' ? 'border-b-2 border-foreground' : 'text-muted-foreground'}`}
-                  onClick={() => setSelectedTab('howToUse')}
-                >
-                  How to Use
-                </button>
+            {/* Highlights / Guarantees */}
+            <div className="border-t border-border pt-6 space-y-3 text-sm text-muted-foreground">
+              <div className="flex items-center gap-3">
+                <Truck className="w-5 h-5 text-primary flex-shrink-0" />
+                <span>Fast regional delivery available across Ghana</span>
               </div>
-              
-              <div className="py-4">
-                {selectedTab === 'description' && (
-                  <p>{product.description}</p>
-                )}
-                {selectedTab === 'ingredients' && (
-                  <ul className="list-disc pl-5 space-y-1">
-                    {(product.ingredients ? product.ingredients.split(',').map(i => i.trim()) : []).map((ingredient, index) => (
-                      <li key={index}>{ingredient}</li>
-                    ))}
-                  </ul>
-                )}
-                {selectedTab === 'howToUse' && (
-                  <p>{product.how_to_use}</p>
-                )}
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="w-5 h-5 text-primary flex-shrink-0" />
+                <span>100% Authentic quality guaranteed</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <RefreshCw className="w-5 h-5 text-primary flex-shrink-0" />
+                <span>Secure payment via Paystack (Cards & Mobile Money) or WhatsApp</span>
               </div>
             </div>
           </div>

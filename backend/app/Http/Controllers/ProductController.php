@@ -9,7 +9,7 @@ class ProductController extends Controller
 {
     public function index()
     {
-        return response()->json(Product::all());
+        return response()->json(Product::orderBy('created_at', 'desc')->get());
     }
 
     public function show($id)
@@ -21,16 +21,12 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'price' => 'required|numeric',
+            'price' => 'required|numeric|min:0',
             'category' => 'required|string',
-            'brands' => 'required|string',
-            'how_to_use' => 'required|string',
-            'stock_quantity' => 'integer',
-            'featured' => 'boolean',
-            'benefits' => 'nullable|string',
-            'ingredients' => 'nullable|string',
+            'stock_quantity' => 'nullable|integer|min:0',
+            'featured' => 'nullable|boolean',
             'images' => 'nullable|array',
             'images.*' => 'image',
         ]);
@@ -45,6 +41,8 @@ class ProductController extends Controller
 
         $validated['images'] = $imageUrls;
         $validated['image'] = count($imageUrls) > 0 ? $imageUrls[0] : null;
+        $validated['stock_quantity'] = $validated['stock_quantity'] ?? 0;
+        $validated['featured'] = $validated['featured'] ?? false;
 
         $product = Product::create($validated);
 
@@ -56,16 +54,12 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
         
         $validated = $request->validate([
-            'name' => 'string',
-            'description' => 'string',
-            'price' => 'numeric',
-            'category' => 'string',
-            'brands' => 'string',
-            'how_to_use' => 'string',
-            'stock_quantity' => 'integer',
-            'featured' => 'boolean',
-            'benefits' => 'nullable|string',
-            'ingredients' => 'nullable|string',
+            'name' => 'sometimes|string|max:255',
+            'description' => 'sometimes|string',
+            'price' => 'sometimes|numeric|min:0',
+            'category' => 'sometimes|string',
+            'stock_quantity' => 'sometimes|integer|min:0',
+            'featured' => 'sometimes|boolean',
             'images' => 'nullable|array',
             'images.*' => 'image',
             'existingImages' => 'nullable|string',
@@ -88,7 +82,7 @@ class ProductController extends Controller
         }
 
         $validated['images'] = $imageUrls;
-        $validated['image'] = count($imageUrls) > 0 ? $imageUrls[0] : null;
+        $validated['image'] = count($imageUrls) > 0 ? $imageUrls[0] : ($product->image ?? null);
 
         $product->update($validated);
 
@@ -100,7 +94,7 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
         $product->delete();
 
-        return response()->json(['message' => 'Product deleted']);
+        return response()->json(['message' => 'Product deleted successfully']);
     }
 
     public function updateStockBatch(Request $request)
