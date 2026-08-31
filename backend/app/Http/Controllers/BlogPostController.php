@@ -26,7 +26,20 @@ class BlogPostController extends Controller
         return response()->json($query->get());
     }
 
-    public function show($slug)
+    public function show($idOrSlug)
+    {
+        $post = is_numeric($idOrSlug)
+            ? BlogPost::with('author')->find($idOrSlug)
+            : BlogPost::with('author')->where('slug', $idOrSlug)->first();
+
+        if (!$post) {
+            abort(404, 'Blog post not found');
+        }
+
+        return response()->json($post);
+    }
+
+    public function showBySlug($slug)
     {
         $post = BlogPost::with('author')->where('slug', $slug)->firstOrFail();
         return response()->json($post);
