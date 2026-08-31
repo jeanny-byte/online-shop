@@ -2,27 +2,98 @@
 
 namespace Database\Seeders;
 
+use App\Models\Category;
+use App\Models\StoreSetting;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Default Admin Account
+        User::updateOrCreate(
+            ['email' => 'admin@nelysah.com'],
+            [
+                'name' => 'admin',
+                'display_name' => 'Administrator',
+                'password' => Hash::make('Admin1122!'),
+                'is_admin' => true,
+                'role' => 'admin',
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@admin.com',
-            'password' => bcrypt('password'),
-            'is_admin' => true,
-            'role' => 'admin',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'admin@admin.com'],
+            [
+                'name' => 'admin',
+                'display_name' => 'Administrator',
+                'password' => Hash::make('Admin1122!'),
+                'is_admin' => true,
+                'role' => 'admin',
+            ]
+        );
+
+        // Default Store Settings
+        StoreSetting::updateOrCreate(
+            ['id' => 1],
+            [
+                'store_name' => 'Nelysah Cosmetics',
+                'store_email' => 'contact@nelysah.com',
+                'store_phone' => '+233 55 724 6424',
+                'whatsapp_number' => '233557246424',
+                'store_address' => 'Accra, Ghana',
+                'currency' => 'GHS',
+                'shipping_fee' => 30.00,
+                'newsletter_enabled' => true,
+                'newsletter_title' => 'Join the Royal Family',
+                'newsletter_description' => 'Subscribe for exclusive offers, skincare advice and new arrivals.',
+            ]
+        );
+
+        // Default Starter Categories
+        $defaultCategories = [
+            [
+                'name' => 'Cleansers',
+                'description' => 'Gentle, effective cleansers for all skin types',
+                'image' => 'https://res.cloudinary.com/dy8crgoev/image/upload/v1753782909/nelysah_uploads/1753782908569-r1.jpg.jpg',
+            ],
+            [
+                'name' => 'Serums',
+                'description' => 'Targeted treatments for specific skin concerns',
+                'image' => 'https://res.cloudinary.com/dy8crgoev/image/upload/v1753783234/nelysah_uploads/1753783233815-cc5.jpg.jpg',
+            ],
+            [
+                'name' => 'Moisturizers',
+                'description' => 'Hydrating formulas for day and night',
+                'image' => 'https://res.cloudinary.com/dy8crgoev/image/upload/v1753783234/nelysah_uploads/1753783233818-cc1.jpg.jpg',
+            ],
+            [
+                'name' => 'Sunscreen',
+                'description' => 'Broad-spectrum daily UV defense',
+                'image' => 'https://images.unsplash.com/photo-1525286116112-b59af11adad1?q=80&w=1780&auto=format&fit=crop',
+            ],
+            [
+                'name' => 'Body Care',
+                'description' => 'Nourishing body lotions and oils',
+                'image' => 'https://images.unsplash.com/photo-1608248543803-ba4f8c70e758?q=80&w=1470&auto=format&fit=crop',
+            ],
+        ];
+
+        foreach ($defaultCategories as $cat) {
+            Category::firstOrCreate(
+                ['slug' => Str::slug($cat['name'])],
+                [
+                    'name' => $cat['name'],
+                    'description' => $cat['description'],
+                    'image' => $cat['image'],
+                ]
+            );
+        }
     }
 }

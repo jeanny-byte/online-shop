@@ -7,14 +7,47 @@ use Illuminate\Http\Request;
 
 class BlogPostController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(BlogPost::with('author')->where('published', true)->orderBy('created_at', 'desc')->get());
+        $query = BlogPost::with('author')->orderBy('created_at', 'desc');
+
+        // If not requesting admin view or all posts, only return published posts
+        $includeAll = $request->query('all') == '1' || $request->query('admin') == '1';
+        
+        // If user is authenticated as admin or explicit admin query
+        if (!$includeAll && !$request->user()?->is_admin) {
+            $query->where('published', true);
+        }
+
+        if ($request->has('limit')) {
+            $query->take((int)$request->query('limit'));
+        }
+
+        return response()->json($query->get());
     }
 
-    public function show($slug)
+    public function show($idOrSlug)
+    {
+        $post = is_numeric($idOrSlug)
+            ? BlogPost::with('author')->find($idOrSlug)
+            : BlogPost::with('author')->where('slug', $idOrSlug)->first();
+
+        if (!$post) {
+            abort(404, 'Blog post not found');
+        }
+
+        return response()->json($post);
+    }
+
+    public function showBySlug($slug)
     {
         $post = BlogPost::with('author')->where('slug', $slug)->firstOrFail();
+        return response()->json($post);
+    }
+
+    public function showById($id)
+    {
+        $post = BlogPost::with('author')->findOrFail($id);
         return response()->json($post);
     }
 
@@ -24,7 +57,7 @@ class BlogPostController extends Controller
             'title' => 'required|string|max:255',
             'excerpt' => 'required|string',
             'content' => 'required|string',
-            'published' => 'required|in:true,false,1,0,true,false',
+            'published' => 'required|in:true,false,1,0',
             'author_id' => 'nullable|exists:users,id',
             'image' => 'required',
         ]);

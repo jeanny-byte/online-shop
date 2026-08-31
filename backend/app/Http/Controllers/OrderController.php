@@ -8,6 +8,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
@@ -15,12 +16,14 @@ class OrderController extends Controller
     {
         $validated = $request->validate([
             'customer_name' => 'required|string',
-            'customer_email' => 'string|email',
+            'customer_email' => 'nullable|string|email',
             'customer_phone' => 'required|string',
-            'shipping_address' => 'string',
-            'order_total' => 'required|numeric',
+            'shipping_address' => 'nullable|string',
+            'order_total' => 'required|numeric|min:0',
             'payment_method' => 'required|string',
             'tracking_code' => 'required|string',
+            'payment_reference' => 'nullable|string',
+            'payment_status' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
@@ -28,6 +31,21 @@ class OrderController extends Controller
         ]);
 
         return DB::transaction(function () use ($validated) {
+            // Check inventory stock before creating the order
+            foreach ($validated['items'] as $item) {
+                $product = Product::lockForUpdate()->find($item['product_id']);
+                if (!$product) {
+                    throw ValidationException::withMessages([
+                        'items' => ["Product #{$item['product_id']} not found."]
+                    ]);
+                }
+                if ($product->stock_quantity < $item['quantity']) {
+                    throw ValidationException::withMessages([
+                        'items' => ["Insufficient stock for '{$product->name}'. Available: {$product->stock_quantity}, requested: {$item['quantity']}."]
+                    ]);
+                }
+            }
+
             $order = Order::create([
                 'customer_name' => $validated['customer_name'],
                 'customer_email' => $validated['customer_email'] ?? '',
@@ -35,7 +53,9 @@ class OrderController extends Controller
                 'shipping_address' => $validated['shipping_address'] ?? '',
                 'order_total' => $validated['order_total'],
                 'payment_method' => $validated['payment_method'],
-                'order_status' => 'pending',
+                'payment_reference' => $validated['payment_reference'] ?? null,
+                'payment_status' => $validated['payment_status'] ?? 'unpaid',
+                'order_status' => 'Pending',
                 'tracking_code' => $validated['tracking_code'],
             ]);
 
@@ -46,6 +66,9 @@ class OrderController extends Controller
                     'quantity' => $item['quantity'],
                     'price_per_item' => $item['price_per_item'],
                 ]);
+
+                // Atomically decrement stock
+                Product::where('id', $item['product_id'])->decrement('stock_quantity', $item['quantity']);
             }
 
             return response()->json([
@@ -59,7 +82,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $status = $request->query('status');
-        $query = Order::query();
+        $query = Order::with(['items.product', 'driver']);
 
         if ($status && $status !== 'all') {
             $query->where('order_status', ucfirst($status));
@@ -81,11 +104,16 @@ class OrderController extends Controller
     public function driverOrders(Request $request)
     {
         $user = $request->user();
-        if (!$user->is_driver) {
+        if (!$user->is_driver && !$user->is_admin && $user->role !== 'driver' && $user->role !== 'admin') {
             return response()->json(['error' => 'Access denied. Driver privileges required.'], 403);
         }
 
-        $orders = Order::with('items.product')
+        // Return orders assigned to driver or all orders if not assigned
+        $orders = Order::with(['items.product', 'driver'])
+            ->where(function ($query) use ($user) {
+                $query->where('driver_id', $user->id)
+                      ->orWhereNull('driver_id');
+            })
             ->orderByRaw("CASE 
                 WHEN order_status = 'Pending' THEN 1
                 WHEN order_status = 'Processing' THEN 2
@@ -99,6 +127,21 @@ class OrderController extends Controller
         return response()->json(['orders' => $orders]);
     }
 
+    public function assignDriver(Request $request, $orderId)
+    {
+        $request->validate([
+            'driver_id' => 'nullable|exists:users,id',
+        ]);
+
+        $order = Order::findOrFail($orderId);
+        $order->update(['driver_id' => $request->driver_id]);
+
+        return response()->json([
+            'message' => 'Driver assigned successfully',
+            'order' => $order->load('driver')
+        ]);
+    }
+
     public function updateStatus(Request $request, $orderId)
     {
         $request->validate([
@@ -107,7 +150,7 @@ class OrderController extends Controller
 
         $order = Order::findOrFail($orderId);
         $prevStatus = $order->order_status;
-        $status = $request->status;
+        $status = ucfirst(strtolower($request->status));
 
         return DB::transaction(function () use ($order, $status, $prevStatus) {
             $order->update(['order_status' => $status]);
@@ -115,7 +158,7 @@ class OrderController extends Controller
             $stockRestored = false;
             $stockDecremented = false;
 
-            if (strtolower($status) === 'cancelled') {
+            if (strtolower($status) === 'cancelled' && strtolower($prevStatus) !== 'cancelled') {
                 foreach ($order->items as $item) {
                     Product::where('id', $item->product_id)->increment('stock_quantity', $item->quantity);
                 }
@@ -129,9 +172,6 @@ class OrderController extends Controller
                 $stockDecremented = true;
             }
 
-            // In a real app, we would fire an event for email notification here
-            // event(new OrderStatusUpdated($order));
-
             return response()->json([
                 'message' => 'Order status updated',
                 'stockRestored' => $stockRestored,
@@ -142,7 +182,7 @@ class OrderController extends Controller
 
     public function trackOrder($trackingCode)
     {
-        $order = Order::with('items.product')
+        $order = Order::with(['items.product', 'driver'])
             ->where('tracking_code', $trackingCode)
             ->first();
 

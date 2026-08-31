@@ -40,6 +40,7 @@ jobs:
         working-directory: ./backend
         run: composer install --no-dev --optimize-autoloader
 
+<<<<<<< HEAD
       # --- Deploy via FTP ---
       - name: Deploy to Server
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -47,10 +48,29 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./
+          local-dir: './'
           server-dir: ${{ secrets.FTP_REMOTE_PATH }}
+          state-name: '.ftp-deploy-sync-state.json'
+          dangerous-delete-remote-files: false
+=======
+      # --- Deploy via SFTP ---
+      - name: Deploy to Server
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          username: ${{ secrets.SFTP_USERNAME }}
+          server: ${{ secrets.SFTP_SERVER }}
+          ssh_private_key: ${{ secrets.SFTP_SSH_KEY }}
+          local_path: './*' # Deploy everything (React root and backend folder)
+          remote_path: ${{ secrets.SFTP_REMOTE_PATH }} # e.g., /home/username/public_html
+          delete_remote_files: false
+          args: '-o ConnectTimeout=5'
+>>>>>>> dev
 
       # --- Post-Deployment (Optional) ---
       # You might need to run migrations or clear cache. 
       # Since shared hosting usually doesn't allow SSH commands easily in workflows,
+<<<<<<< HEAD
       # you can use a deployment hook or manually run them once.
+=======
+      # you can use a deployment hook or manually run them once.
+>>>>>>> dev
