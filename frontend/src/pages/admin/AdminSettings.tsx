@@ -7,10 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Loader2, Upload, Globe, Mail, Phone, MapPin, Newspaper, DollarSign, Truck } from 'lucide-react';
+import { Save, Loader2, Upload, Globe, Mail, Phone, MapPin, Newspaper, DollarSign, Truck, MessageCircle, ExternalLink, Trash2 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 interface StoreSettings {
   store_name: string;
@@ -57,18 +57,20 @@ const AdminSettings: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch settings');
       const data = await response.json();
       if (data) {
-        // Sanitize null values to empty strings to prevent React warnings
         const sanitizedData = {
           ...data,
+          store_name: data.store_name || '',
           store_email: data.store_email || '',
           store_phone: data.store_phone || '',
           whatsapp_number: data.whatsapp_number || '',
           store_address: data.store_address || '',
           newsletter_title: data.newsletter_title || '',
           newsletter_description: data.newsletter_description || '',
+          logo_url: data.logo_url || '',
         };
         setSettings(sanitizedData);
-        if (data.logo_url) setLogoPreview(data.logo_url);
+        setLogoPreview(data.logo_url || null);
+        setLogoFile(null);
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -103,6 +105,14 @@ const AdminSettings: React.FC = () => {
     }
   };
 
+  const handleRemoveLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+    setSettings(prev => ({ ...prev, logo_url: '' }));
+  };
+
+  const cleanWhatsapp = settings.whatsapp_number.replace(/[^\d]/g, '');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -113,7 +123,6 @@ const AdminSettings: React.FC = () => {
       
       Object.entries(settings).forEach(([key, value]) => {
         if (key !== 'logo_url' && value !== null) {
-          // Convert booleans to 1/0 for Laravel compatibility in FormData
           if (typeof value === 'boolean') {
             formData.append(key, value ? '1' : '0');
           } else {
@@ -124,10 +133,13 @@ const AdminSettings: React.FC = () => {
 
       if (logoFile) {
         formData.append('logo', logoFile);
+      } else if (!logoPreview) {
+        // Logo was removed
+        formData.append('logo_url', '');
       }
 
       const response = await fetch(`${API_URL}/api/settings`, {
-        method: 'POST', // Using POST for multipart form data
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
@@ -136,22 +148,22 @@ const AdminSettings: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Failed to update settings');
       }
 
       toast({
-        title: 'Success',
-        description: 'Store settings updated successfully',
+        title: 'Settings Saved',
+        description: 'Store branding, WhatsApp number, and configuration updated successfully.',
       });
       
-      await fetchSettings(); // Refresh local form data
-      await refreshSettings(); // Refresh global context data
-    } catch (error) {
+      await fetchSettings();
+      await refreshSettings();
+    } catch (error: any) {
       console.error('Error updating settings:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to update settings',
+        description: error.message || 'Failed to update settings',
         variant: 'destructive',
       });
     } finally {
@@ -179,22 +191,53 @@ const AdminSettings: React.FC = () => {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Globe className="w-5 h-5 text-primary" />
-                  <CardTitle>General Information</CardTitle>
+                  <CardTitle>Branding & Contact Information</CardTitle>
                 </div>
-                <CardDescription>Configure your store's basic identification and contact details.</CardDescription>
+                <CardDescription>Configure your store identification, WhatsApp order recipient, and public contacts.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="store_name">Store Name</Label>
+                    <Label htmlFor="store_name">Store Name *</Label>
                     <Input 
                       id="store_name" 
                       name="store_name" 
                       value={settings.store_name} 
                       onChange={handleChange} 
-                      placeholder="e.g. Nelysah Royal Care"
+                      placeholder="e.g. Nelysah Cosmetics"
+                      required
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp_number">Admin WhatsApp Number *</Label>
+                    <div className="relative">
+                      <MessageCircle className="absolute left-2.5 top-2.5 h-4 w-4 text-[#25D366]" />
+                      <Input 
+                        id="whatsapp_number" 
+                        name="whatsapp_number" 
+                        value={settings.whatsapp_number} 
+                        onChange={handleChange} 
+                        className="pl-8"
+                        placeholder="e.g. 233557246424 or 0557246424"
+                        required
+                      />
+                    </div>
+                    {cleanWhatsapp && (
+                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                        <span>Format: +{cleanWhatsapp}</span>
+                        <a
+                          href={`https://wa.me/${cleanWhatsapp}?text=Test%20message%20from%20admin%20panel`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline inline-flex items-center gap-1 font-medium"
+                        >
+                          <ExternalLink size={12} /> Test Link
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="store_email">Support Email</Label>
                     <div className="relative">
@@ -205,12 +248,13 @@ const AdminSettings: React.FC = () => {
                         value={settings.store_email} 
                         onChange={handleChange} 
                         className="pl-8"
-                        placeholder="info@example.com"
+                        placeholder="info@nelysah.com"
                       />
                     </div>
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="store_phone">Phone Number</Label>
+                    <Label htmlFor="store_phone">Public Phone Number</Label>
                     <div className="relative">
                       <Phone className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input 
@@ -219,26 +263,13 @@ const AdminSettings: React.FC = () => {
                         value={settings.store_phone} 
                         onChange={handleChange} 
                         className="pl-8"
-                        placeholder="+233 ..."
+                        placeholder="+233 55 724 6424"
                       />
                     </div>
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="whatsapp_number" 
-                        name="whatsapp_number" 
-                        value={settings.whatsapp_number} 
-                        onChange={handleChange} 
-                        className="pl-8"
-                        placeholder="+233 ..."
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="currency">Currency Code</Label>
+                    <Label htmlFor="currency">Store Currency</Label>
                     <div className="relative">
                       <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input 
@@ -262,8 +293,8 @@ const AdminSettings: React.FC = () => {
                       name="store_address" 
                       value={settings.store_address} 
                       onChange={handleChange} 
-                      className="pl-8 min-h-[100px]"
-                      placeholder="123 Street Name, City, Country"
+                      className="pl-8 min-h-[80px]"
+                      placeholder="Accra, Ghana"
                     />
                   </div>
                 </div>
@@ -281,8 +312,8 @@ const AdminSettings: React.FC = () => {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="space-y-0.5">
-                    <Label className="text-base">Enable Newsletter Popup</Label>
-                    <p className="text-sm text-muted-foreground">Show a subscription modal to new visitors.</p>
+                    <Label className="text-base">Enable Newsletter Section</Label>
+                    <p className="text-sm text-muted-foreground">Show subscription form across footer & home.</p>
                   </div>
                   <Switch 
                     checked={settings.newsletter_enabled} 
@@ -297,7 +328,7 @@ const AdminSettings: React.FC = () => {
                     name="newsletter_title" 
                     value={settings.newsletter_title} 
                     onChange={handleChange} 
-                    placeholder="e.g. Join Our Newsletter"
+                    placeholder="e.g. Join the Royal Family"
                   />
                 </div>
 
@@ -308,7 +339,7 @@ const AdminSettings: React.FC = () => {
                     name="newsletter_description" 
                     value={settings.newsletter_description} 
                     onChange={handleChange} 
-                    placeholder="Describe why customers should subscribe..."
+                    placeholder="Subscribe for exclusive offers and skincare advice..."
                   />
                 </div>
               </CardContent>
@@ -320,7 +351,7 @@ const AdminSettings: React.FC = () => {
                   <Truck className="w-5 h-5 text-primary" />
                   <CardTitle>Shipping & Logistics</CardTitle>
                 </div>
-                <CardDescription>Set default shipping parameters for your orders.</CardDescription>
+                <CardDescription>Set default standard delivery fee applied at checkout.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="max-w-xs space-y-2">
@@ -330,6 +361,7 @@ const AdminSettings: React.FC = () => {
                     name="shipping_fee" 
                     type="number"
                     step="0.01"
+                    min="0"
                     value={settings.shipping_fee} 
                     onChange={handleChange} 
                   />
@@ -338,50 +370,66 @@ const AdminSettings: React.FC = () => {
             </Card>
           </div>
 
-          {/* Logo & Branding */}
+          {/* Logo & Branding Card */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Store Logo</CardTitle>
-                <CardDescription>Upload your brand's primary logo.</CardDescription>
+                <CardDescription>Upload your brand's primary logo for the header, footer, and invoices.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-col items-center gap-4">
-                  <div className="w-full aspect-square relative rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden bg-muted/20">
+                  <div className="w-full aspect-video relative rounded-xl border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-secondary/20 p-4">
                     {logoPreview ? (
-                      <img src={logoPreview} alt="Logo preview" className="max-w-full max-h-full object-contain" />
+                      <div className="relative group w-full h-full flex items-center justify-center">
+                        <img 
+                          src={logoPreview} 
+                          alt="Store Logo Preview" 
+                          className="max-w-full max-h-full object-contain"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveLogo}
+                          className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 shadow-md opacity-90 transition-opacity"
+                          title="Remove logo"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     ) : (
                       <div className="text-center p-4">
                         <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground">No logo uploaded</p>
+                        <p className="text-sm font-medium text-foreground">{settings.store_name || 'Typography Logo'}</p>
+                        <p className="text-xs text-muted-foreground mt-1">No custom logo uploaded. Store name will be displayed as styled text.</p>
                       </div>
                     )}
                   </div>
+
                   <Label 
                     htmlFor="logo-upload" 
                     className="cursor-pointer w-full"
                   >
-                    <div className="bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 rounded-md flex items-center justify-center gap-2 transition-colors">
+                    <div className="bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium border border-border">
                       <Upload className="w-4 h-4" />
-                      Choose Logo
+                      {logoPreview ? 'Replace Logo' : 'Upload Store Logo'}
                     </div>
                     <input 
                       id="logo-upload" 
                       type="file" 
-                      accept="image/*" 
+                      accept="image/png,image/jpeg,image/svg+xml,image/webp" 
                       className="hidden" 
                       onChange={handleLogoChange} 
                     />
                   </Label>
                   <p className="text-xs text-center text-muted-foreground">
-                    Recommended: Square PNG or SVG with transparent background.
+                    Recommended: PNG, WebP or SVG with transparent background (Max 5MB).
                   </p>
                 </div>
               </CardContent>
             </Card>
 
             <div className="flex flex-col gap-3">
-              <Button type="submit" className="w-full" disabled={saving}>
+              <Button type="submit" className="w-full py-2.5 text-sm font-medium" disabled={saving}>
                 {saving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -395,7 +443,7 @@ const AdminSettings: React.FC = () => {
                 )}
               </Button>
               <Button type="button" variant="outline" className="w-full" onClick={fetchSettings} disabled={saving}>
-                Cancel & Reset
+                Reset Changes
               </Button>
             </div>
           </div>

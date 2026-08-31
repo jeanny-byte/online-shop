@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +9,7 @@ import { LoadingProvider } from "./context/LoadingContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import FloatingWhatsApp from "./components/FloatingWhatsApp";
 import HomePage from "./pages/HomePage";
 import ShopPage from "./pages/ShopPage";
 import ProductPage from "./pages/ProductPage";
@@ -41,14 +41,9 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DriverRoute from "./components/DriverRoute";
 
+import React from 'react';
 
-import React, { useEffect } from 'react';
-// Create a function component to properly use React hooks
 const App = () => {
-  useEffect(() => {
-    // testConnection removed: backend-only
-  }, []);
-  // Create a new QueryClient instance within the component
   const queryClient = new QueryClient();
   
   return (
@@ -58,91 +53,92 @@ const App = () => {
           <SettingsProvider>
             <CartProvider>
               <LoadingProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <Navbar />
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/shop" element={<ShopPage />} />
-                <Route path="/product/:id" element={<ProductPage />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/track-order" element={<OrderTrackingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/signup" element={<SignupPage />} />
-                <Route path="/account" element={<AccountPage />} />
-<Route path="/user-orders" element={<UserOrdersPage />} />
-                <Route path="/blog" element={<BlogPage />} />
-                <Route path="/blog/:slug" element={<BlogPostPage />} />
-                
-                {/* Information Pages */}
-                <Route path="/faq" element={<FAQPage />} />
-                <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
-                <Route path="/returns-policy" element={<ReturnsRefundsPage />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-                <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-                
-                {/* Admin Routes */}
-                <Route path="/admin" element={
-                  <ProtectedRoute adminOnly>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                } />
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <Navbar />
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/shop" element={<ShopPage />} />
+                    <Route path="/product/:id" element={<ProductPage />} />
+                    <Route path="/about" element={<AboutPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
+                    <Route path="/cart" element={<CartPage />} />
+                    <Route path="/checkout" element={<CheckoutPage />} />
+                    <Route path="/track-order" element={<OrderTrackingPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/signup" element={<SignupPage />} />
+                    <Route path="/account" element={<AccountPage />} />
+                    <Route path="/user-orders" element={<UserOrdersPage />} />
+                    <Route path="/blog" element={<BlogPage />} />
+                    <Route path="/blog/:slug" element={<BlogPostPage />} />
+                    
+                    {/* Information Pages */}
+                    <Route path="/faq" element={<FAQPage />} />
+                    <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
+                    <Route path="/returns-policy" element={<ReturnsRefundsPage />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                    <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+                    
+                    {/* Admin Routes */}
+                    <Route path="/admin" element={
+                      <ProtectedRoute adminOnly>
+                        <AdminDashboard />
+                      </ProtectedRoute>
+                    } />
 
-                {/* Driver Routes */}
-                <Route path="/driver" element={
-                  <DriverRoute>
-                    <DriverDashboard />
-                  </DriverRoute>
-                } />
-                <Route path="/admin/products" element={
-                  <ProtectedRoute>
-                    <AdminProducts />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/orders" element={
-                  <ProtectedRoute>
-                    <AdminOrders />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/blog" element={
-                  <ProtectedRoute>
-                    <AdminBlogPosts />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/blog/new" element={
-                  <ProtectedRoute>
-                    <AdminBlogEditor />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/blog/edit/:id" element={
-                  <ProtectedRoute>
-                    <AdminBlogEditor />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/users" element={
-                  <ProtectedRoute adminOnly>
-                    <AdminUsers />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/settings" element={
-                  <ProtectedRoute adminOnly>
-                    <AdminSettings />
-                  </ProtectedRoute>
-                } />
-                
-                {/* 404 route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <Footer />
-            </TooltipProvider>
-            </LoadingProvider>
-          </CartProvider>
-        </SettingsProvider>
-      </AuthProvider>
+                    {/* Driver Routes */}
+                    <Route path="/driver" element={
+                      <DriverRoute>
+                        <DriverDashboard />
+                      </DriverRoute>
+                    } />
+                    <Route path="/admin/products" element={
+                      <ProtectedRoute>
+                        <AdminProducts />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/orders" element={
+                      <ProtectedRoute>
+                        <AdminOrders />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/blog" element={
+                      <ProtectedRoute>
+                        <AdminBlogPosts />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/blog/new" element={
+                      <ProtectedRoute>
+                        <AdminBlogEditor />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/blog/edit/:id" element={
+                      <ProtectedRoute>
+                        <AdminBlogEditor />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/users" element={
+                      <ProtectedRoute adminOnly>
+                        <AdminUsers />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/settings" element={
+                      <ProtectedRoute adminOnly>
+                        <AdminSettings />
+                      </ProtectedRoute>
+                    } />
+                    
+                    {/* 404 route */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                  <Footer />
+                  <FloatingWhatsApp />
+                </TooltipProvider>
+              </LoadingProvider>
+            </CartProvider>
+          </SettingsProvider>
+        </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

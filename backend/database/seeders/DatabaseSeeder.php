@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Category;
+use App\Models\StoreSetting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -35,6 +36,23 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make('Admin1122!'),
                 'is_admin' => true,
                 'role' => 'admin',
+            ]
+        );
+
+        // Default Store Settings
+        StoreSetting::updateOrCreate(
+            ['id' => 1],
+            [
+                'store_name' => 'Nelysah Cosmetics',
+                'store_email' => 'contact@nelysah.com',
+                'store_phone' => '+233 55 724 6424',
+                'whatsapp_number' => '233557246424',
+                'store_address' => 'Accra, Ghana',
+                'currency' => 'GHS',
+                'shipping_fee' => 30.00,
+                'newsletter_enabled' => true,
+                'newsletter_title' => 'Join the Royal Family',
+                'newsletter_description' => 'Subscribe for exclusive offers, skincare advice and new arrivals.',
             ]
         );
 

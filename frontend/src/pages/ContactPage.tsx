@@ -86,6 +86,25 @@ const ContactPage: React.FC = () => {
               </div>
               
               <div className="flex items-start">
+                <div className="h-10 w-10 rounded-full bg-[#25D366]/20 text-[#25D366] flex items-center justify-center mr-4 flex-shrink-0">
+                  <Phone size={18} />
+                </div>
+                <div>
+                  <h3 className="font-medium mb-1">WhatsApp Support</h3>
+                  <p className="text-muted-foreground">
+                    <a 
+                      href={`https://wa.me/${(settings?.whatsapp_number || '233557246424').replace(/\D/g, '')}?text=Hello%20${encodeURIComponent(settings?.store_name || 'Nelysah')}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[#25D366] font-medium hover:underline inline-flex items-center gap-1"
+                    >
+                      Chat on WhatsApp (+{(settings?.whatsapp_number || '233557246424').replace(/\D/g, '')})
+                    </a>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start">
                 <div className="h-10 w-10 rounded-full bg-lskin-pink flex items-center justify-center mr-4 flex-shrink-0">
                   <Phone size={18} />
                 </div>
