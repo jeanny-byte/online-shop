@@ -20,6 +20,8 @@ Route::post('/auth/signup', [AuthController::class, 'register']);
 Route::post('/auth/signin', [AuthController::class, 'login']);
 
 Route::get('/settings', [StoreSettingController::class, 'index']);
+Route::get('/settings/logo', [StoreSettingController::class, 'logo']);
+Route::get('/storage/{path}', [StoreSettingController::class, 'streamStorageFile'])->where('path', '.*');
 
 Route::get('/categories', [CategoryController::class, 'index']);
 

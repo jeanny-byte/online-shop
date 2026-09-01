@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { normalizeImageUrl } from '../lib/imageUtils';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 interface StoreSettings {
   store_name: string;
@@ -23,27 +24,6 @@ interface SettingsContextType {
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
-
-const normalizeImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  if (url.startsWith('data:image') || url.startsWith('blob:')) return url;
-  
-  // If the stored URL contains localhost/127.0.0.1, adapt it to the current API_URL in production
-  if (url.includes('localhost') || url.includes('127.0.0.1')) {
-    const storageIdx = url.indexOf('/storage/');
-    if (storageIdx !== -1) {
-      const relative = url.substring(storageIdx);
-      return `${API_URL || ''}${relative}`;
-    }
-  }
-
-  // If the URL is relative like "/storage/settings/..."
-  if (url.startsWith('/storage/')) {
-    return `${API_URL || ''}${url}`;
-  }
-
-  return url;
-};
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<StoreSettings | null>(null);

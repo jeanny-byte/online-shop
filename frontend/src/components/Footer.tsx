@@ -20,12 +20,27 @@ const Footer: React.FC = () => {
                   src={settings.logo_url} 
                   alt={storeName} 
                   className="h-10 w-auto object-contain mb-2"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    const fallbackUrl = `${import.meta.env.VITE_API_URL || ''}/api/settings/logo`;
+                    if (!target.dataset.triedFallback && target.src !== fallbackUrl) {
+                      target.dataset.triedFallback = 'true';
+                      target.src = fallbackUrl;
+                    } else {
+                      target.style.display = 'none';
+                      if (target.nextElementSibling) {
+                        (target.nextElementSibling as HTMLElement).style.display = 'block';
+                      }
+                    }
+                  }}
                 />
-              ) : (
-                <h3 className="text-2xl font-serif font-semibold text-foreground mb-2">
-                  {storeName}
-                </h3>
-              )}
+              ) : null}
+              <h3 
+                className="text-2xl font-serif font-semibold text-foreground mb-2"
+                style={{ display: settings?.logo_url ? 'none' : 'block' }}
+              >
+                {storeName}
+              </h3>
             </Link>
             
             <p className="text-muted-foreground text-sm leading-relaxed">

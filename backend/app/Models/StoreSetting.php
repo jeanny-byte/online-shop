@@ -42,17 +42,30 @@ class StoreSetting extends Model
             return $value;
         }
 
-        // If it points to storage, dynamically format with current request's scheme and host
+        $relativePath = $value;
         if (str_contains($value, '/storage/')) {
             $relativePath = substr($value, strpos($value, '/storage/'));
-            return url($relativePath);
+        } elseif (!str_starts_with($value, 'http://') && !str_starts_with($value, 'https://')) {
+            $relativePath = '/storage/' . ltrim($value, '/');
         }
 
-        // If it's a relative path like "settings/logo.png"
-        if (!str_starts_with($value, 'http://') && !str_starts_with($value, 'https://')) {
-            return url('storage/' . ltrim($value, '/'));
+        // If it's already an external absolute URL (e.g. Cloudinary, AWS S3)
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            if (!str_contains($value, 'localhost') && !str_contains($value, '127.0.0.1')) {
+                // Enforce HTTPS if request is secure or forwarded
+                if (request()->secure() || request()->header('x-forwarded-proto') === 'https') {
+                    return preg_replace('/^http:\/\//', 'https://', $value);
+                }
+                return $value;
+            }
         }
 
-        return $value;
+        // Dynamically resolve URL using current request host and scheme
+        $fullUrl = url($relativePath);
+        if (request()->secure() || request()->header('x-forwarded-proto') === 'https') {
+            $fullUrl = preg_replace('/^http:\/\//', 'https://', $fullUrl);
+        }
+
+        return $fullUrl;
     }
 }

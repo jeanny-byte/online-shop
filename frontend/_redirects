@@ -1,2 +1,3 @@
 https://lskin-beauty-boutique.pages.dev/* http://localhost:8000/:splat 200
 /api/* http://localhost:8000/api/:splat 200
+/storage/* http://localhost:8000/storage/:splat 200

@@ -47,12 +47,27 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
                     src={settings.logo_url} 
                     alt={storeName} 
                     className="h-9 w-auto max-w-[120px] object-contain rounded"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      const fallbackUrl = `${import.meta.env.VITE_API_URL || ''}/api/settings/logo`;
+                      if (!target.dataset.triedFallback && target.src !== fallbackUrl) {
+                        target.dataset.triedFallback = 'true';
+                        target.src = fallbackUrl;
+                      } else {
+                        target.style.display = 'none';
+                        if (target.nextElementSibling) {
+                          (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                        }
+                      }
+                    }}
                   />
-                ) : (
-                  <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-serif font-bold text-lg">
-                    {storeName.charAt(0)}
-                  </div>
-                )}
+                ) : null}
+                <div 
+                  className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-serif font-bold text-lg"
+                  style={{ display: settings?.logo_url ? 'none' : 'flex' }}
+                >
+                  {storeName.charAt(0)}
+                </div>
                 <div>
                   <h2 className="font-serif font-semibold text-base leading-tight text-foreground truncate max-w-[140px]">
                     {storeName}
@@ -107,10 +122,31 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-2">
                 {settings?.logo_url ? (
-                  <img src={settings.logo_url} alt={storeName} className="h-7 w-auto object-contain" />
-                ) : (
-                  <span className="font-serif font-semibold">{storeName}</span>
-                )}
+                  <img 
+                    src={settings.logo_url} 
+                    alt={storeName} 
+                    className="h-7 w-auto object-contain"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      const fallbackUrl = `${import.meta.env.VITE_API_URL || ''}/api/settings/logo`;
+                      if (!target.dataset.triedFallback && target.src !== fallbackUrl) {
+                        target.dataset.triedFallback = 'true';
+                        target.src = fallbackUrl;
+                      } else {
+                        target.style.display = 'none';
+                        if (target.nextElementSibling) {
+                          (target.nextElementSibling as HTMLElement).style.display = 'inline';
+                        }
+                      }
+                    }}
+                  />
+                ) : null}
+                <span 
+                  className="font-serif font-semibold"
+                  style={{ display: settings?.logo_url ? 'none' : 'inline' }}
+                >
+                  {storeName}
+                </span>
                 <span className="text-xs text-muted-foreground">Admin</span>
               </div>
               <div className="flex gap-2">

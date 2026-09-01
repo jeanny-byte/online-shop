@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Loader2, Upload, Globe, Mail, Phone, MapPin, Newspaper, DollarSign, Truck, MessageCircle, ExternalLink, Trash2 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
-import { processImageOptimization } from '@/lib/imageUtils';
+import { processImageOptimization, normalizeImageUrl } from '@/lib/imageUtils';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -26,25 +26,6 @@ interface StoreSettings {
   currency: string;
   shipping_fee: number;
 }
-
-const normalizeImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  if (url.startsWith('data:image') || url.startsWith('blob:')) return url;
-  
-  if (url.includes('localhost') || url.includes('127.0.0.1')) {
-    const storageIdx = url.indexOf('/storage/');
-    if (storageIdx !== -1) {
-      const relative = url.substring(storageIdx);
-      return `${API_URL || ''}${relative}`;
-    }
-  }
-
-  if (url.startsWith('/storage/')) {
-    return `${API_URL || ''}${url}`;
-  }
-
-  return url;
-};
 
 const AdminSettings: React.FC = () => {
   const { toast } = useToast();

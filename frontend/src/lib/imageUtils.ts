@@ -192,3 +192,55 @@ const fileToDataUrl = (file: File): Promise<string> => {
     reader.readAsDataURL(file);
   });
 };
+
+/**
+ * Normalizes any image or logo URL to ensure it resolves accurately across both local and production environments.
+ * Handles:
+ * - base64 data URLs and object blob URLs
+ * - local/dev host URLs (localhost, 127.0.0.1) dynamically converted to current VITE_API_URL
+ * - relative storage paths like /storage/... or settings/...
+ * - mixed content: ensures https protocol when running on https
+ */
+export const normalizeImageUrl = (url: string | null | undefined): string => {
+  if (!url) return '';
+  if (url.startsWith('data:image') || url.startsWith('blob:')) return url;
+
+  const rawApiUrl = (import.meta.env.VITE_API_URL || '').trim();
+  const cleanApiUrl = rawApiUrl.replace(/\/+$/, '');
+  const baseHost = cleanApiUrl.replace(/\/api$/, '');
+
+  const storageIdx = url.indexOf('/storage/');
+  if (storageIdx !== -1) {
+    const relativePath = url.substring(storageIdx);
+
+    if (
+      url.startsWith('/storage/') ||
+      url.includes('localhost') ||
+      url.includes('127.0.0.1')
+    ) {
+      return baseHost ? `${baseHost}${relativePath}` : relativePath;
+    }
+
+    // Upgrade http to https if browsing securely to prevent mixed content blocking
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+      return url.replace(/^http:\/\//, 'https://');
+    }
+
+    return url;
+  }
+
+  // Relative path without /storage/
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    const cleanRel = url.startsWith('/') ? url : `/${url}`;
+    const storagePath = cleanRel.startsWith('/storage/') ? cleanRel : `/storage${cleanRel}`;
+    return baseHost ? `${baseHost}${storagePath}` : storagePath;
+  }
+
+  // Enforce https on secure pages
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
+    return url.replace(/^http:\/\//, 'https://');
+  }
+
+  return url;
+};
+

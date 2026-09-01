@@ -66,10 +66,28 @@ const Navbar: React.FC = () => {
           {/* Logo */}
           <Link to="/" className="text-2xl font-serif font-semibold">
             {settings?.logo_url ? (
-              <img src={settings.logo_url} alt={settings.store_name} className="h-10 w-auto object-contain" />
-            ) : (
-              settings?.store_name || 'Nelysah'
-            )}
+              <img 
+                src={settings.logo_url} 
+                alt={settings.store_name} 
+                className="h-10 w-auto object-contain"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  const fallbackUrl = `${import.meta.env.VITE_API_URL || ''}/api/settings/logo`;
+                  if (!target.dataset.triedFallback && target.src !== fallbackUrl) {
+                    target.dataset.triedFallback = 'true';
+                    target.src = fallbackUrl;
+                  } else {
+                    target.style.display = 'none';
+                    if (target.nextElementSibling) {
+                      (target.nextElementSibling as HTMLElement).style.display = 'inline';
+                    }
+                  }
+                }}
+              />
+            ) : null}
+            <span style={{ display: settings?.logo_url ? 'none' : 'inline' }}>
+              {settings?.store_name || 'Nelysah'}
+            </span>
           </Link>
           
           {/* Desktop Navigation */}
@@ -186,10 +204,28 @@ const Navbar: React.FC = () => {
             <div className="flex justify-between items-center">
               <Link to="/" className="text-2xl font-serif font-semibold" onClick={() => setIsOpen(false)}>
                 {settings?.logo_url ? (
-                  <img src={settings.logo_url} alt={settings?.store_name || 'Store'} className="h-9 w-auto object-contain" />
-                ) : (
-                  settings?.store_name || 'Nelysah Royal Care'
-                )}
+                  <img 
+                    src={settings.logo_url} 
+                    alt={settings?.store_name || 'Store'} 
+                    className="h-9 w-auto object-contain"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      const fallbackUrl = `${import.meta.env.VITE_API_URL || ''}/api/settings/logo`;
+                      if (!target.dataset.triedFallback && target.src !== fallbackUrl) {
+                        target.dataset.triedFallback = 'true';
+                        target.src = fallbackUrl;
+                      } else {
+                        target.style.display = 'none';
+                        if (target.nextElementSibling) {
+                          (target.nextElementSibling as HTMLElement).style.display = 'inline';
+                        }
+                      }
+                    }}
+                  />
+                ) : null}
+                <span style={{ display: settings?.logo_url ? 'none' : 'inline' }}>
+                  {settings?.store_name || 'Nelysah Royal Care'}
+                </span>
               </Link>
               <button onClick={() => setIsOpen(false)}>
                 <X size={24} />

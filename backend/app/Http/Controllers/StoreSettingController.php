@@ -66,16 +66,28 @@ class StoreSettingController extends Controller
 
         // Handle File Logo Upload
         if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
-            // Delete old logo if it exists in local storage
-            if ($settings->logo_url && str_contains($settings->logo_url, '/storage/')) {
-                $oldRel = substr($settings->logo_url, strpos($settings->logo_url, '/storage/') + 9);
+            $rawLogo = $settings->getRawOriginal('logo_url');
+            if ($rawLogo && str_contains($rawLogo, '/storage/')) {
+                $oldRel = substr($rawLogo, strpos($rawLogo, '/storage/') + 9);
                 if (Storage::disk('public')->exists($oldRel)) {
                     Storage::disk('public')->delete($oldRel);
                 }
+                @unlink(public_path('storage/' . $oldRel));
             }
 
             $path = $request->file('logo')->store('settings', 'public');
             $validated['logo_url'] = '/storage/' . $path;
+
+            // Also copy to public/storage if directory exists or can be created (for direct web server static delivery)
+            try {
+                $destDir = public_path('storage/settings');
+                if (!file_exists($destDir)) {
+                    @mkdir($destDir, 0755, true);
+                }
+                @copy(Storage::disk('public')->path($path), public_path('storage/' . $path));
+            } catch (\Throwable $e) {
+                // Ignore copy errors; fallback stream routes will serve it
+            }
         } 
         // Handle Base64 Logo Upload (fallback for proxy / payload resilience)
         elseif ($request->filled('logo_base64') && str_starts_with($request->input('logo_base64'), 'data:image')) {
@@ -86,26 +98,40 @@ class StoreSettingController extends Controller
                 $decoded = base64_decode($base64Content);
 
                 if ($decoded !== false) {
-                    if ($settings->logo_url && str_contains($settings->logo_url, '/storage/')) {
-                        $oldRel = substr($settings->logo_url, strpos($settings->logo_url, '/storage/') + 9);
+                    $rawLogo = $settings->getRawOriginal('logo_url');
+                    if ($rawLogo && str_contains($rawLogo, '/storage/')) {
+                        $oldRel = substr($rawLogo, strpos($rawLogo, '/storage/') + 9);
                         if (Storage::disk('public')->exists($oldRel)) {
                             Storage::disk('public')->delete($oldRel);
                         }
+                        @unlink(public_path('storage/' . $oldRel));
                     }
 
                     $ext = ($imageType === 'jpeg') ? 'jpg' : $imageType;
                     $fileName = 'settings/logo_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
                     Storage::disk('public')->put($fileName, $decoded);
                     $validated['logo_url'] = '/storage/' . $fileName;
+
+                    try {
+                        $destDir = public_path('storage/settings');
+                        if (!file_exists($destDir)) {
+                            @mkdir($destDir, 0755, true);
+                        }
+                        @file_put_contents(public_path('storage/' . $fileName), $decoded);
+                    } catch (\Throwable $e) {
+                        // Ignore copy errors
+                    }
                 }
             }
         } elseif ($request->has('logo_url') && empty($request->input('logo_url'))) {
             // If logo was explicitly removed
-            if ($settings->logo_url && str_contains($settings->logo_url, '/storage/')) {
-                $oldRel = substr($settings->logo_url, strpos($settings->logo_url, '/storage/') + 9);
+            $rawLogo = $settings->getRawOriginal('logo_url');
+            if ($rawLogo && str_contains($rawLogo, '/storage/')) {
+                $oldRel = substr($rawLogo, strpos($rawLogo, '/storage/') + 9);
                 if (Storage::disk('public')->exists($oldRel)) {
                     Storage::disk('public')->delete($oldRel);
                 }
+                @unlink(public_path('storage/' . $oldRel));
             }
             $validated['logo_url'] = null;
         }
@@ -115,6 +141,83 @@ class StoreSettingController extends Controller
         return response()->json([
             'message' => 'Store settings updated successfully',
             'settings' => $settings
+        ]);
+    }
+
+    /**
+     * Direct streaming endpoint for current store logo (/api/settings/logo).
+     * Works seamlessly regardless of symlinks, proxy re-writes or CORS.
+     */
+    public function logo()
+    {
+        $settings = StoreSetting::first();
+        if (!$settings) {
+            abort(404, 'Settings not found');
+        }
+
+        $rawLogo = $settings->getRawOriginal('logo_url');
+        if (empty($rawLogo)) {
+            abort(404, 'No logo configured');
+        }
+
+        // If stored as base64 data URL
+        if (str_starts_with($rawLogo, 'data:image/')) {
+            if (preg_match('/^data:image\/(\w+);base64,/', $rawLogo, $matches)) {
+                $mime = 'image/' . $matches[1];
+                $data = base64_decode(substr($rawLogo, strpos($rawLogo, ',') + 1));
+                return response($data, 200, [
+                    'Content-Type' => $mime,
+                    'Cache-Control' => 'public, max-age=86400',
+                    'Access-Control-Allow-Origin' => '*',
+                ]);
+            }
+        }
+
+        // If it's a storage path
+        $cleanPath = $rawLogo;
+        if (str_contains($cleanPath, '/storage/')) {
+            $cleanPath = substr($cleanPath, strpos($cleanPath, '/storage/') + 9);
+        }
+        $cleanPath = ltrim($cleanPath, '/');
+
+        return $this->streamStorageFile($cleanPath);
+    }
+
+    /**
+     * Stream uploaded public storage files with CORS headers and multi-candidate directory searching.
+     */
+    public function streamStorageFile($path)
+    {
+        $cleanPath = ltrim($path, '/');
+
+        // Check possible physical paths on disk across different hosting architectures
+        $candidates = [
+            storage_path('app/public/' . $cleanPath),
+            public_path('storage/' . $cleanPath),
+            storage_path('app/' . $cleanPath),
+            public_path($cleanPath),
+        ];
+
+        $filePath = null;
+        foreach ($candidates as $candidate) {
+            if (file_exists($candidate) && !is_dir($candidate)) {
+                $filePath = $candidate;
+                break;
+            }
+        }
+
+        if (!$filePath) {
+            abort(404, 'File not found');
+        }
+
+        $mimeType = mime_content_type($filePath) ?: 'application/octet-stream';
+
+        return response()->file($filePath, [
+            'Content-Type' => $mimeType,
+            'Cache-Control' => 'public, max-age=86400',
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => 'GET, HEAD, OPTIONS',
+            'Access-Control-Allow-Headers' => '*',
         ]);
     }
 }
