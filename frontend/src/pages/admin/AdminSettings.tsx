@@ -27,6 +27,25 @@ interface StoreSettings {
   shipping_fee: number;
 }
 
+const normalizeImageUrl = (url: string | null | undefined): string => {
+  if (!url) return '';
+  if (url.startsWith('data:image') || url.startsWith('blob:')) return url;
+  
+  if (url.includes('localhost') || url.includes('127.0.0.1')) {
+    const storageIdx = url.indexOf('/storage/');
+    if (storageIdx !== -1) {
+      const relative = url.substring(storageIdx);
+      return `${API_URL || ''}${relative}`;
+    }
+  }
+
+  if (url.startsWith('/storage/')) {
+    return `${API_URL || ''}${url}`;
+  }
+
+  return url;
+};
+
 const AdminSettings: React.FC = () => {
   const { toast } = useToast();
   const { refreshSettings } = useSettings();
@@ -61,6 +80,7 @@ const AdminSettings: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch settings');
       const data = await response.json();
       if (data) {
+        const normalizedLogo = normalizeImageUrl(data.logo_url);
         const sanitizedData = {
           ...data,
           store_name: data.store_name || '',
@@ -70,10 +90,10 @@ const AdminSettings: React.FC = () => {
           store_address: data.store_address || '',
           newsletter_title: data.newsletter_title || '',
           newsletter_description: data.newsletter_description || '',
-          logo_url: data.logo_url || '',
+          logo_url: normalizedLogo,
         };
         setSettings(sanitizedData);
-        setLogoPreview(data.logo_url || null);
+        setLogoPreview(normalizedLogo || null);
         setLogoFile(null);
         setLogoBase64(null);
         setLogoStats(null);

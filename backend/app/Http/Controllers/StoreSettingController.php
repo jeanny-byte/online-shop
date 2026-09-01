@@ -68,15 +68,14 @@ class StoreSettingController extends Controller
         if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
             // Delete old logo if it exists in local storage
             if ($settings->logo_url && str_contains($settings->logo_url, '/storage/')) {
-                $oldPath = str_replace(url('storage') . '/', '', $settings->logo_url);
-                $oldPath = str_replace('/storage/', '', $oldPath);
-                if (Storage::disk('public')->exists($oldPath)) {
-                    Storage::disk('public')->delete($oldPath);
+                $oldRel = substr($settings->logo_url, strpos($settings->logo_url, '/storage/') + 9);
+                if (Storage::disk('public')->exists($oldRel)) {
+                    Storage::disk('public')->delete($oldRel);
                 }
             }
 
             $path = $request->file('logo')->store('settings', 'public');
-            $validated['logo_url'] = url('storage/' . $path);
+            $validated['logo_url'] = '/storage/' . $path;
         } 
         // Handle Base64 Logo Upload (fallback for proxy / payload resilience)
         elseif ($request->filled('logo_base64') && str_starts_with($request->input('logo_base64'), 'data:image')) {
@@ -88,26 +87,24 @@ class StoreSettingController extends Controller
 
                 if ($decoded !== false) {
                     if ($settings->logo_url && str_contains($settings->logo_url, '/storage/')) {
-                        $oldPath = str_replace(url('storage') . '/', '', $settings->logo_url);
-                        $oldPath = str_replace('/storage/', '', $oldPath);
-                        if (Storage::disk('public')->exists($oldPath)) {
-                            Storage::disk('public')->delete($oldPath);
+                        $oldRel = substr($settings->logo_url, strpos($settings->logo_url, '/storage/') + 9);
+                        if (Storage::disk('public')->exists($oldRel)) {
+                            Storage::disk('public')->delete($oldRel);
                         }
                     }
 
                     $ext = ($imageType === 'jpeg') ? 'jpg' : $imageType;
                     $fileName = 'settings/logo_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
                     Storage::disk('public')->put($fileName, $decoded);
-                    $validated['logo_url'] = url('storage/' . $fileName);
+                    $validated['logo_url'] = '/storage/' . $fileName;
                 }
             }
         } elseif ($request->has('logo_url') && empty($request->input('logo_url'))) {
             // If logo was explicitly removed
             if ($settings->logo_url && str_contains($settings->logo_url, '/storage/')) {
-                $oldPath = str_replace(url('storage') . '/', '', $settings->logo_url);
-                $oldPath = str_replace('/storage/', '', $oldPath);
-                if (Storage::disk('public')->exists($oldPath)) {
-                    Storage::disk('public')->delete($oldPath);
+                $oldRel = substr($settings->logo_url, strpos($settings->logo_url, '/storage/') + 9);
+                if (Storage::disk('public')->exists($oldRel)) {
+                    Storage::disk('public')->delete($oldRel);
                 }
             }
             $validated['logo_url'] = null;

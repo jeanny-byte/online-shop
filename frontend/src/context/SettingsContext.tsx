@@ -24,6 +24,27 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
+const normalizeImageUrl = (url: string | null | undefined): string => {
+  if (!url) return '';
+  if (url.startsWith('data:image') || url.startsWith('blob:')) return url;
+  
+  // If the stored URL contains localhost/127.0.0.1, adapt it to the current API_URL in production
+  if (url.includes('localhost') || url.includes('127.0.0.1')) {
+    const storageIdx = url.indexOf('/storage/');
+    if (storageIdx !== -1) {
+      const relative = url.substring(storageIdx);
+      return `${API_URL || ''}${relative}`;
+    }
+  }
+
+  // If the URL is relative like "/storage/settings/..."
+  if (url.startsWith('/storage/')) {
+    return `${API_URL || ''}${url}`;
+  }
+
+  return url;
+};
+
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<StoreSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,9 +54,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const response = await fetch(`${API_URL}/api/settings`);
       if (response.ok) {
         const data = await response.json();
-        // Sanitize null values to empty strings
+        // Sanitize null values to empty strings and normalize image URL
         const sanitizedData = {
           ...data,
+          logo_url: normalizeImageUrl(data.logo_url),
           store_email: data.store_email || '',
           store_phone: data.store_phone || '',
           whatsapp_number: data.whatsapp_number || '',
