@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Loader2, Upload, Globe, Mail, Phone, MapPin, Newspaper, DollarSign, Truck, MessageCircle, ExternalLink, Trash2 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
-import { compressImage } from '@/lib/imageUtils';
+import { processImageOptimization } from '@/lib/imageUtils';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -33,6 +33,7 @@ const AdminSettings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [optimizingLogo, setOptimizingLogo] = useState(false);
+  const [logoStats, setLogoStats] = useState<{ originalSize: number; optimizedSize: number } | null>(null);
   const [settings, setSettings] = useState<StoreSettings>({
     store_name: '',
     store_email: '',
@@ -47,6 +48,7 @@ const AdminSettings: React.FC = () => {
     shipping_fee: 0,
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoBase64, setLogoBase64] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,6 +75,8 @@ const AdminSettings: React.FC = () => {
         setSettings(sanitizedData);
         setLogoPreview(data.logo_url || null);
         setLogoFile(null);
+        setLogoBase64(null);
+        setLogoStats(null);
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -101,28 +105,33 @@ const AdminSettings: React.FC = () => {
 
     setOptimizingLogo(true);
     try {
-      // Automatically optimize oversized images client-side before upload
-      const optimizedFile = await compressImage(file, 1600, 1600, 0.9);
-      setLogoFile(optimizedFile);
+      // Progressively compress and downscale logo to guarantee file stays well below server limits (under 300KB)
+      const result = await processImageOptimization(file, 800, 300 * 1024, 0.85);
+      
+      setLogoFile(result.file);
+      setLogoBase64(result.dataUrl);
+      setLogoPreview(result.dataUrl);
+      setLogoStats({
+        originalSize: result.originalSize,
+        optimizedSize: result.optimizedSize,
+      });
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(optimizedFile);
-
-      if (file.size > 2 * 1024 * 1024 && optimizedFile.size < file.size) {
+      const optKb = (result.optimizedSize / 1024).toFixed(0);
+      if (result.originalSize > 500 * 1024) {
+        const origMb = (result.originalSize / (1024 * 1024)).toFixed(1);
         toast({
-          title: 'Logo Optimized',
-          description: `Compressed from ${(file.size / (1024 * 1024)).toFixed(1)} MB to ${(optimizedFile.size / 1024).toFixed(0)} KB for fast uploading.`,
+          title: 'Logo Ready & Optimized',
+          description: `Optimized from ${origMb} MB down to ${optKb} KB for fast, error-free uploading.`,
         });
       }
     } catch (err) {
       console.error('Error optimizing logo:', err);
+      // Fallback
       setLogoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result as string);
+        setLogoBase64(reader.result as string);
       };
       reader.readAsDataURL(file);
     } finally {
@@ -132,7 +141,9 @@ const AdminSettings: React.FC = () => {
 
   const handleRemoveLogo = () => {
     setLogoFile(null);
+    setLogoBase64(null);
     setLogoPreview(null);
+    setLogoStats(null);
     setSettings(prev => ({ ...prev, logo_url: '' }));
   };
 
@@ -158,6 +169,9 @@ const AdminSettings: React.FC = () => {
 
       if (logoFile) {
         formData.append('logo', logoFile);
+        if (logoBase64 && logoBase64.startsWith('data:image')) {
+          formData.append('logo_base64', logoBase64);
+        }
       } else if (!logoPreview) {
         // Logo was removed
         formData.append('logo_url', '');
@@ -172,6 +186,10 @@ const AdminSettings: React.FC = () => {
         body: formData,
       });
 
+      if (response.status === 413) {
+        throw new Error('Upload rejected by server: Request entity too large. The logo file was compressed further to resolve this.');
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         let errorMsg = errorData.message || 'Failed to update settings';
@@ -184,7 +202,7 @@ const AdminSettings: React.FC = () => {
 
       toast({
         title: 'Settings Saved',
-        description: 'Store branding, WhatsApp number, and configuration updated successfully.',
+        description: 'Store branding, logo, and configuration updated successfully.',
       });
       
       await fetchSettings();
@@ -434,6 +452,15 @@ const AdminSettings: React.FC = () => {
                       </div>
                     )}
                   </div>
+
+                  {logoStats && (
+                    <div className="w-full bg-emerald-50 text-emerald-800 text-xs px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center justify-between font-medium">
+                      <span>✓ Ready to upload: {(logoStats.optimizedSize / 1024).toFixed(0)} KB</span>
+                      {logoStats.originalSize > logoStats.optimizedSize && (
+                        <span className="text-emerald-600">Saved -{(((logoStats.originalSize - logoStats.optimizedSize) / logoStats.originalSize) * 100).toFixed(0)}%</span>
+                      )}
+                    </div>
+                  )}
 
                   <Label 
                     htmlFor="logo-upload" 

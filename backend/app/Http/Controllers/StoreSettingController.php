@@ -51,6 +51,7 @@ class StoreSettingController extends Controller
             'currency' => 'nullable|string|max:10',
             'shipping_fee' => 'nullable|numeric|min:0',
             'logo' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,webp|max:20480',
+            'logo_base64' => 'nullable|string',
         ]);
 
         // Clean & sanitize WhatsApp number
@@ -63,7 +64,7 @@ class StoreSettingController extends Controller
             $validated['whatsapp_number'] = $digitsOnly;
         }
 
-        // Handle Logo Upload
+        // Handle File Logo Upload
         if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
             // Delete old logo if it exists in local storage
             if ($settings->logo_url && str_contains($settings->logo_url, '/storage/')) {
@@ -76,6 +77,30 @@ class StoreSettingController extends Controller
 
             $path = $request->file('logo')->store('settings', 'public');
             $validated['logo_url'] = url('storage/' . $path);
+        } 
+        // Handle Base64 Logo Upload (fallback for proxy / payload resilience)
+        elseif ($request->filled('logo_base64') && str_starts_with($request->input('logo_base64'), 'data:image')) {
+            $base64Data = $request->input('logo_base64');
+            if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $typeMatches)) {
+                $imageType = strtolower($typeMatches[1]);
+                $base64Content = substr($base64Data, strpos($base64Data, ',') + 1);
+                $decoded = base64_decode($base64Content);
+
+                if ($decoded !== false) {
+                    if ($settings->logo_url && str_contains($settings->logo_url, '/storage/')) {
+                        $oldPath = str_replace(url('storage') . '/', '', $settings->logo_url);
+                        $oldPath = str_replace('/storage/', '', $oldPath);
+                        if (Storage::disk('public')->exists($oldPath)) {
+                            Storage::disk('public')->delete($oldPath);
+                        }
+                    }
+
+                    $ext = ($imageType === 'jpeg') ? 'jpg' : $imageType;
+                    $fileName = 'settings/logo_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                    Storage::disk('public')->put($fileName, $decoded);
+                    $validated['logo_url'] = url('storage/' . $fileName);
+                }
+            }
         } elseif ($request->has('logo_url') && empty($request->input('logo_url'))) {
             // If logo was explicitly removed
             if ($settings->logo_url && str_contains($settings->logo_url, '/storage/')) {
