@@ -185,7 +185,11 @@ const Navbar: React.FC = () => {
           <div className="container-custom py-5">
             <div className="flex justify-between items-center">
               <Link to="/" className="text-2xl font-serif font-semibold" onClick={() => setIsOpen(false)}>
-                {settings?.store_name || 'Nelysah Royal Care'}
+                {settings?.logo_url ? (
+                  <img src={settings.logo_url} alt={settings?.store_name || 'Store'} className="h-9 w-auto object-contain" />
+                ) : (
+                  settings?.store_name || 'Nelysah Royal Care'
+                )}
               </Link>
               <button onClick={() => setIsOpen(false)}>
                 <X size={24} />

@@ -80,22 +80,50 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     if (settings?.store_name) {
-      document.title = settings.store_name;
+      document.title = `${settings.store_name} - All Beauty Products`;
 
       const ogTitle = document.querySelector('meta[property="og:title"]');
       if (ogTitle) {
-        ogTitle.setAttribute('content', settings.store_name);
+        ogTitle.setAttribute('content', `${settings.store_name} - All Beauty Products`);
+      }
+
+      const twitterTitle = document.querySelector('meta[name="twitter:title"]');
+      if (twitterTitle) {
+        twitterTitle.setAttribute('content', `${settings.store_name} - All Beauty Products`);
+      }
+
+      const authorMeta = document.querySelector('meta[name="author"]');
+      if (authorMeta) {
+        authorMeta.setAttribute('content', settings.store_name);
       }
     }
 
     if (settings?.logo_url) {
-      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'shortcut icon';
-        document.getElementsByTagName('head')[0].appendChild(link);
+      const iconSelectors = ["link[rel='icon']", "link[rel='shortcut icon']", "link[rel='apple-touch-icon']"];
+      iconSelectors.forEach(selector => {
+        let link: HTMLLinkElement | null = document.querySelector(selector);
+        if (link) {
+          link.href = settings.logo_url;
+        }
+      });
+
+      let mainIcon: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+      if (!mainIcon) {
+        mainIcon = document.createElement('link');
+        mainIcon.rel = 'shortcut icon';
+        document.head.appendChild(mainIcon);
       }
-      link.href = settings.logo_url;
+      mainIcon.href = settings.logo_url;
+
+      const ogImage = document.querySelector('meta[property="og:image"]');
+      if (ogImage) {
+        ogImage.setAttribute('content', settings.logo_url);
+      }
+
+      const twitterImage = document.querySelector('meta[name="twitter:image"]');
+      if (twitterImage) {
+        twitterImage.setAttribute('content', settings.logo_url);
+      }
     }
   }, [settings?.store_name, settings?.logo_url]);
 

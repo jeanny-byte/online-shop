@@ -2,8 +2,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useSettings } from '@/context/SettingsContext';
 
 const ShippingPolicyPage: React.FC = () => {
+  const { settings } = useSettings();
+  const storeName = settings?.store_name || 'Nelysah';
+
   return (
     <div className="min-h-screen pt-24 pb-16">
       <div className="container-custom">
@@ -13,7 +17,7 @@ const ShippingPolicyPage: React.FC = () => {
           <section className="mb-8">
             <h2 className="text-2xl font-medium mb-4">Shipping Information</h2>
             <p>
-              At Nelysah, we strive to deliver your products as quickly and efficiently as possible. 
+              At {storeName}, we strive to deliver your products as quickly and efficiently as possible. 
               Please review our shipping information below.
             </p>
           </section>
@@ -56,7 +60,7 @@ const ShippingPolicyPage: React.FC = () => {
             <h3 className="text-xl font-medium mb-3">International Shipping</h3>
             <p>
               We ship to most countries worldwide. Please note that international orders may be subject 
-              to import duties and taxes, which are the responsibility of the recipient. Nelysah is not 
+              to import duties and taxes, which are the responsibility of the recipient. {storeName} is not 
               responsible for delays due to customs processing.
             </p>
           </section>

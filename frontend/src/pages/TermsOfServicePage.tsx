@@ -1,8 +1,12 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useSettings } from '@/context/SettingsContext';
 
 const TermsOfServicePage: React.FC = () => {
+  const { settings } = useSettings();
+  const storeName = settings?.store_name || 'Nelysah';
+
   return (
     <div className="min-h-screen pt-24 pb-16">
       <div className="container-custom">
@@ -14,7 +18,7 @@ const TermsOfServicePage: React.FC = () => {
             
             <p className="mt-4">
               Please read these Terms of Service ("Terms", "Terms of Service") carefully before using 
-              the Nelysah website (the "Service") operated by Nelysah ("us", "we", or "our").
+              the {storeName} website (the "Service") operated by {storeName} ("us", "we", or "our").
             </p>
             
             <p className="mt-2">
@@ -81,10 +85,10 @@ const TermsOfServicePage: React.FC = () => {
             <h2 className="text-2xl font-medium mb-4">Intellectual Property</h2>
             <p>
               The Service and its original content, features, and functionality are and will remain the 
-              exclusive property of Nelysah and its licensors. The Service is protected by copyright, 
+              exclusive property of {storeName} and its licensors. The Service is protected by copyright, 
               trademark, and other laws of both the United States and foreign countries. Our trademarks 
               and trade dress may not be used in connection with any product or service without the prior 
-              written consent of Nelysah.
+              written consent of {storeName}.
             </p>
           </section>
           
@@ -92,12 +96,12 @@ const TermsOfServicePage: React.FC = () => {
             <h2 className="text-2xl font-medium mb-4">Links To Other Websites</h2>
             <p>
               Our Service may contain links to third-party websites or services that are not owned or 
-              controlled by Nelysah.
+              controlled by {storeName}.
             </p>
             <p className="mt-2">
-              Nelysah has no control over, and assumes no responsibility for, the content, privacy policies, 
+              {storeName} has no control over, and assumes no responsibility for, the content, privacy policies, 
               or practices of any third-party websites or services. You further acknowledge and agree that 
-              Nelysah shall not be responsible or liable, directly or indirectly, for any damage or loss caused 
+              {storeName} shall not be responsible or liable, directly or indirectly, for any damage or loss caused 
               or alleged to be caused by or in connection with the use of or reliance on any such content, 
               goods, or services available on or through any such websites or services.
             </p>
@@ -122,7 +126,7 @@ const TermsOfServicePage: React.FC = () => {
           <section className="mb-8">
             <h2 className="text-2xl font-medium mb-4">Limitation Of Liability</h2>
             <p>
-              In no event shall Nelysah, nor its directors, employees, partners, agents, suppliers, or 
+              In no event shall {storeName}, nor its directors, employees, partners, agents, suppliers, or 
               affiliates, be liable for any indirect, incidental, special, consequential or punitive 
               damages, including without limitation, loss of profits, data, use, goodwill, or other 
               intangible losses, resulting from your access to or use of or inability to access or use 

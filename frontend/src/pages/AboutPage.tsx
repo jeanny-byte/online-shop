@@ -1,7 +1,11 @@
-
+  
 import React from 'react';
+import { useSettings } from '@/context/SettingsContext';
 
 const AboutPage: React.FC = () => {
+  const { settings } = useSettings();
+  const storeName = settings?.store_name || 'Nelysah Royal Care';
+
   return (
     <div className="min-h-screen pt-24">
       <div className="container-custom py-8">
@@ -9,7 +13,7 @@ const AboutPage: React.FC = () => {
         <div className="text-center mb-12">
           <h1 className="text-3xl md:text-5xl font-serif font-medium mb-4">Our Story</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            How Nelysah Royal Care blossomed from a passion project to a beloved luxury beauty brand
+            How {storeName} blossomed from a passion project to a beloved luxury beauty brand
           </p>
         </div>
         
@@ -18,19 +22,19 @@ const AboutPage: React.FC = () => {
           <div>
             <h2 className="text-2xl md:text-3xl font-serif mb-4">It Started With a Problem</h2>
             <p className="text-muted-foreground mb-4">
-              Nelysah was born from necessity. Our founder, Lisa Chen, struggled with sensitive skin issues her entire life. Every product she tried either irritated her skin or simply didn't work as promised.
+              {storeName} was born from necessity. Our founder, Lisa Chen, struggled with sensitive skin issues her entire life. Every product she tried either irritated her skin or simply didn't work as promised.
             </p>
             <p className="text-muted-foreground mb-4">
               Frustrated with the industry's one-size-fits-all approach, Lisa began creating her own formulations in 2015. What started as a personal solution quickly gained attention when friends and family noticed the remarkable improvements in her skin.
             </p>
             <p className="text-muted-foreground">
-              With a background in biochemistry and a passion for natural ingredients, Lisa spent three years perfecting her formulas before officially launching Nelysah in 2018.
+              With a background in biochemistry and a passion for natural ingredients, Lisa spent three years perfecting her formulas before officially launching {storeName} in 2018.
             </p>
           </div>
           <div className="rounded-lg overflow-hidden">
             <img 
               src="https://images.unsplash.com/photo-1515377905703-c4788e51af15?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-              alt="Nelysah founder" 
+              alt={`${storeName} founder`} 
               className="w-full h-full object-cover"
             />
           </div>
@@ -41,7 +45,7 @@ const AboutPage: React.FC = () => {
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-2xl md:text-3xl font-serif mb-6">Our Philosophy</h2>
             <p className="text-lg mb-6">
-              At Nelysah, we believe skincare should be effective, transparent, and kind — to your skin and to our planet.
+              At {storeName}, we believe skincare should be effective, transparent, and kind — to your skin and to our planet.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
               <div>
@@ -98,7 +102,7 @@ const AboutPage: React.FC = () => {
           <div className="order-1 md:order-2 rounded-lg overflow-hidden">
             <img 
               src="https://images.unsplash.com/photo-1591130222196-2b0918f42e1f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-              alt="Nelysah products" 
+              alt={`${storeName} products`} 
               className="w-full h-full object-cover"
             />
           </div>
@@ -110,7 +114,7 @@ const AboutPage: React.FC = () => {
           <div className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-serif mb-4">Meet Our Team</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              The passionate individuals behind Nelysah who are dedicated to creating exceptional skincare products.
+              The passionate individuals behind {storeName} who are dedicated to creating exceptional skincare products.
             </p>
           </div>
           

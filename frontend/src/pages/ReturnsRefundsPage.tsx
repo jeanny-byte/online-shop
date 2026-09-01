@@ -2,8 +2,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useSettings } from '@/context/SettingsContext';
 
 const ReturnsRefundsPage: React.FC = () => {
+  const { settings } = useSettings();
+  const storeName = settings?.store_name || 'Nelysah';
+  const storeEmail = settings?.store_email || 'returns@nelysah.com';
+
   return (
     <div className="min-h-screen pt-24 pb-16">
       <div className="container-custom">
@@ -13,7 +18,7 @@ const ReturnsRefundsPage: React.FC = () => {
           <section className="mb-8">
             <h2 className="text-2xl font-medium mb-4">Our Return Policy</h2>
             <p>
-              We want you to be completely satisfied with your purchase. If you're not entirely happy 
+              We want you to be completely satisfied with your purchase from {storeName}. If you're not entirely happy 
               with your order, we're here to help.
             </p>
           </section>
@@ -71,7 +76,7 @@ const ReturnsRefundsPage: React.FC = () => {
           <section className="mb-8">
             <h3 className="text-xl font-medium mb-3">How to Initiate a Return</h3>
             <p>
-              To start the return process, please email us at returns@Nelysah.com or contact us through 
+              To start the return process, please email us at <a href={`mailto:${storeEmail}`} className="text-primary hover:underline">{storeEmail}</a> or contact us through 
               our contact form. Please include your order number and the reason for your return.
             </p>
           </section>

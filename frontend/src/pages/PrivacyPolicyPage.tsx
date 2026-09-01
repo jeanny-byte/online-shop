@@ -1,8 +1,14 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useSettings } from '@/context/SettingsContext';
 
 const PrivacyPolicyPage: React.FC = () => {
+  const { settings } = useSettings();
+  const storeName = settings?.store_name || 'Nelysah';
+  const storeEmail = settings?.store_email || 'privacy@nelysah.com';
+  const storeAddress = settings?.store_address || 'Tema Community 25, Accra-Ghana';
+
   return (
     <div className="min-h-screen pt-24 pb-16">
       <div className="container-custom">
@@ -13,7 +19,7 @@ const PrivacyPolicyPage: React.FC = () => {
             <p className="italic">Last updated: May 13, 2025</p>
             
             <p className="mt-4">
-              This Privacy Policy describes how Nelysah ("we," "us," or "our") collects, uses, and shares 
+              This Privacy Policy describes how {storeName} ("we," "us," or "our") collects, uses, and shares 
               your personal information when you visit our website, make a purchase, or interact with us.
             </p>
           </section>
@@ -89,7 +95,7 @@ const PrivacyPolicyPage: React.FC = () => {
               <li>The right to data portability</li>
               <li>The right to object to processing of your personal information</li>
             </ul>
-            <p className="mt-2">To exercise any of these rights, please contact us at privacy@Nelysah.com.</p>
+            <p className="mt-2">To exercise any of these rights, please contact us at <a href={`mailto:${storeEmail}`} className="text-primary hover:underline">{storeEmail}</a>.</p>
           </section>
           
           <section className="mb-8">
@@ -104,8 +110,8 @@ const PrivacyPolicyPage: React.FC = () => {
           
           <section className="mb-8">
             <h2 className="text-2xl font-medium mb-4">Contact Us</h2>
-            <p>For more information about our privacy practices, if you have questions, or if you would like to make a complaint, please contact us by e‑mail at privacy@Nelysah.com or by mail using the details provided below:</p>
-            <p className="mt-2">Nelysah<br />123 Skincare Drive, Suite 100<br />Los Angeles, CA 90001<br />United States</p>
+            <p>For more information about our privacy practices, if you have questions, or if you would like to make a complaint, please contact us by e‑mail at <a href={`mailto:${storeEmail}`} className="text-primary hover:underline">{storeEmail}</a> or by mail using the details provided below:</p>
+            <p className="mt-2 whitespace-pre-line">{storeName}<br />{storeAddress}</p>
           </section>
         </div>
       </div>
