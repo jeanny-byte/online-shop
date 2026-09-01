@@ -95,10 +95,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/settings', [StoreSettingController::class, 'update']);
         Route::get('/newsletter/subscribers', [NewsletterController::class, 'index']);
+        Route::post('/newsletter/broadcast', [NewsletterController::class, 'broadcast']);
     });
 
     Route::put('/orders/{orderId}', [OrderController::class, 'updateStatus'])->middleware('can:staff');
 });
+
+// Email template preview for design inspection & testing
+Route::get('/emails/preview/{template}', [NewsletterController::class, 'previewEmail']);
 
 Route::get('/health', function () {
     return response()->json(['status' => 'ok']);

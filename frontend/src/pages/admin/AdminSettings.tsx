@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Loader2, Upload, Globe, Mail, Phone, MapPin, Newspaper, DollarSign, Truck, MessageCircle, ExternalLink, Trash2 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { compressImage } from '@/lib/imageUtils';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -31,6 +32,7 @@ const AdminSettings: React.FC = () => {
   const { refreshSettings } = useSettings();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [optimizingLogo, setOptimizingLogo] = useState(false);
   const [settings, setSettings] = useState<StoreSettings>({
     store_name: '',
     store_email: '',
@@ -93,15 +95,38 @@ const AdminSettings: React.FC = () => {
     setSettings(prev => ({ ...prev, newsletter_enabled: checked }));
   };
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    setOptimizingLogo(true);
+    try {
+      // Automatically optimize oversized images client-side before upload
+      const optimizedFile = await compressImage(file, 1600, 1600, 0.9);
+      setLogoFile(optimizedFile);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(optimizedFile);
+
+      if (file.size > 2 * 1024 * 1024 && optimizedFile.size < file.size) {
+        toast({
+          title: 'Logo Optimized',
+          description: `Compressed from ${(file.size / (1024 * 1024)).toFixed(1)} MB to ${(optimizedFile.size / 1024).toFixed(0)} KB for fast uploading.`,
+        });
+      }
+    } catch (err) {
+      console.error('Error optimizing logo:', err);
       setLogoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+    } finally {
+      setOptimizingLogo(false);
     }
   };
 
@@ -149,7 +174,12 @@ const AdminSettings: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to update settings');
+        let errorMsg = errorData.message || 'Failed to update settings';
+        if (errorData.errors) {
+          const firstErr = Object.values(errorData.errors).flat()[0];
+          if (firstErr) errorMsg = String(firstErr);
+        }
+        throw new Error(errorMsg);
       }
 
       toast({
@@ -162,7 +192,7 @@ const AdminSettings: React.FC = () => {
     } catch (error: any) {
       console.error('Error updating settings:', error);
       toast({
-        title: 'Error',
+        title: 'Error Saving Settings',
         description: error.message || 'Failed to update settings',
         variant: 'destructive',
       });
@@ -407,22 +437,32 @@ const AdminSettings: React.FC = () => {
 
                   <Label 
                     htmlFor="logo-upload" 
-                    className="cursor-pointer w-full"
+                    className={`w-full ${optimizingLogo ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
                   >
                     <div className="bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium border border-border">
-                      <Upload className="w-4 h-4" />
-                      {logoPreview ? 'Replace Logo' : 'Upload Store Logo'}
+                      {optimizingLogo ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Optimizing Image...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          {logoPreview ? 'Replace Logo' : 'Upload Store Logo'}
+                        </>
+                      )}
                     </div>
                     <input 
                       id="logo-upload" 
                       type="file" 
                       accept="image/png,image/jpeg,image/svg+xml,image/webp" 
                       className="hidden" 
+                      disabled={optimizingLogo || saving}
                       onChange={handleLogoChange} 
                     />
                   </Label>
                   <p className="text-xs text-center text-muted-foreground">
-                    Recommended: PNG, WebP or SVG with transparent background (Max 5MB).
+                    Recommended: PNG, WebP or SVG with transparent background (Large images auto-compressed).
                   </p>
                 </div>
               </CardContent>

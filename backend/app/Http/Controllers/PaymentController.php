@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Services\EmailService;
 use App\Services\MomoService;
 use App\Services\PaystackService;
 use Illuminate\Http\Request;
@@ -12,11 +13,13 @@ class PaymentController extends Controller
 {
     protected MomoService $momoService;
     protected PaystackService $paystackService;
+    protected EmailService $emailService;
 
-    public function __construct(MomoService $momoService, PaystackService $paystackService)
+    public function __construct(MomoService $momoService, PaystackService $paystackService, EmailService $emailService)
     {
         $this->momoService = $momoService;
         $this->paystackService = $paystackService;
+        $this->emailService = $emailService;
     }
 
     /**
@@ -83,12 +86,18 @@ class PaymentController extends Controller
             }
 
             if ($order) {
+                $wasPaid = $order->payment_status === 'paid';
                 $order->update([
                     'payment_status' => 'paid',
                     'payment_reference' => $reference,
                     'paid_at' => now(),
                     'order_status' => $order->order_status === 'Pending' ? 'Processing' : $order->order_status,
                 ]);
+
+                // Send payment receipt notification if not already sent
+                if (!$wasPaid) {
+                    $this->emailService->sendPaymentReceivedNotification($order);
+                }
             }
 
             return response()->json([
@@ -137,12 +146,17 @@ class PaymentController extends Controller
             }
 
             if ($order) {
+                $wasPaid = $order->payment_status === 'paid';
                 $order->update([
                     'payment_status' => 'paid',
                     'payment_reference' => $reference,
                     'paid_at' => now(),
                     'order_status' => $order->order_status === 'Pending' ? 'Processing' : $order->order_status,
                 ]);
+
+                if (!$wasPaid) {
+                    $this->emailService->sendPaymentReceivedNotification($order);
+                }
             }
         }
 

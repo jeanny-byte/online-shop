@@ -56,6 +56,27 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     fetchSettings();
   }, []);
 
+  useEffect(() => {
+    if (settings?.store_name) {
+      document.title = settings.store_name;
+
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) {
+        ogTitle.setAttribute('content', settings.store_name);
+      }
+    }
+
+    if (settings?.logo_url) {
+      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'shortcut icon';
+        document.getElementsByTagName('head')[0].appendChild(link);
+      }
+      link.href = settings.logo_url;
+    }
+  }, [settings?.store_name, settings?.logo_url]);
+
   return (
     <SettingsContext.Provider value={{ settings, loading, refreshSettings: fetchSettings }}>
       {children}

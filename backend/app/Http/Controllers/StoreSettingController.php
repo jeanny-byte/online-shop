@@ -50,7 +50,7 @@ class StoreSettingController extends Controller
             'newsletter_description' => 'nullable|string',
             'currency' => 'nullable|string|max:10',
             'shipping_fee' => 'nullable|numeric|min:0',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:5120',
+            'logo' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,webp|max:20480',
         ]);
 
         // Clean & sanitize WhatsApp number
@@ -64,7 +64,7 @@ class StoreSettingController extends Controller
         }
 
         // Handle Logo Upload
-        if ($request->hasFile('logo')) {
+        if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
             // Delete old logo if it exists in local storage
             if ($settings->logo_url && str_contains($settings->logo_url, '/storage/')) {
                 $oldPath = str_replace(url('storage') . '/', '', $settings->logo_url);
@@ -76,6 +76,16 @@ class StoreSettingController extends Controller
 
             $path = $request->file('logo')->store('settings', 'public');
             $validated['logo_url'] = url('storage/' . $path);
+        } elseif ($request->has('logo_url') && empty($request->input('logo_url'))) {
+            // If logo was explicitly removed
+            if ($settings->logo_url && str_contains($settings->logo_url, '/storage/')) {
+                $oldPath = str_replace(url('storage') . '/', '', $settings->logo_url);
+                $oldPath = str_replace('/storage/', '', $oldPath);
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+            $validated['logo_url'] = null;
         }
 
         $settings->update($validated);

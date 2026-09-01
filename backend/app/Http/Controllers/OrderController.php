@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -12,6 +13,13 @@ use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
+    protected EmailService $emailService;
+
+    public function __construct(EmailService $emailService)
+    {
+        $this->emailService = $emailService;
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -30,7 +38,7 @@ class OrderController extends Controller
             'items.*.price_per_item' => 'required|numeric',
         ]);
 
-        return DB::transaction(function () use ($validated) {
+        $order = DB::transaction(function () use ($validated) {
             // Check inventory stock before creating the order
             foreach ($validated['items'] as $item) {
                 $product = Product::lockForUpdate()->find($item['product_id']);
@@ -71,12 +79,17 @@ class OrderController extends Controller
                 Product::where('id', $item['product_id'])->decrement('stock_quantity', $item['quantity']);
             }
 
-            return response()->json([
-                'id' => $order->id,
-                'tracking_code' => $order->tracking_code,
-                'message' => 'Order created successfully'
-            ], 201);
+            return $order;
         });
+
+        // Dispatch order confirmation email notification
+        $this->emailService->sendOrderPlacedNotification($order);
+
+        return response()->json([
+            'id' => $order->id,
+            'tracking_code' => $order->tracking_code,
+            'message' => 'Order created successfully'
+        ], 201);
     }
 
     public function index(Request $request)
@@ -152,7 +165,7 @@ class OrderController extends Controller
         $prevStatus = $order->order_status;
         $status = ucfirst(strtolower($request->status));
 
-        return DB::transaction(function () use ($order, $status, $prevStatus) {
+        $result = DB::transaction(function () use ($order, $status, $prevStatus) {
             $order->update(['order_status' => $status]);
 
             $stockRestored = false;
@@ -172,12 +185,22 @@ class OrderController extends Controller
                 $stockDecremented = true;
             }
 
-            return response()->json([
-                'message' => 'Order status updated',
+            return [
                 'stockRestored' => $stockRestored,
                 'stockDecremented' => $stockDecremented
-            ]);
+            ];
         });
+
+        // If status actually changed, dispatch customer email notification
+        if ($prevStatus !== $status) {
+            $this->emailService->sendOrderStatusUpdatedNotification($order);
+        }
+
+        return response()->json([
+            'message' => 'Order status updated',
+            'stockRestored' => $result['stockRestored'],
+            'stockDecremented' => $result['stockDecremented']
+        ]);
     }
 
     public function trackOrder($trackingCode)
