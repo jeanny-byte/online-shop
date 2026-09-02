@@ -193,54 +193,109 @@ const fileToDataUrl = (file: File): Promise<string> => {
   });
 };
 
+export const DEFAULT_PLACEHOLDER_IMAGE = '/placeholder.svg';
+
 /**
- * Normalizes any image or logo URL to ensure it resolves accurately across both local and production environments.
+ * Normalizes any image or logo URL to ensure it resolves accurately across local dev and production on AWS.
  * Handles:
  * - base64 data URLs and object blob URLs
- * - local/dev host URLs (localhost, 127.0.0.1) dynamically converted to current VITE_API_URL
- * - relative storage paths like /storage/... or settings/...
+ * - local/dev host URLs (localhost, 127.0.0.1) dynamically converted to current VITE_API_URL host
+ * - relative storage paths like /storage/... or product-images/...
+ * - external CDNs (AWS S3, Cloudinary, Unsplash) preserved with HTTPS enforcement
  * - mixed content: ensures https protocol when running on https
  */
-export const normalizeImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  if (url.startsWith('data:image') || url.startsWith('blob:')) return url;
+export const normalizeImageUrl = (url: string | null | undefined, fallback = ''): string => {
+  if (!url || typeof url !== 'string' || url.trim() === '') {
+    return fallback;
+  }
+
+  const trimmed = url.trim();
+
+  // Keep data URLs and blobs as-is
+  if (trimmed.startsWith('data:image') || trimmed.startsWith('blob:')) {
+    return trimmed;
+  }
 
   const rawApiUrl = (import.meta.env.VITE_API_URL || '').trim();
   const cleanApiUrl = rawApiUrl.replace(/\/+$/, '');
   const baseHost = cleanApiUrl.replace(/\/api$/, '');
 
-  const storageIdx = url.indexOf('/storage/');
+  const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+
+  // Check if it is an external cloud CDN / storage service (AWS S3, Cloudinary, Unsplash, etc.)
+  const isExternalCdn = (trimmed.startsWith('http://') || trimmed.startsWith('https://')) &&
+    !trimmed.includes('localhost') &&
+    !trimmed.includes('127.0.0.1') &&
+    (
+      trimmed.includes('amazonaws.com') ||
+      trimmed.includes('unsplash.com') ||
+      trimmed.includes('cloudinary.com') ||
+      trimmed.includes('imgur.com') ||
+      trimmed.includes('googleusercontent.com')
+    );
+
+  if (isExternalCdn) {
+    if (isSecure && trimmed.startsWith('http://')) {
+      return trimmed.replace(/^http:\/\//, 'https://');
+    }
+    return trimmed;
+  }
+
+  // Handle paths containing /storage/
+  const storageIdx = trimmed.indexOf('/storage/');
   if (storageIdx !== -1) {
-    const relativePath = url.substring(storageIdx);
+    const relativePath = trimmed.substring(storageIdx);
 
-    if (
-      url.startsWith('/storage/') ||
-      url.includes('localhost') ||
-      url.includes('127.0.0.1')
-    ) {
-      return baseHost ? `${baseHost}${relativePath}` : relativePath;
+    // If it's localhost, relative, or an old server IP, route through the current baseHost
+    if (baseHost) {
+      let fullUrl = `${baseHost}${relativePath}`;
+      if (isSecure && fullUrl.startsWith('http://')) {
+        fullUrl = fullUrl.replace(/^http:\/\//, 'https://');
+      }
+      return fullUrl;
     }
 
-    // Upgrade http to https if browsing securely to prevent mixed content blocking
-    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
-      return url.replace(/^http:\/\//, 'https://');
+    if (isSecure && relativePath.startsWith('http://')) {
+      return relativePath.replace(/^http:\/\//, 'https://');
     }
-
-    return url;
+    return relativePath;
   }
 
-  // Relative path without /storage/
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    const cleanRel = url.startsWith('/') ? url : `/${url}`;
+  // Relative path without /storage/ (e.g. "product-images/pic.jpg" or "/product-images/pic.jpg")
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    const cleanRel = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
     const storagePath = cleanRel.startsWith('/storage/') ? cleanRel : `/storage${cleanRel}`;
-    return baseHost ? `${baseHost}${storagePath}` : storagePath;
+
+    if (baseHost) {
+      let fullUrl = `${baseHost}${storagePath}`;
+      if (isSecure && fullUrl.startsWith('http://')) {
+        fullUrl = fullUrl.replace(/^http:\/\//, 'https://');
+      }
+      return fullUrl;
+    }
+    return storagePath;
   }
 
-  // Enforce https on secure pages
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
-    return url.replace(/^http:\/\//, 'https://');
+  // Fallback for general absolute URLs pointing to current API host or needing HTTPS upgrade
+  if (isSecure && trimmed.startsWith('http://') && !trimmed.includes('localhost') && !trimmed.includes('127.0.0.1')) {
+    return trimmed.replace(/^http:\/\//, 'https://');
   }
 
-  return url;
+  return trimmed;
 };
+
+/**
+ * Standard onError handler for <img> elements to gracefully fallback to placeholder.
+ */
+export const handleImageError = (
+  e: React.SyntheticEvent<HTMLImageElement, Event>,
+  fallback = DEFAULT_PLACEHOLDER_IMAGE
+): void => {
+  const target = e.currentTarget;
+  if (target.src !== fallback && !target.src.endsWith(fallback)) {
+    target.onerror = null; // Prevent infinite loop if fallback fails
+    target.src = fallback;
+  }
+};
+
 

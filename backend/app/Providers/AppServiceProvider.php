@@ -19,6 +19,25 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Enforce HTTPS scheme in production or behind AWS ALB / CloudFront reverse proxy
+        if (
+            config('app.env') === 'production'
+            || request()->header('x-forwarded-proto') === 'https'
+            || str_starts_with((string)config('app.url'), 'https://')
+        ) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
+        // Auto-ensure public storage directory or symlink exists on AWS servers
+        if (!file_exists(public_path('storage'))) {
+            try {
+                \Illuminate\Support\Facades\Artisan::call('storage:link');
+            } catch (\Throwable $e) {
+                // If symlinking is disabled or restricted by OS permissions, ensure directory exists
+                @mkdir(public_path('storage'), 0755, true);
+            }
+        }
+
         \Illuminate\Support\Facades\Gate::define('admin', function ($user) {
             return $user->is_admin === true || $user->role === 'admin';
         });

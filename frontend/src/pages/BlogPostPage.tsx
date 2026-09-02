@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchBlogPostBySlug, BlogPost } from '@/lib/blogUtils';
 import { formatDistanceToNow } from 'date-fns';
 import { Loader2 } from 'lucide-react';
+import { normalizeImageUrl, handleImageError, DEFAULT_PLACEHOLDER_IMAGE } from '@/lib/imageUtils';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -60,8 +61,9 @@ const BlogPostPage: React.FC = () => {
           
           <div className="mb-8">
             <img 
-              src={post.image ? post.image : '/placeholder.jpg'} 
+              src={normalizeImageUrl(post.image, DEFAULT_PLACEHOLDER_IMAGE)} 
               alt={post.title} 
+              onError={handleImageError}
               className="w-full h-auto rounded-lg object-cover aspect-video"
             />
           </div>

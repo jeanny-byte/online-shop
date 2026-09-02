@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2, ShoppingBag, Truck, ShieldCheck, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useCart } from '../context/CartContext';
+import { normalizeImageUrl, handleImageError, DEFAULT_PLACEHOLDER_IMAGE } from '../lib/imageUtils';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -113,8 +114,9 @@ const ProductPage: React.FC = () => {
           <div>
             <div className="border border-border rounded-xl mb-4 overflow-hidden bg-secondary/10 aspect-square flex items-center justify-center">
               <img
-                src={selectedImage || product.image || '/placeholder.svg'}
+                src={normalizeImageUrl(selectedImage || product.image, DEFAULT_PLACEHOLDER_IMAGE)}
                 alt={product.name}
+                onError={handleImageError}
                 className="w-full h-full object-cover rounded-xl"
               />
             </div>
@@ -127,8 +129,9 @@ const ProductPage: React.FC = () => {
                     onClick={() => setSelectedImage(img)}
                   >
                     <img
-                      src={img}
+                      src={normalizeImageUrl(img, DEFAULT_PLACEHOLDER_IMAGE)}
                       alt={`${product.name} thumbnail ${index + 1}`}
+                      onError={handleImageError}
                       className="w-full h-full object-cover"
                     />
                   </button>

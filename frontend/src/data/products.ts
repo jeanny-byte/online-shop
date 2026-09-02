@@ -59,6 +59,8 @@ export const defaultProducts: Product[] = [
   }
 ];
 
+import { normalizeImageUrl, DEFAULT_PLACEHOLDER_IMAGE } from '../lib/imageUtils';
+
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 /**
@@ -69,18 +71,25 @@ export async function fetchProducts(): Promise<Product[]> {
     const response = await fetch(`${API_URL}/api/products`);
     if (!response.ok) throw new Error('Network response was not ok');
     const data = await response.json();
-    const formattedData = data.map((product: any) => ({
-      id: product.id,
-      name: product.name,
-      price: Number(product.price),
-      image: product.image,
-      images: Array.isArray(product.images) ? product.images : (product.image ? [product.image] : []),
-      category: product.category,
-      description: product.description,
-      stock_quantity: product.stock_quantity ?? 0,
-      featured: Boolean(product.featured),
-      best_seller: Boolean(product.best_seller),
-    }));
+    const formattedData = data.map((product: any) => {
+      const rawImage = product.image;
+      const rawImages = Array.isArray(product.images) ? product.images : (rawImage ? [rawImage] : []);
+      const normalizedImages = rawImages.map((img: string) => normalizeImageUrl(img, DEFAULT_PLACEHOLDER_IMAGE));
+      const normalizedImage = normalizeImageUrl(rawImage || (normalizedImages.length > 0 ? normalizedImages[0] : ''), DEFAULT_PLACEHOLDER_IMAGE);
+
+      return {
+        id: product.id,
+        name: product.name,
+        price: Number(product.price),
+        image: normalizedImage,
+        images: normalizedImages,
+        category: product.category,
+        description: product.description,
+        stock_quantity: product.stock_quantity ?? 0,
+        featured: Boolean(product.featured),
+        best_seller: Boolean(product.best_seller),
+      };
+    });
     if (Array.isArray(formattedData) && formattedData.length > 0) {
       return formattedData;
     } else {

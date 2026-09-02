@@ -27,4 +27,12 @@ class BlogPost extends Model
     {
         return $this->belongsTo(User::class, 'author_id');
     }
+
+    /**
+     * Dynamically resolve blog post image URL.
+     */
+    public function getImageAttribute($value)
+    {
+        return \App\Traits\ResolvesImageUrls::resolveImageUrl($value);
+    }
 }

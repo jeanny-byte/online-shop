@@ -58,4 +58,12 @@ class User extends Authenticatable
             'is_driver' => 'boolean',
         ];
     }
+
+    /**
+     * Dynamically resolve avatar URL.
+     */
+    public function getAvatarUrlAttribute($value)
+    {
+        return \App\Traits\ResolvesImageUrls::resolveImageUrl($value);
+    }
 }

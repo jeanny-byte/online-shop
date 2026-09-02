@@ -15,4 +15,12 @@ class Category extends Model
         'description',
         'image',
     ];
+
+    /**
+     * Dynamically resolve category image URL.
+     */
+    public function getImageAttribute($value)
+    {
+        return \App\Traits\ResolvesImageUrls::resolveImageUrl($value);
+    }
 }

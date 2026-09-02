@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { ArrowLeft, Trash } from 'lucide-react';
+import { normalizeImageUrl, handleImageError, DEFAULT_PLACEHOLDER_IMAGE } from '../lib/imageUtils';
 
 const CartPage: React.FC = () => {
   const { cart, updateQuantity, removeFromCart, cartTotal } = useCart();
@@ -13,10 +13,10 @@ const CartPage: React.FC = () => {
         <div className="container-custom py-8">
           <h1 className="text-3xl md:text-4xl font-serif font-medium mb-8">Your Cart</h1>
           <div className="text-center py-16">
-            <h2 className="text-2xl font-serif mb-4">Your cart is empty</h2>
+            <h2 className="text-2xl font-medium mb-4">Your cart is empty</h2>
             <p className="text-muted-foreground mb-8">Looks like you haven't added any products to your cart yet.</p>
             <Link to="/shop" className="btn btn-primary py-2 px-6">
-              Continue Shopping
+              Start Shopping
             </Link>
           </div>
         </div>
@@ -25,8 +25,15 @@ const CartPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen pt-24">
+    <div className="min-h-screen pt-24 pb-16">
       <div className="container-custom py-8">
+        <div className="flex items-center mb-6">
+          <Link to="/shop" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary">
+            <ArrowLeft size={16} className="mr-1" />
+            Continue Shopping
+          </Link>
+        </div>
+        
         <h1 className="text-3xl md:text-4xl font-serif font-medium mb-8">Your Cart</h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -38,8 +45,9 @@ const CartPage: React.FC = () => {
                   {/* Product Image */}
                   <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0 mb-4 sm:mb-0">
                     <img 
-                      src={item.product.image} 
+                      src={normalizeImageUrl(item.product.image, DEFAULT_PLACEHOLDER_IMAGE)} 
                       alt={item.product.name}
+                      onError={handleImageError}
                       className="w-full h-full object-cover"
                     />
                   </div>

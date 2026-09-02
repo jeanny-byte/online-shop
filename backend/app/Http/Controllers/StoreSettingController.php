@@ -188,7 +188,17 @@ class StoreSettingController extends Controller
      */
     public function streamStorageFile($path)
     {
-        $cleanPath = ltrim($path, '/');
+        if (request()->isMethod('OPTIONS')) {
+            return response('', 200, [
+                'Access-Control-Allow-Origin' => '*',
+                'Access-Control-Allow-Methods' => 'GET, HEAD, OPTIONS',
+                'Access-Control-Allow-Headers' => '*',
+            ]);
+        }
+
+        // Normalize path: strip leading slashes and any repeated 'storage/' segment
+        $rawPath = urldecode(ltrim($path, '/'));
+        $cleanPath = preg_replace('/^storage\//', '', $rawPath);
 
         // Check possible physical paths on disk across different hosting architectures
         $candidates = [
@@ -196,6 +206,8 @@ class StoreSettingController extends Controller
             public_path('storage/' . $cleanPath),
             storage_path('app/' . $cleanPath),
             public_path($cleanPath),
+            storage_path('app/public/' . $rawPath),
+            public_path('storage/' . $rawPath),
         ];
 
         $filePath = null;

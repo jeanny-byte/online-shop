@@ -20,4 +20,12 @@ class Testimonial extends Model
     protected $casts = [
         'rating' => 'integer',
     ];
+
+    /**
+     * Dynamically resolve testimonial avatar/image URL.
+     */
+    public function getImageAttribute($value)
+    {
+        return \App\Traits\ResolvesImageUrls::resolveImageUrl($value);
+    }
 }

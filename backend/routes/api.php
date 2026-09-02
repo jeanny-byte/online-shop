@@ -20,7 +20,22 @@ Route::post('/auth/signup', [AuthController::class, 'register']);
 Route::post('/auth/signin', [AuthController::class, 'login']);
 
 Route::get('/settings', [StoreSettingController::class, 'index']);
+Route::options('/settings/logo', function () {
+    return response('', 200, [
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, HEAD, OPTIONS',
+        'Access-Control-Allow-Headers' => '*',
+    ]);
+});
 Route::get('/settings/logo', [StoreSettingController::class, 'logo']);
+
+Route::options('/storage/{path}', function () {
+    return response('', 200, [
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, HEAD, OPTIONS',
+        'Access-Control-Allow-Headers' => '*',
+    ]);
+})->where('path', '.*');
 Route::get('/storage/{path}', [StoreSettingController::class, 'streamStorageFile'])->where('path', '.*');
 
 Route::get('/categories', [CategoryController::class, 'index']);

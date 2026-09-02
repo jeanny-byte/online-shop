@@ -3,6 +3,7 @@ import { Product } from '@/data/products';
 import { toast } from '@/hooks/use-toast';
 import AdminLayout from './components/AdminLayout';
 import { Plus, Tag, Trash2, Edit, X, Image as ImageIcon, FolderPlus } from 'lucide-react';
+import { normalizeImageUrl, handleImageError, DEFAULT_PLACEHOLDER_IMAGE } from '@/lib/imageUtils';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -515,8 +516,9 @@ const AdminProducts: React.FC = () => {
                       {formData.existingImages && formData.existingImages.map((img: string, idx: number) => (
                         <div key={`existing-${idx}`} className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border">
                           <img
-                            src={img}
+                            src={normalizeImageUrl(img, DEFAULT_PLACEHOLDER_IMAGE)}
                             alt={`Image ${idx + 1}`}
+                            onError={handleImageError}
                             className="w-full h-full object-cover"
                           />
                           <button
@@ -603,8 +605,9 @@ const AdminProducts: React.FC = () => {
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           <img
-                            src={product.image || (Array.isArray(product.images) && product.images[0]) || '/placeholder.svg'}
+                            src={normalizeImageUrl(product.image || (Array.isArray(product.images) && product.images[0]), DEFAULT_PLACEHOLDER_IMAGE)}
                             alt={product.name}
+                            onError={handleImageError}
                             className="w-12 h-12 object-cover rounded-lg border border-border flex-shrink-0"
                           />
                           <div>
@@ -741,7 +744,12 @@ const AdminProducts: React.FC = () => {
                       >
                         <div className="flex items-center gap-3">
                           {cat.image ? (
-                            <img src={cat.image} alt={cat.name} className="w-9 h-9 object-cover rounded-md border border-border" />
+                            <img
+                              src={normalizeImageUrl(cat.image, DEFAULT_PLACEHOLDER_IMAGE)}
+                              alt={cat.name}
+                              onError={handleImageError}
+                              className="w-9 h-9 object-cover rounded-md border border-border"
+                            />
                           ) : (
                             <div className="w-9 h-9 rounded-md bg-secondary flex items-center justify-center text-muted-foreground">
                               <Tag size={16} />

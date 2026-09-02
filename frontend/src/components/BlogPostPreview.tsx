@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { BlogPost } from '@/lib/blogUtils';
 import { formatDistanceToNow } from 'date-fns';
+import { normalizeImageUrl, handleImageError, DEFAULT_PLACEHOLDER_IMAGE } from '@/lib/imageUtils';
 
 // Use API URL from .env
 const API_URL = import.meta.env.VITE_API_URL;
@@ -19,8 +20,9 @@ const BlogPostPreview: React.FC<BlogPostPreviewProps> = ({ post, className }) =>
     <Card className={`overflow-hidden ${className}`}>
       <div className="aspect-w-16 aspect-h-9">
         <img 
-          src={post.image} 
+          src={normalizeImageUrl(post.image, DEFAULT_PLACEHOLDER_IMAGE)} 
           alt={post.title} 
+          onError={handleImageError}
           className="w-full h-48 object-cover"
         />
       </div>

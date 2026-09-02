@@ -1,3 +1,5 @@
+import { normalizeImageUrl, DEFAULT_PLACEHOLDER_IMAGE } from './imageUtils';
+
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 export interface BlogPost {
@@ -17,6 +19,14 @@ export interface BlogPost {
   updated_at: string;
 }
 
+const normalizePost = (post: any): BlogPost => {
+  if (!post) return post;
+  return {
+    ...post,
+    image: normalizeImageUrl(post.image, DEFAULT_PLACEHOLDER_IMAGE),
+  };
+};
+
 const getAuthHeaders = () => {
   const token = localStorage.getItem('jwt_token');
   return {
@@ -29,7 +39,8 @@ export const fetchBlogPosts = async (limit?: number): Promise<BlogPost[]> => {
   const url = limit ? `${API_URL}/api/blog-posts?limit=${limit}` : `${API_URL}/api/blog-posts`;
   const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
   if (!res.ok) throw new Error('Failed to fetch blog posts');
-  return await res.json();
+  const data = await res.json();
+  return Array.isArray(data) ? data.map(normalizePost) : [];
 };
 
 export const fetchAllBlogPosts = async (includeUnpublished = false): Promise<BlogPost[]> => {
@@ -38,7 +49,8 @@ export const fetchAllBlogPosts = async (includeUnpublished = false): Promise<Blo
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error('Failed to fetch all blog posts');
-  return await res.json();
+  const data = await res.json();
+  return Array.isArray(data) ? data.map(normalizePost) : [];
 };
 
 export const fetchBlogPostById = async (id: string | number): Promise<BlogPost | null> => {
@@ -46,7 +58,7 @@ export const fetchBlogPostById = async (id: string | number): Promise<BlogPost |
     headers: getAuthHeaders(),
   });
   if (!res.ok) return null;
-  return await res.json();
+  return normalizePost(await res.json());
 };
 
 export const fetchBlogPostBySlug = async (slug: string): Promise<BlogPost | null> => {
@@ -54,7 +66,7 @@ export const fetchBlogPostBySlug = async (slug: string): Promise<BlogPost | null
     headers: { 'Accept': 'application/json' },
   });
   if (!res.ok) return null;
-  return await res.json();
+  return normalizePost(await res.json());
 };
 
 export const createBlogPost = async (postData: FormData): Promise<{ data: BlogPost | null; error: any }> => {

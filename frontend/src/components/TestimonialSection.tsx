@@ -1,10 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
+import { Star } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { normalizeImageUrl, handleImageError } from '../lib/imageUtils';
 
 // Use API URL from .env
 const API_URL = import.meta.env.VITE_API_URL;
-import { Star } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 
 interface TestimonialProps {
   name: string;
@@ -199,8 +200,9 @@ const TestimonialSection: React.FC = () => {
                   <div className="flex items-center">
                     {testimonial.image ? (
                       <img 
-                        src={testimonial.image}
+                        src={normalizeImageUrl(testimonial.image)}
                         alt={testimonial.name}
+                        onError={handleImageError}
                         className="w-10 h-10 rounded-full object-cover mr-3"
                       />
                     ) : (

@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import RichTextEditor from '@/components/RichTextEditor';
 import { Loader2, ImageIcon } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { normalizeImageUrl, handleImageError, DEFAULT_PLACEHOLDER_IMAGE } from '@/lib/imageUtils';
 
 interface FormValues {
   title: string;
@@ -76,7 +77,7 @@ const AdminBlogEditor: React.FC = () => {
           published: post.published,
         });
         
-        setImagePreview(post.image);
+        setImagePreview(normalizeImageUrl(post.image, DEFAULT_PLACEHOLDER_IMAGE));
       } catch (error) {
         console.error('Error loading blog post:', error);
         toast({
@@ -211,8 +212,9 @@ const AdminBlogEditor: React.FC = () => {
                   <div className="relative group">
                     <AspectRatio ratio={16/9}>
                       <img 
-                        src={imagePreview} 
+                        src={normalizeImageUrl(imagePreview, DEFAULT_PLACEHOLDER_IMAGE)} 
                         alt="Featured"
+                        onError={handleImageError}
                         className="w-full h-full object-cover rounded-md"
                       />
                     </AspectRatio>

@@ -35,7 +35,16 @@ class ProductController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
                 $path = $file->store('product-images', 'public');
-                $imageUrls[] = url('storage/' . $path);
+                try {
+                    $destDir = public_path('storage/product-images');
+                    if (!file_exists($destDir)) {
+                        @mkdir($destDir, 0755, true);
+                    }
+                    @copy(\Illuminate\Support\Facades\Storage::disk('public')->path($path), public_path('storage/' . $path));
+                } catch (\Throwable $e) {
+                    // Ignore copy error; stream route will serve it
+                }
+                $imageUrls[] = '/storage/' . $path;
             }
         }
 
@@ -77,7 +86,16 @@ class ProductController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
                 $path = $file->store('product-images', 'public');
-                $imageUrls[] = url('storage/' . $path);
+                try {
+                    $destDir = public_path('storage/product-images');
+                    if (!file_exists($destDir)) {
+                        @mkdir($destDir, 0755, true);
+                    }
+                    @copy(\Illuminate\Support\Facades\Storage::disk('public')->path($path), public_path('storage/' . $path));
+                } catch (\Throwable $e) {
+                    // Ignore copy error; stream route will serve it
+                }
+                $imageUrls[] = '/storage/' . $path;
             }
         }
 

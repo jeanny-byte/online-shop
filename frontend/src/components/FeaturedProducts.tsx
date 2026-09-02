@@ -20,7 +20,8 @@ const FeaturedProducts: React.FC = () => {
             id: p.id,
             name: p.name,
             price: p.price,
-            image: Array.isArray(p.images) ? p.images[0] : '',
+            image: (Array.isArray(p.images) && p.images.length > 0) ? p.images[0] : (p.image || ''),
+            images: Array.isArray(p.images) ? p.images : (p.image ? [p.image] : []),
             category: p.category,
             featured: p.featured,
           }))

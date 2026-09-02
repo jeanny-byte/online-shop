@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { normalizeImageUrl, handleImageError } from '../lib/imageUtils';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -69,8 +70,9 @@ const CategorySection: React.FC = () => {
                 
                 {/* Image */}
                 <img 
-                  src={category.image || 'https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?q=80&w=1374&auto=format&fit=crop'} 
+                  src={normalizeImageUrl(category.image, 'https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?q=80&w=1374&auto=format&fit=crop')} 
                   alt={category.name} 
+                  onError={handleImageError}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 

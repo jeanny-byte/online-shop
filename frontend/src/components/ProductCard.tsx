@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { useCart } from '../context/CartContext';
+import { normalizeImageUrl, handleImageError, DEFAULT_PLACEHOLDER_IMAGE } from '../lib/imageUtils';
 
 // Use API URL from .env
 const API_URL = import.meta.env.VITE_API_URL;
@@ -30,7 +31,8 @@ const ProductCard: React.FC<ProductProps> = ({ id, name, price, image, images, c
     });
   };
   
-  const imageUrl = images && images.length > 0 ? images[0] : image;
+  const rawImage = images && images.length > 0 ? images[0] : image;
+  const imageUrl = normalizeImageUrl(rawImage, DEFAULT_PLACEHOLDER_IMAGE);
 
   return (
     <div className={`group relative ${featured ? 'animate-fade-in' : ''}`}>
@@ -49,8 +51,9 @@ const ProductCard: React.FC<ProductProps> = ({ id, name, price, image, images, c
 )}
         <Link to={`/product/${id}`}>
           <img
-            src={imageUrl ? imageUrl : '/placeholder.jpg'}
+            src={imageUrl}
             alt={name}
+            onError={handleImageError}
             className="h-full w-full object-cover object-center transition-all duration-300 group-hover:scale-105"
           />
         </Link>
