@@ -28,15 +28,9 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
 
-        // Auto-ensure public storage directory or symlink exists on AWS servers
-        if (!file_exists(public_path('storage'))) {
-            try {
-                \Illuminate\Support\Facades\Artisan::call('storage:link');
-            } catch (\Throwable $e) {
-                // If symlinking is disabled or restricted by OS permissions, ensure directory exists
-                @mkdir(public_path('storage'), 0755, true);
-            }
-        }
+        // Auto-ensure public storage directory or symlink exists and is healthy
+        \App\Services\StorageService::ensureStorageLink();
+        \App\Services\StorageService::syncDirectory('settings');
 
         \Illuminate\Support\Facades\Gate::define('admin', function ($user) {
             return $user->is_admin === true || $user->role === 'admin';

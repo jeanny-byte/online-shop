@@ -142,7 +142,13 @@ class FixImageUrlsCommand extends Command
             }
         }
 
-        $this->info("Completed! Total records normalized: {$updatedCount}");
+        $this->info("Completed! Total database records normalized: {$updatedCount}");
+
+        if (!$dryRun) {
+            $this->info("Ensuring physical files are mirrored to public/storage...");
+            $mirroredCount = \App\Services\StorageService::syncDirectory();
+            $this->info("Total physical storage files mirrored: {$mirroredCount}");
+        }
 
         return Command::SUCCESS;
     }

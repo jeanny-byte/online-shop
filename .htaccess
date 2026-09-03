@@ -1,0 +1,49 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    Options +FollowSymLinks
+
+    # 1. Handle pre-flight CORS requests
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ $1 [R=200,L]
+
+    # 2. Storage handling: if static file exists physically in backend/public/storage, serve it
+    RewriteCond %{DOCUMENT_ROOT}/backend/public/storage/$1 -f
+    RewriteRule ^storage/(.*)$ backend/public/storage/$1 [L]
+
+    # If static file exists in public/storage, serve it
+    RewriteCond %{DOCUMENT_ROOT}/storage/$1 -f
+    RewriteRule ^storage/(.*)$ storage/$1 [L]
+
+    # If storage requested but static file not found, stream through Laravel front controller
+    RewriteCond %{REQUEST_URI} ^/storage/
+    RewriteRule ^storage/(.*)$ backend/public/index.php [L]
+
+    # 3. Route all /api/ requests to backend/public/index.php
+    RewriteCond %{REQUEST_URI} ^/api/
+    RewriteRule ^ backend/public/index.php [L]
+
+    # 4. Route frontend compiled assets if they exist in frontend/dist
+    RewriteCond %{DOCUMENT_ROOT}/frontend/dist/$1 -f
+    RewriteRule ^(.*)$ frontend/dist/$1 [L]
+
+    # 5. Route backend public assets (favicon, robots.txt, etc.) if they exist in backend/public
+    RewriteCond %{DOCUMENT_ROOT}/backend/public/$1 -f
+    RewriteRule ^(.*)$ backend/public/$1 [L]
+
+    # 6. Fallback for React SPA routes (if frontend/dist/index.html exists)
+    RewriteCond %{DOCUMENT_ROOT}/frontend/dist/index.html -f
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ frontend/dist/index.html [L]
+
+    # 7. Fallback to Laravel if no frontend build present
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ backend/public/index.php [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, HEAD"
+    Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization, X-XSRF-TOKEN"
+</IfModule>

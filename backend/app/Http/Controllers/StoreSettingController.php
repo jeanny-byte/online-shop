@@ -78,16 +78,8 @@ class StoreSettingController extends Controller
             $path = $request->file('logo')->store('settings', 'public');
             $validated['logo_url'] = '/storage/' . $path;
 
-            // Also copy to public/storage if directory exists or can be created (for direct web server static delivery)
-            try {
-                $destDir = public_path('storage/settings');
-                if (!file_exists($destDir)) {
-                    @mkdir($destDir, 0755, true);
-                }
-                @copy(Storage::disk('public')->path($path), public_path('storage/' . $path));
-            } catch (\Throwable $e) {
-                // Ignore copy errors; fallback stream routes will serve it
-            }
+            // Mirror to public/storage and any parent web roots for direct web server delivery
+            \App\Services\StorageService::mirrorFile($path);
         } 
         // Handle Base64 Logo Upload (fallback for proxy / payload resilience)
         elseif ($request->filled('logo_base64') && str_starts_with($request->input('logo_base64'), 'data:image')) {
@@ -112,15 +104,8 @@ class StoreSettingController extends Controller
                     Storage::disk('public')->put($fileName, $decoded);
                     $validated['logo_url'] = '/storage/' . $fileName;
 
-                    try {
-                        $destDir = public_path('storage/settings');
-                        if (!file_exists($destDir)) {
-                            @mkdir($destDir, 0755, true);
-                        }
-                        @file_put_contents(public_path('storage/' . $fileName), $decoded);
-                    } catch (\Throwable $e) {
-                        // Ignore copy errors
-                    }
+                    // Mirror to public/storage and parent web roots
+                    \App\Services\StorageService::mirrorFile($fileName);
                 }
             }
         } elseif ($request->has('logo_url') && empty($request->input('logo_url'))) {
@@ -196,27 +181,7 @@ class StoreSettingController extends Controller
             ]);
         }
 
-        // Normalize path: strip leading slashes and any repeated 'storage/' segment
-        $rawPath = urldecode(ltrim($path, '/'));
-        $cleanPath = preg_replace('/^storage\//', '', $rawPath);
-
-        // Check possible physical paths on disk across different hosting architectures
-        $candidates = [
-            storage_path('app/public/' . $cleanPath),
-            public_path('storage/' . $cleanPath),
-            storage_path('app/' . $cleanPath),
-            public_path($cleanPath),
-            storage_path('app/public/' . $rawPath),
-            public_path('storage/' . $rawPath),
-        ];
-
-        $filePath = null;
-        foreach ($candidates as $candidate) {
-            if (file_exists($candidate) && !is_dir($candidate)) {
-                $filePath = $candidate;
-                break;
-            }
-        }
+        $filePath = \App\Services\StorageService::resolvePhysicalPath($path);
 
         if (!$filePath) {
             abort(404, 'File not found');

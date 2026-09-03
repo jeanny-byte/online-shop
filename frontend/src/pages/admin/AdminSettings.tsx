@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Loader2, Upload, Globe, Mail, Phone, MapPin, Newspaper, DollarSign, Truck, MessageCircle, ExternalLink, Trash2 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
-import { processImageOptimization, normalizeImageUrl } from '@/lib/imageUtils';
+import { processImageOptimization, normalizeImageUrl, handleImageError } from '@/lib/imageUtils';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -435,6 +435,7 @@ const AdminSettings: React.FC = () => {
                           src={logoPreview} 
                           alt="Store Logo Preview" 
                           className="max-w-full max-h-full object-contain"
+                          onError={handleImageError}
                         />
                         <button
                           type="button"

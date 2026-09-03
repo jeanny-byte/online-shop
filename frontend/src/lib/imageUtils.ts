@@ -285,13 +285,31 @@ export const normalizeImageUrl = (url: string | null | undefined, fallback = '')
 };
 
 /**
- * Standard onError handler for <img> elements to gracefully fallback to placeholder.
+ * Standard onError handler for <img> elements to gracefully retry via API streaming endpoint, then fallback to placeholder.
  */
 export const handleImageError = (
   e: React.SyntheticEvent<HTMLImageElement, Event>,
   fallback = DEFAULT_PLACEHOLDER_IMAGE
 ): void => {
   const target = e.currentTarget;
+
+  // If failed on a /storage/ URL, attempt streaming via API before falling back to placeholder
+  if (!target.dataset.triedApiFallback && target.src && target.src.includes('/storage/')) {
+    target.dataset.triedApiFallback = 'true';
+    const rawApiUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+    const baseHost = rawApiUrl.replace(/\/api$/, '');
+    const storageIdx = target.src.indexOf('/storage/');
+    const subpath = target.src.substring(storageIdx + 9); // strip '/storage/'
+
+    if (subpath.startsWith('settings/')) {
+      target.src = `${baseHost || ''}/api/settings/logo`;
+      return;
+    }
+
+    target.src = `${baseHost || ''}/api/storage/${subpath}`;
+    return;
+  }
+
   if (target.src !== fallback && !target.src.endsWith(fallback)) {
     target.onerror = null; // Prevent infinite loop if fallback fails
     target.src = fallback;

@@ -67,15 +67,7 @@ class BlogPostController extends Controller
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('blog-images', 'public');
-            try {
-                $destDir = public_path('storage/blog-images');
-                if (!file_exists($destDir)) {
-                    @mkdir($destDir, 0755, true);
-                }
-                @copy(\Illuminate\Support\Facades\Storage::disk('public')->path($path), public_path('storage/' . $path));
-            } catch (\Throwable $e) {
-                // Ignore copy errors
-            }
+            \App\Services\StorageService::mirrorFile($path);
             $validated['image'] = '/storage/' . $path;
         }
 
@@ -107,15 +99,7 @@ class BlogPostController extends Controller
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('blog-images', 'public');
-            try {
-                $destDir = public_path('storage/blog-images');
-                if (!file_exists($destDir)) {
-                    @mkdir($destDir, 0755, true);
-                }
-                @copy(\Illuminate\Support\Facades\Storage::disk('public')->path($path), public_path('storage/' . $path));
-            } catch (\Throwable $e) {
-                // Ignore copy errors
-            }
+            \App\Services\StorageService::mirrorFile($path);
             $validated['image'] = '/storage/' . $path;
         }
 
